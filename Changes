@@ -1,4 +1,10 @@
 CGI-Builder Latest Versions Changes
 
+Version 1.01
+- Fixed POD errors in the Examples sections
+- Fixed POD errors in the page_content and page_prefix properties sections
+- Fixed a weird PH_AUTOLOAD bug (probably related with the use of constant.pm)
+- Eliminated dependance from constant.pm in CGI::Builder::Const
+ 
 Version 1.0
 - First public release

@@ -1,5 +1,5 @@
 package CGI::Builder::Const ;
-$VERSION = 1.0 ;
+$VERSION = 1.01 ;
 
 ; use strict
 
@@ -24,9 +24,11 @@ $VERSION = 1.0 ;
                     PH
                   |
    ; @$h{@prefix} = map { "$_\_" } @prefix
+   ; while ( my ($k, $v) = each %$h )
+      { no strict 'refs'
+      ; *$k = sub () { $v }
+      }
    }
-   
-; use constant( $h )
 
 ; require Exporter
 ; our @ISA = 'Exporter'
@@ -44,9 +46,13 @@ __END__
 
 CGI::Builder::Const - Imports constant
 
-=head1 VERSION 1.0
+=head1 VERSION 1.01
 
-Included in CGI-Builder 1.0 distribution. The distribution includes:
+Included in CGI-Builder 1.01 distribution.
+
+The latest versions changes are reported in the F<Changes> file in this distribution.
+
+The distribution includes:
 
 =over
 

@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.0 ;
+$VERSION = 1.01 ;
 
 ; use strict
 ; use Carp
@@ -165,9 +165,8 @@ $VERSION = 1.0 ;
    ; $s->page_name = $p
    ; $s->PHASE = SWITCH_HANDLER
    ; my $shm   = $s->switch_handler_map
-   ; my $switch_handler = do {  $$shm{$p}        # SH from mapping
-                             || $s->can(SH.$p)  # SH from SH_method
-                                && SH.$p
+   ; my $switch_handler = do {  $$shm{$p}
+                             || do{$s->can(SH.$p) && SH.$p}
                              }
    ; $s->$switch_handler() if $switch_handler
    ; if ($s->PHASE < PRE_PAGE)
@@ -177,16 +176,11 @@ $VERSION = 1.0 ;
    ; if ( $s->PHASE < PAGE_HANDLER )
       { $s->PHASE = PAGE_HANDLER
       ; my $phm   = $s->page_handler_map
-      ; my $al
-      ; my $page_handler = do {  $$phm{$p}          # PH from mapping
-                              || $s->can(PH.$p)  # PH from PH_method
-                                 && PH.$p
-                              || (  $$phm{AUTOLOAD} # AUTOLOAD from mapping
-                                 && ++ $al && $$phm{AUTOLOAD}
-                                 )
-                              || (  $s->can(PH.'ÁUTOLOAD')  # from PH_AUTO..
-                                 && ++ $al && PH.'ÁUTOLOAD'
-                                 )
+      ; my $PHA = PH.'AUTOLOAD'
+      ; my $page_handler = do {  $$phm{$p}
+                              || do{my $ref = $s->can(PH.$p); $ref}
+                              || do{$$phm{'AUTOLOAD'} && $$phm{'AUTOLOAD'}}
+                              || do{my $ref = $s->can($PHA); $ref}
                               }
       ; $s->$page_handler(@args) if $page_handler
       }
@@ -239,9 +233,13 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.0
+=head1 VERSION 1.01
 
-Included in CGI-Builder 1.0 distribution. The distribution includes:
+Included in CGI-Builder 1.01 distribution.
+
+The latest versions changes are reported in the F<Changes> file in this distribution.
+
+The distribution includes:
 
 =over
 
@@ -274,7 +272,7 @@ To have the complete list of all the extensions of the CBF, see L<"Extensions Li
 
     Perl version >= 5.6.1
     OOTools      >= 1.61
-    IO::Util     >= 1.0
+    IO::Util     >= 1.11
 
 =item CPAN
 
@@ -369,7 +367,7 @@ The CBF implements a pre-structured and customizable CGI process, subdivided in 
 
 =item * Memory Efficient
 
-The whole CGI::Builder module is written in just 240 lines of code, very fast to load, very small footprint and very easy to maintain ;-). (see L<"The Internal Structure">)
+The whole CGI::Builder module is written in just 230 lines of code, very fast to load, very small footprint and very easy to maintain ;-). (see L<"The Internal Structure">)
 
 =item * Homogeneous Accessors
 
@@ -820,7 +818,9 @@ Set the C<page_name> to redefine the default page_name. This default will be use
 
 =head2 page_content
 
-This property allows you to access and set the content of the page (or a reference to it) to send to the client. During the process the C<page_content> property will be set to some page content, to a reference to it or to a CODE reference that will print the output on its own. In this case the refereced code will be called after the printing of the header.
+This property allows you to access and set the content of the page (or a reference to it) to send to the client. The default for this property is the empty string '' so be aware that it is always defined even if you don't set it.
+
+During the process the C<page_content> property will be set to some page content, to a reference to it or to a CODE reference that will print the output on its own. In this case the refereced code will be called after the printing of the header.
 
     sub PH_myPage
     {
@@ -849,7 +849,7 @@ This property allows you to access and set the path of the page (e.g used to add
 
 =head2 page_suffix
 
-This property allows you to access and set the suffix string used by some template extension to compose the page file path. This property is undefined by default, but your code or other extensions may set it otherwise.
+This property allows you to access and set the suffix string used by some template extension to compose the page file path. The default for this property is the empty string '' so be aware that it is always defined even if you don't set it, anyway your code or other extensions may set it otherwise.
 
 =head1 PROPERTY GROUP ACCESSORS
 
@@ -877,7 +877,7 @@ This accessor handles the parameters of your application
     # delete some param
     delete $s->param->{myParam} ;
 
-A special feature only for the param() accessor, is the automatic loading and retrieving using the parameter key as it were a defined property or method. This feature uses the L<"AUTOLOAD"> method:
+A special feature only for the param() accessor, is the automatic loading and retrieving using the parameter key as it was a defined property or method. This feature uses the L<"AUTOLOAD"> method:
 
     # with the AUTOLOAD of param, this
     $webapp = WebApp->new(param => {myParam => 'myD'})
@@ -949,13 +949,13 @@ These are the handlers called on a per page basis, i.e. each per Page Handler is
 
 =head3 SH_* (Switch Handlers)
 
-This handlers are usually prefixed by 'SH_' (i.e. Switch Handler). (e.g. If defined, the 'SH_foo' will be executed when the 'foo' page will be requested).
+This handlers are prefixed by 'SH_' (i.e. Switch Handler). (e.g. If defined, the 'SH_foo' will be executed when the 'foo' page will be requested).
 
 You can use this handlers to check some condition just before the PAGE_PROCESS Phase so giving you the possibility to switch to another page before the execution of that phase.
 
 =head3 PH_* (Page Handlers)
 
-This handlers are usually prefixed by 'PH_' (i.e. Page Handler). (e.g. If defined, the 'PH_foo' will be executed when the 'foo' page will be requested).
+This handlers are prefixed by 'PH_' (i.e. Page Handler). (e.g. If defined, the 'PH_foo' will be executed when the 'foo' page will be requested).
 
 B<Note>: Exception to this rule is the B<AUTOLOAD handler> that will be called IF defined and IF there are no other defined Page Handler for the specific page.
 
@@ -987,7 +987,7 @@ This method executes the I<CODE> (which can be a method name or a CODE ref) and 
 
 =head2 Internal Methods
 
-B<You don't need to directly use any of these methods because they are used internally> but you could need to override them in very special cases, so they are documented here.
+B<You don't need to directly use any of these methods because they are used internally> but you might need to override them in very special cases, so they are documented here.
 
 =head3 get_page_name
 
@@ -1118,7 +1118,7 @@ Remember also that you can change the order of all the Overrun Handlers in a sin
                                 'My::SuperClassA']);
   }
 
-B<Important Note>: The keys of this accessor are the handler identifier WITHOUT the C<overrun_handler> prefix (usually 'OH_').
+B<Important Note>: The keys of this accessor are the handler identifier WITHOUT the 'OH_' overrun handler prefix .
 
 =head1 EXAMPLES
 
@@ -1177,9 +1177,8 @@ Suppose that we want to send the "hello world!" content just for the specific "H
   
   sub OH_fixup {
       my $s = shift;
-      if (not defined $s->page_content) {
-          return $s->redirect('http://my/not/fond/page/url')
-      }
+      return $s->redirect('http://my/not/fond/page/url')
+        unless $s->page_content; # no page will be '0' ;-)
   }
   
   1;
@@ -1212,10 +1211,10 @@ To add another page we just add another Page Handler:
   
   sub OH_fixup {
       my $s = shift;
-      if (not defined $s->page_content) {
-          $s->redirect('http://my/not/fond/page/url')
-      }
+      return $s->redirect('http://my/not/fond/page/url')
+        unless $s->page_content; # no page will be '0' ;-)
   }
+
   
   1;
 
@@ -1248,9 +1247,8 @@ If instead of a client redirection we want to send a specific page internally ge
   
   sub OH_fixup {
       my $s = shift;
-      if (not defined $s->page_content) {
-          $s->switch_to('no_page')  # switches to the no_page Page Handler
-      }
+      $s->switch_to('no_page')  # switches to the no_page Page Handler
+        unless $s->page_content
   }
   
   # second alternative
@@ -1259,7 +1257,7 @@ If instead of a client redirection we want to send a specific page internally ge
   
   sub OH_fixup {
       my $s = shift;
-      if (not defined $s->page_content) {
+      unless ($s->page_content) {
           $s->page_content = "The page you requested is not available!"
       }
   }
@@ -1319,7 +1317,7 @@ You could do the same by avoiding the use of the 'SH_Submitted' handler, by movi
      $s->page_content = 'Thank you for filling the form';
   }
 
-Please, in this case, note the C<return> before the C<switch_to()> to return from the handler on switching.
+In this case, notice the C<return switch_to()> to return from the handler on switching.
 
 B<Note>: You should consider to use the L<CGI::Builder::DFVCheck|CGI::Builder::DFVCheck> extension that integrates C::B and the C<Data::FormValidator> module.
 
@@ -1383,7 +1381,7 @@ Use the C<OH_fixup()> as the last hook before the RESPONSE phase (when the page 
 
 =item *
 
-Use the C<cleanp_handler()> as the last hook of the process, to do cleanup after the page has been sent (e.g. close DB connection, log, etc.)
+Use the C<cleanup_handler()> as the last hook of the process, to do cleanup after the page has been sent (e.g. close DB connection, log, etc.)
 
 =item *
 
