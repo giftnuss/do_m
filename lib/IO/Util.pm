@@ -1,5 +1,5 @@
 package IO::Util ;
-$VERSION = 1.01 ;
+$VERSION = 1.11 ;
 
 ; use strict
 
@@ -51,8 +51,9 @@ __END__
 
 IO::Util - Captures the output sent to a file handler
 
-=head1 VERSION 1.1
+=head1 VERSION 1.11
 
+The latest versions changes are reported in the F<Changes> file in this distribution.
 
 =head1 SYNOPSIS
 
@@ -101,7 +102,7 @@ From the directory where this file is located, type:
 
 The C<capture> function espects a I<code> block as the first argument and an optional I<FILEHANDLER> as the second argument. If I<FILEHANDLER> is omitted the selected file handler will be used by default (usually C<STDOUT>). The function returns the reference to the captured output.
 
-B<Note>: This function ties the I<FILEHANDLER> to IO::Util class and unties it after the execution of the I<code>. If I<FILEHANDLER> is already tied to some other class, it just re-bless the tied object to IO::Util class and re-bless again the tied object to its original class after the execution of the I<code>, thus preserving the original I<FILEHANDLER> configuration.
+B<Note>: This function ties the I<FILEHANDLER> to IO::Util class and unties it after the execution of the I<code>. If I<FILEHANDLER> is already tied to any other class, it just re-bless the tied object to IO::Util class and re-bless again the tied object to its original class after the execution of the I<code>, thus preserving the original I<FILEHANDLER> configuration.
 
 =head1 SUPPORT and FEEDBACK
 

@@ -1,5 +1,7 @@
 IO-Util Latest Versions Changes
 
+Version 1.11
+- Fixed $IO::Util::VERSION required by CGI::Builder and Template::Magic
 
 Version 1.1
 - Fixed catching for already tied filehandlers
