@@ -4,15 +4,14 @@
 ; use 5.006_001
 ; use ExtUtils::MakeMaker
 
-; my $dist = 'CGI::Builder'
-; my $vers = '1.25'
+; my $pm = 'lib/CGI/Builder.pm'
 
 ; WriteMakefile
-   ( NAME           => $dist
-   , VERSION        => $vers
+   ( NAME           => 'CGI::Builder'
+   , VERSION_FROM   => $pm
    , ( $] ge '5.005' )
-     ? ( AUTHOR     => 'Domizio Demichelis - perl.4pro.net'
-       , ABSTRACT   => 'Framework to build simple or complex web-apps'
+     ? ( AUTHOR        => 'Domizio Demichelis - perl.4pro.net'
+       , ABSTRACT_FROM => $pm
        )
      : ()
    , PREREQ_PM      => { 'Class::constr'  => '1.62'

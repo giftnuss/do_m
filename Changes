@@ -1,5 +1,20 @@
 CGI-Builder Latest Versions Changes
 
+Version 1.26
+- Changed the page_content_check method: it does not use the page_content
+  accessor any more. That fixes the PH_AUTOLOAD problem with
+  CGI::Builder::HTMLtmpl.
+- Changed the private and protected 'my' suffix to the more useful and
+  consistent 'my_'
+- Added a warning in AUTOLOAD sub for unprefixed autoloaded params
+- Improved die_handler method: now it doesn't wrap the $@
+- Removed the PH, SH, OH constants from *::Const
+- Added a few useful information in the "IMPORTANT INFO" POD section
+- Changed the "SUPPORT" POD section
+- Improved the documentation of "PH_AUTOLOAD" and "switch_to" method
+- Added a few information in the "Avoid Common Mistakes" POD section
+- Added CGI::Builder::Auth in the "Extensions List" section
+- Added "KNOWN ISSUE" POD section
 
 Version 1.25
 - Eliminated version check and installation feedback system

@@ -1,5 +1,5 @@
 package Bundle::CGI::Builder::Complete;
-$VERSION = 1.25;
+$VERSION = 1.26;
 
 # If you have any problem with the coding style used here
 # you should read http://perl.4pro.net/perlish_coding_style.html
@@ -43,6 +43,8 @@ CGI::Builder            - main distribution
 CGI::Builder::CgiAppAPI - cgiapp compatible API
 
 Apache::CGI::Builder    - Apache/mod_perl integration
+
+CGI::Builder::Auth      - Authentication and authorization
 
 Template::Magic         - used by CGI::Builder::Magic
 

@@ -35,9 +35,9 @@
 ; ok($$o6 =~ /legal/)
 
 # set param from new
-; my $ap7 = Test5->new( myData => 'myData' )
-; is( $ap7->data('myData')
-    , 'myData'
+; my $ap7 = Test5->new( my_data => 'my_data' )
+; is( $ap7->my_data('my_data')
+    , 'my_data'
     )
 
 ; my $ap8 = Test8->new( cgi => CGI->new({ p => 'one' }) )

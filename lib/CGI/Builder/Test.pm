@@ -1,5 +1,5 @@
 package CGI::Builder::Test ;
-$VERSION = 1.25 ;
+$VERSION = 1.26 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -9,7 +9,8 @@ $VERSION = 1.25 ;
              
 ; sub dump
    { my ($s, @args) = @_
-   ; $s->page_content    .= qq(\nPage name: '${\$s->page_name}'\n)
+   ; $s->page_content    .= sprintf qq(\nPage name: '%s'\n)
+                                  , $s->page_name
    ; $s->page_content    .= "\nQuery Parameters:\n"
    ; foreach my $p ( sort $s->cgi->param() )
       { my $data_str      = "'"
@@ -28,7 +29,8 @@ $VERSION = 1.25 ;
    { my $s = shift
    ; my $c = ref $s
    ; $s->page_content     = "<HTML><HEAD><title>$c Dump</title></HEAD><BODY>"
-   ; $s->page_content    .= qq(<P><B>Page name:</B> ${\$s->page_name}</P>\n)
+   ; $s->page_content    .= sprintf qq(<P><B>Page name:</B> %s</P>\n)
+                                  , $s->page_name
    ; $s->page_content    .= "<P><B>\nQuery Parameters:</B><BR>\n<OL>\n"
    ; foreach my $p ( sort $s->cgi->param() )
       { my $data_str      = "'"
@@ -47,10 +49,11 @@ $VERSION = 1.25 ;
 ; sub die_handler
    { my $s = shift
    ; require Data::Dumper
-   ; my $dump = Data::Dumper::Dumper($s)
-   ; my $phase = $CGI::Builder::Const::phase[$s->PHASE]
-   ; die qq(Fatal error in phase $phase for page "${\$s->page_name}": $_[0]\n$dump)
-   ;
+   ; die sprintf qq(Fatal error in phase %s for page "%s": %s\n%s)
+               , $CGI::Builder::Const::phase[$s->PHASE]
+               , $s->page_name
+               , $_[0]
+               , Data::Dumper::Dumper($s)
    }
    
 ; 1
@@ -61,9 +64,9 @@ __END__
 
 CGI::Builder::Test - Adds some testing methods to your build
 
-=head1 VERSION 1.25
+=head1 VERSION 1.26
 
-Included in CGI-Builder 1.25 distribution.
+Included in CGI-Builder 1.26 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -120,11 +123,7 @@ The dump_html() method returns a chunk of text which contains all the environmen
 
 =head1 SUPPORT
 
-Support for all the modules of the CBF is via the mailing list. The list is used for general support on the use of the CBF, announcements, bug reports, patches, suggestions for improvements or new features. The API to the CBF is stable, but if you use the CBF in a production environment, it's probably a good idea to keep a watch on the list.
-
-You can join the CBF mailing list at this url:
-
-L<http://lists.sourceforge.net/lists/listinfo/cgi-builder-users>
+See L<CGI::Builder/"SUPPORT">.
 
 =head1 AUTHOR and COPYRIGHT
 

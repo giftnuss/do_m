@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.25 ;
+$VERSION = 1.26 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -11,6 +11,7 @@ $VERSION = 1.25 ;
 ; $Carp::Internal{'CGI::Builder::_'}++
 ; use CGI::Builder::Const qw| :all |
 ; use IO::Util
+; use warnings::register
 
 ; sub capture
    { my ($s, $h, @args) = @_
@@ -34,7 +35,7 @@ $VERSION = 1.25 ;
                 { return { map
                             { my $h = $_
                             ; my @op = grep
-                                        { defined &{$_.'::'.OH.$h}
+                                        { defined &{"$_\::OH_$h"}
                                         }
                                         $h =~ /up$/   # ;-)
                                         ? reverse ($CB, @ext, $cbb)
@@ -60,7 +61,7 @@ $VERSION = 1.25 ;
    ; return unless my $over = $s->overrun_handler_map($h)
    ; foreach my $pkg ( @$over )
       { no strict 'refs'
-      ; &{$pkg.'::'.OH.$h}($s, @args)
+      ; &{"$pkg\::OH_$h"}($s, @args)
       }
    }
 
@@ -103,7 +104,7 @@ $VERSION = 1.25 ;
       , { name       => 'page_path'
         , default    => './tm'
         , no_strict  => 1    # doesn't croak if ./tm is not a valid path
-        , validation => sub { -d or croak qq(Not a valid path) }
+        , validation => sub { -d or croak 'Not a valid path' }
         }
       , { name       => [ qw| page_content page_suffix | ]
         , default    => ''
@@ -115,11 +116,16 @@ $VERSION = 1.25 ;
 ; sub AUTOLOAD : lvalue              # param AUTOLOADING
    { (my $n = $AUTOLOAD) =~ s/.*://
    ; return if $n eq 'DESTROY'
+   ; if ( warnings::enabled )
+      { carp qq(Use of unprefixed parameter "$n". )
+        . qq(Application parameters should start with 'my_' or '_')
+          unless $n =~ /^(?:my)?_/
+      }
    ; @_ == 2
      ? ( $_[0]{param}{$n} = $_[1] )
      :   $_[0]{param}{$n}
    }
-
+   
 ; sub cgi_new
    { require CGI
    ; CGI->new()
@@ -160,13 +166,13 @@ $VERSION = 1.25 ;
 
 ; sub switch_to
    { my ($s, $p, @args) = @_
-   ; $s->PHASE < PRE_PROCESS && croak qq(Too early to call switch_to())
-   ; $s->PHASE > FIXUP       && croak qq(Too late to call switch_to())
-   ; defined $p && length $p || croak qq(No page_name name passed)
+   ; $s->PHASE < PRE_PROCESS && croak 'Too early to call switch_to()'
+   ; $s->PHASE > FIXUP       && croak 'Too late to call switch_to()'
+   ; defined $p && length $p || croak 'No page_name name passed'
    ; $s->page_name = $p
    ; $s->PHASE     = SWITCH_HANDLER
    ; my $shm       = $s->switch_handler_map
-   ; my $SH        = $$shm{$p} || $s->can(do{SH.$p})
+   ; my $SH        = $$shm{$p} || $s->can("SH_$p")
    ; $s->$SH() if $SH
    ; if ($s->PHASE < PRE_PAGE)
       { $s->PHASE = PRE_PAGE
@@ -175,9 +181,9 @@ $VERSION = 1.25 ;
    ; if ($s->PHASE < PAGE_HANDLER)
       { $s->PHASE = PAGE_HANDLER
       ; my $phm   = $s->page_handler_map
-      ; my $PH    =  $$phm{$p}       || $s->can(do{PH.$p})
+      ; my $PH    =  $$phm{$p}       || $s->can("PH_$p")
                   || ! $s->page_content_check
-                  && ($$phm{AUTOLOAD} || $s->can(do{PH.'AUTOLOAD'}))
+                  && ($$phm{AUTOLOAD} || $s->can('PH_AUTOLOAD'))
       ; $s->$PH(@args) if $PH
       }
    }
@@ -211,20 +217,28 @@ $VERSION = 1.25 ;
 
 ; sub redirect
    { my ($s, $url) = @_
-   ; $s->PHASE < GET_PAGE        && croak qq(Too early to call redirect())
-   ; $s->PHASE > RESPONSE        && croak qq(Too late to call redirect())
-   ; defined $url && length $url || croak qq(No URL passed)
+   ; $s->PHASE < GET_PAGE        && croak 'Too early to call redirect()'
+   ; $s->PHASE > RESPONSE        && croak 'Too late to call redirect()'
+   ; defined $url && length $url || croak 'No URL passed'
    ; $s->PHASE = REDIR
    ; $s->header(-url => $url)
    ; print $s->cgi->redirect( %{$s->header} )
    }
 
 ; sub die_handler
-   { my $s = shift
-   ; my $phase = $CGI::Builder::Const::phase[$s->PHASE]
-   ; die qq(Fatal error in phase $phase for page "${\$s->page_name}": $_[0])
+   { my ( $s, $msg ) = @_
+   ; for ( my $i = 1
+         ; my $sub = (caller($i))[3]
+         ; $i++
+         )
+      { die $msg if $sub eq '(eval)' && (caller($i+1))[3]
+      }
+   ; die sprintf 'Fatal error in phase %s for page "%s": %s'
+               , $CGI::Builder::Const::phase[$s->PHASE]
+               , $s->page_name
+               , $msg
    }
-
+   
 ; 1
 
 __END__
@@ -233,9 +247,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.25
+=head1 VERSION 1.26
 
-Included in CGI-Builder 1.25 distribution.
+Included in CGI-Builder 1.26 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -305,19 +319,49 @@ From the directory where this file is located, type:
 
 This is the starting point of the documentation of the CGI::Builder framework (CBF). You should read this documentation before any other documentation in any other module that extends the CBF.
 
-=head2 Useful links
+=head1 IMPORTANT INFO
+
+The CBF is growing quickly, likewise its features, documentation and resources: if you use it and you have not subscribed the L<cgi-builder-announce> mailing list, you should remember to check at least monthly for new releases and ALWAYS read the F<Changes> file.
+
+=head2 Mailing lists
+
+The CBF has 3 mailing lists which may be very useful for developement:
 
 =over
 
-=item *
+=item * cgi-builder-announce (IMPORTANT)
 
-A simple and useful navigation system between the various CBF extensions is available at this URL: L<http://perl.4pro.net>
+If you use the CBF, you should definitively subscribe this list, since it has a very low traffic (about 1-2 message per month) but informs you about new releases, improvements and fixes which B<you must not miss>.
 
-=item *
+L<http://lists.sourceforge.net/lists/listinfo/cgi-builder-announce>
 
-More examples and more practical topics are available in the mailing list at this URL: L<http://lists.sourceforge.net/lists/listinfo/cgi-builder-users>
+=item * cgi-builder-users
+
+This list is the CBF support mailing list, with a searchable archive full of examples and practical topics. You need to subscribe this list just if you need or give free support to/from other users. (see also L<"SUPPORT">)
+
+L<http://lists.sourceforge.net/lists/listinfo/cgi-builder-users>
+
+B<Note>: You could also search in the old CBF mailing list archive for previous posts (http://sourceforge.net/mailarchive/forum.php?forum=cgi-builder-users).
+
+=item * cgi-builder-developers
+
+This is the list reserved to the developers of the CBF and its Extensions: you must ask to be subscribed to this list, although you can browse the archive if you are interested in knowing what will come next in the CBF.
+
+L<http://lists.sourceforge.net/lists/listinfo/cgi-builder-developers>
 
 =back
+
+=head2 Links
+
+A simple and useful navigation system between the various CBF Extensions (and other modules used by the CBF) is available at this URL: L<http://perl.4pro.net>
+
+=head2 Jobs
+
+If you are interested in being hired as a developer for any commercial project, and if you have a good knowledge of the CBF, please send me a message with your CV including you usual hourly and monthly rate.
+
+=head2 Applications
+
+If you realize any interesting application by using the CBF and you want to share its link to increment your traffic, please send me a message. I am planning to publish a list of real world applications to show as successful CBF examples to the users. This will be a place where to show also information about your skills and other useful data about your work.
 
 =head2 About CGI::Application and CGI::Application::Plus
 
@@ -361,14 +405,6 @@ means Switch Handler
 
 =back
 
-=head2 A Personal Note
-
-I don't ask you any money to use my modules: I just ask you to write me a simple message telling me something about you and/or about the specific usage you give them ;-).
-
-Please, write me a few lines: it does not cost you any money and it will give me one more reason to keep publishing my works. Thank you.
-
-I<(please, use this page to send your message: L<http://perl.4pro.net>)>
-
 =head1 CGI Builder Framework (CBF)
 
 B<Definition>: A "framework" in object-oriented systems, is a set of classes that embodies an abstract design for solutions to a number of related problems.
@@ -380,6 +416,10 @@ In even simpler words: if you invest a few hours in learning this documentation,
 =head2 Features
 
 =over
+
+=item Rapid Development
+
+You inherit an efficient and flexible pre-built structure, a lot of useful, pre-configured and ready to use objects which will allow you to produce very compact, simple to write and maintain code.
 
 =item * An easy tool for beginners and experts
 
@@ -723,6 +763,9 @@ Imports constants
 
 =back
 
+=item * L<CGI::Builder::Auth|CGI::Builder::Auth>
+
+Adds user authentication and authorization to the CBF
 
 =item * L<Apache::CGI::Builder|Apache::CGI::Builder>
 
@@ -790,7 +833,7 @@ You usually will use this in the Instance Script without any argument. If you ne
 
 =head2 switch_to ( page_name [, arguments] )
 
-This method will switch the process to a page_name, e.g. useful when validating some condition in any handler.
+This method will switch the process to a page_name, e.g. useful when validating some condition in any handler. This cause a sort of internal redirect: use the L<redirect( url )> method to make the client do a new request.
 
     sub PH_myPage
     {
@@ -799,6 +842,33 @@ This method will switch the process to a page_name, e.g. useful when validating 
         || return $s->switch_to('myOtherPage', @optional_arg)
       ...
     }
+
+The I<arguments> passed to this method are optional and not needed by the CBF itself; they are just passed to your other handlers, just in case you need to keep track of something, or whatever you need to do.
+
+This is an example, to show a possible use of the I<arguments>:
+ 
+  sub SH_any_handler {
+      my $s = shift;
+      if (any_condition) {
+          return switch_to("other_page", $my_argument)
+      }
+  }
+  
+  sub SH_other_page {
+      my ($s, $my_argument) = @_ ;
+      if ( $my_argument eq "something" ){
+          do_something
+      } else {
+          do_something_else
+      }
+  }
+  
+  sub PH_other_page {
+      my ($s, $my_argument) = @_  ;
+      $s->page_content = $my_argument
+                         ? "You requested "any_page""
+                         : "You requested "other_page""
+  }
 
 B<Note>: You can use this method from the PRE_PROCESS phase until the FIXUP phase.
 
@@ -842,12 +912,12 @@ If you use the default you have just to use the C<cgi> property which will retur
    $my_query_param = $s->cgi->param('any_query_parameter')
 
 If, for any reason, you want to use your own cgi object, you can pass this property to the new() method, or you can also directly set it at some point in the process.
-
-    $webapp = WebApp
+                
+    $cbb = WebAppClass
              ->new( cgi => CGI->new({myOwnQuery => 'something'}) )
     
     $s->cgi = CGI->new({myOwnQuery => 'something'}) ;
-    
+
 =head2 page_name
 
 This property allows you to access and set the page name. The default for this property is 'index'. This means that the 'index' page will be requested if no other page has been explicitly requested.
@@ -945,7 +1015,7 @@ A special feature only for the param() accessor, is the automatic loading and re
     $s->myParam = 'myD';
     $p = $s->myParam ;
 
-B<Important Note>: If you use the AUTOLOAD feature, and if you want to write code that will not break, you should always follow the CBF convention and name your param with the 'my' or '_' prefixes. If you don't do that, it might happen that in the future, your 'special_data' parameter loaded with AUTOLOAD (C<< $s->special_data >>) will call instead a special_data() method implemented by any new release of any extension :-). The 'my_special_data' or '_special_data' are safer choices.
+B<Important Note>: If you use the AUTOLOAD feature, and if you want to write code that will not break, you should always follow the CBF convention and name your param with the 'my_' or '_' prefixes. If you don't do that, it might happen that in the future, your 'special_data' parameter loaded with AUTOLOAD (C<< $s->special_data >>) will call instead a special_data() method implemented by any new release of any extension :-). The 'my_special_data' or '_special_data' are safer choices.
 
 =head2 header( [ header ] )
 
@@ -1030,6 +1100,32 @@ You can use this handlers to do something specific for different pages, such as 
 This is a special Page Handler which will be called IF defined and IF there are no other defined page handler for the specific requested page and UNLESS the page_content_check() return true (i.e. there is no page content so far).
 You can use it for different reasons e.g. as the last chance to redirect the client or switch_to your special 'Not found' page.
 
+=head3 PH_AUTOLOAD
+
+The main purpose of this handler is giving you one more option to generate the page_content if no other handler has generated it so far, so you can use it e.g. as the last chance to redirect the client or switch_to your special 'Not found' page during the PAGE_HANDLER phase.
+
+You can also use the C<page_handler_map> advanced accessor to map the AUTOLOAD handler to any method you prefer.
+
+B<Note>: The execution of this handler is skipped by the presence of:
+
+=over
+
+=item *
+
+any specific PH handler defined for the current page
+
+=item *
+
+any page_content already defined
+
+=item *
+
+a found template, which is supposed to generate the page content if you use any template integration Extension
+
+=back
+
+If you need a wider solution you should use an C<OH_pre_page> or an C<OH_fixup> handler instead, which get always called without any restriction.
+
 =head1 ADVANCED FEATURES
 
 In this section you can find all the most advanced or less used features that document all the details of the CBF. In most cases you don't need to use them, anyway, knowing them will not hurt.
@@ -1091,23 +1187,23 @@ Used internally to send the C<page_content> to the client.
 This method (not to be confused with the 'PH_AUTOLOAD' Page Handler) implements an handy param accessor. You can store or retrieve some param as it was an object property:
 
     # instead of do this
-    $s->param(myParam => 'some init value')
+    $s->param(my_Param => 'some init value')
     
     # you can do this directly
-    $s->myParam = 'some init value' ;
+    $s->my_Param = 'some init value' ;
     
     # same thing with the new() method
-    $webapp = WebApp->new(myParam => 'some init value')
+    $webapp = WebApp->new(my_Param => 'some init value')
     
     # or with the explicit assignation
-    $webapp = WebApp->new(param => {myParam      => 'some init value',
-                                    myOtherParam => 'some data'      } )
+    $webapp = WebApp->new(param => {my_Param      => 'some init value',
+                                    my_OtherParam => 'some data'      } )
     # and to retrieve it
-    $p = $s->myParam
+    $p = $s->my_Param
 
-B<Note>: If you don't like this feature, just override the AUTOLOAD method. If your application implements its own AUTOLOAD sub and you want to keep this possibility just fall back on the SUPER class method when needed.
+B<Note>: If you don't like this feature, just override the AUTOLOAD method. If your application implements its own AUTOLOAD sub and you want to keep this possibility just fall back on the SUPER method when needed.
 
-B<Important Note>: If you use this feature, and if you want to write code that does not break, you should always follow the CBF convention and name your param with the 'my' or '_' prefixes. If you don't do that, it might happen that in the future your 'special_data' parameter loaded with AUTOLOAD (C<< $s->special_data >>) will call instead a special_data() method implemented by any new release of any extension :-). The 'my_special_data' or '_special_data' are safer choices.
+B<Important Note>: If you use this feature, and if you want to write code that does not break, you should always follow the CBF convention and name your param with the 'my_' or '_' prefixes. If you don't do that, it might happen that in the future your 'special_data' parameter loaded with AUTOLOAD (C<< $s->special_data >>) will call instead a special_data() method implemented by any new release of any Extension :-). The 'my_special_data' or '_special_data' are safer choices.
 
 =head3 page_content_check
 
@@ -1544,7 +1640,11 @@ Don't change CBF defaults unless you have a good reason to do so. Defaults keep 
 
 =item *
 
-Don't override any internal method without a good reason.
+Don't override any internal method without a good reason, specially if you can use another way to do what you need. The internal methods will evolve with the framework, so if your application rely on any overridden method, it will loose the possibility to benefit of the future improvements of that method.
+
+=item *
+
+Don't set C<page_name>, C<page_path> and C<page_suffix> unless you need to change the default in CBF_INIT Phase. Use switch_to to switch to another page.
 
 =back
 
@@ -1699,13 +1799,35 @@ No exception will blame your module and your user will have always a meaningful 
 
 =back
 
+=head1 KNOWN ISSUE
+
+Due to the perl bug #17663 I<(Perl 5 Debugger doesn't handle properly lvalue sub assignment)>, and since all the internals of the CBF use lvalue assignments, you cannot use the B<-d> switch.
+
+Maybe a next version of perl will fix the bug, maybe I will rewrite the CBF in order to avoid the perl bug. Meanwhile you could apply a patch to perl itself, which should fix it. See http://www.talkaboutprogramming.com/group/comp.lang.perl.moderated/messages/13142.html.
+
 =head1 SUPPORT
 
-Support for all the modules of the CBF is via the mailing list. The list is used for general support on the use of the CBF, announcements, bug reports, patches, suggestions for improvements or new features. The API to the CBF is stable, but if you use the CBF in a production environment, it's probably a good idea to keep a watch on the list.
+You can obtain free support, by using the L<cgi-builder-users> mailing list. Before posting, please:
 
-You can join the CBF mailing list at this url:
+=over
 
-L<http://lists.sourceforge.net/lists/listinfo/cgi-builder-users>
+=item 1
+
+carefully read the whole documentation of the modules you are using
+
+=item 2
+
+check and run the CBF examples and/or your own sample code
+
+=item 3
+
+search the forum archive for any clue about your problem at: http://sourceforge.net/mailarchive/forum.php?forum=cgi-builder-users
+
+=item 4
+
+try to add to your post a brief working example that reproduces your problem
+
+=back
 
 
 =head1 AUTHOR and COPYRIGHT
@@ -1743,4 +1865,3 @@ Thanks to these people which - in very different ways - have been somehow helpfu
 =item * Vincent Veselosky
 
 =back
-
