@@ -1,7 +1,10 @@
+# This file uses the "Perlish" coding style
+# please read http://perl.4pro.net/perlish_coding_style.html
+
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'IO::Util'
-; my $vers = '1.22'
+; my $vers = '1.23'
 
 ; WriteMakefile
    ( NAME           => $dist
@@ -14,13 +17,16 @@
    )
 
 ### VERSION CHECK ###
+; my (%opt) = map { split /=/ } @ARGV
+; exit if $opt{NO_VERSION_CHECK}
+
 ; my $LWP_installed = eval {require LWP::Simple}
 ; if ( $LWP_installed )
    { my $current_vers = LWP::Simple::get
                         ( "http://perl.4pro.net/version_ceck"
                         . "?DISTRIBUTION=$dist&VERSION=$vers&PERL=$]-$^O"
                         )
-   ; exit if ! defined $current_vers
+   ; exit unless defined $current_vers
    ; if ( $current_vers == 0 )          # unknown version
       { print << "EOS"
     Unknown distribution: $dist.

@@ -1,5 +1,8 @@
 package IO::Util ;
-$VERSION = 1.22 ;
+$VERSION = 1.23 ;
+
+# This file uses the "Perlish" coding style
+# please read http://perl.4pro.net/perlish_coding_style.html
 
 ; use strict
 ; use Carp
@@ -73,9 +76,30 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.22
+=head1 VERSION 1.23
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
+
+=head1 INSTALLATION
+
+=over
+
+=item CPAN
+
+    perl -MCPAN -e 'install IO::Util'
+
+=item Standard installation
+
+From the directory where this file is located, type:
+
+    perl Makefile.PL
+    make
+    make test
+    make install
+
+B<Note>: The installation of this module runs an automatic version check connection which will warn you in case a newer version is available: please don't use old versions, because I can give you full support only for current versions. Besides, since CPAN does not provide any download statistic to the authors, this check allows me also to keep my own installation counter. Version checking is transparent to regular users, while CPAN testers should skip it by running the Makefile.PL with NO_VERSION_CHECK=1.
+
+=back
 
 =head1 SYNOPSIS
 
@@ -102,25 +126,6 @@ The latest versions changes are reported in the F<Changes> file in this distribu
 =head1 DESCRIPTION
 
 This is a micro-weight module that exports just a couple of functions of general utility in IO operations.
-
-=head1 INSTALLATION
-
-=over
-
-=item CPAN
-
-    perl -MCPAN -e 'install IO::Util'
-
-=item Standard installation
-
-From the directory where this file is located, type:
-
-    perl Makefile.PL
-    make
-    make test
-    make install
-
-=back
 
 =head1 FUNCTIONS
 
