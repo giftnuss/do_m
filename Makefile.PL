@@ -14,6 +14,7 @@
        , ABSTRACT_FROM   => $pm
        )
      : ()
+   , PREREQ_PM => {'Tie::Handle' => 4}
    )
 
 

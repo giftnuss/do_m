@@ -24,12 +24,20 @@
 ; select STDOUT
 
 
+; { package test_tie
+  ; use Tie::Handle
+  ; our @ISA = qw(Tie::StdHandle)
 
-; tie *STDOUT, 'My::test_tie'
+  ; sub PRINT
+     { my $s = shift
+     }
+  }
+
+; tie *STDOUT, 'test_tie'
 
 ; $out = capture { print_something('e'); print_something('f')}
 ; ok (  ($$out eq 'ef')
-     && (ref(tied *STDOUT) eq 'My::test_tie')
+     && (ref(tied *STDOUT) eq 'test_tie')
      )
 ; untie *STDOUT
 
@@ -44,16 +52,6 @@
     , 'X*Y#<     a>Z#'
     )
 
-; package My::test_tie
 
-; my $output = ''
-
-; sub TIEHANDLE
-   { bless \@_, shift()
-   }
-
-; sub PRINT
-   { my $s = shift
-   }
 
 

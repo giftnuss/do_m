@@ -1,9 +1,10 @@
 package IO::Util ;
-$VERSION = 1.4 ;
+$VERSION = 1.41 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
+; use 5.006_001
 ; use strict
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
@@ -15,45 +16,6 @@ $VERSION = 1.4 ;
                        load_mml
                      |
                      
-############# capturing output #############
-
-; our $output
-   
-; sub capture (&;*)
-   { my $code = shift
-   ; local $output = ''
-   ; my $fh = shift || select
-   ; no strict 'refs'
-   ; if ( my $to = tied *$fh )
-      { my $tc = ref $to
-      ; bless $to, __PACKAGE__
-      ; &{$code}()
-      ; bless $to, $tc
-      }
-     else
-      { tie *$fh , __PACKAGE__
-      ; &{$code}()
-      ; untie *$fh
-      }
-   ; my $out = $output    # copy to lexical fixes -T bug
-   ; \ $out
-   }
-                  
-; sub TIEHANDLE
-   { bless \@_, shift
-   }
-
-; sub PRINT
-   { shift
-   ; $output .= join $,||'', map{ defined($_) ? $_ : '' } @_
-   ; $output .= $\||''
-   }
-
-; sub PRINTF
-   { shift
-   ; my $fmt = shift
-   ; $output .= sprintf $fmt, @_
-   }
 
 ############# slurping files #############
            
@@ -134,6 +96,41 @@ $VERSION = 1.4 ;
    ; join $sep, _convert($ip, \%args), Lid(@_)
    }
 
+############# parsing cache #############
+
+; our %PARSING_CACHE
+
+; sub _path_mtime
+     { my $path  = File::Spec->rel2abs($_[0])
+     ; my $mtime = ( stat($path) )[9]
+       or croak qq(Unable to find modification time for "$path", died)
+     ; $path, $mtime
+     }
+
+; sub _set_parsing_cache
+   { my $type = shift
+   ; my ($path, $mtime) = &_path_mtime
+   ; $PARSING_CACHE{$type}{$path}{mtime} = $mtime
+   ; $PARSING_CACHE{$type}{$path}{value} = $_[1]
+   }
+   
+; sub _get_parsing_cache
+   { my $type = shift
+   ; my ($path, $mtime) = &_path_mtime
+   ; exists $PARSING_CACHE{$type}{$path}               # if it is cached
+     &&! $mtime > $PARSING_CACHE{$type}{$path}{mtime}  # and not old
+     ? $PARSING_CACHE{$type}{$path}{value}
+     : undef
+   }
+
+; sub _purge_parsing_cache
+   { my $type = shift
+   ; @_ || return delete $PARSING_CACHE{$type}
+   ; map delete $PARSING_CACHE{$type}{$_}
+   , map File::Spec->rel2abs($_)
+   , @_
+   }
+
 ############# loading MML #############
 
 ; my $parser_re = qr/ \G(.*?)   # elements and text outside blocks are ignored
@@ -147,11 +144,21 @@ $VERSION = 1.4 ;
 
 ; sub load_mml
    { my ($mml, $opt) = @_
+   ; my $struct
+   ; defined $$opt{cache} or $$opt{cache} = 1
+   ; if ( $$opt{cache} && not ref $mml )
+      { $struct = _get_parsing_cache 'mml_struct', $mml
+      ; return $struct if $struct
+      }
    ; defined $$opt{strict} or $$opt{strict} = 1
-   ; $mml = IO::Util::slurp $mml unless ref $mml
-   ; $$mml =~ s/<!--.*?-->//sg
-   ; my $struct = parse_mml( '', $mml,  $opt )
-   ; $$opt{keep_root} ? $struct : $$struct{(keys %$struct)[0]}
+   ; my $content = ref $mml eq 'SCALAR' ? $mml : slurp $mml
+   ; $$content =~ s/<!--.*?-->//sg
+   ; $struct = parse_mml( '', $content,  $opt )
+   ; $struct = $$struct{(keys %$struct)[0]}
+               unless $$opt{keep_root}
+   ; $$opt{cache} &&! ref($mml)
+     && _set_parsing_cache 'mml_struct', $mml, $struct
+   ; $struct
    }
 
 ; sub parse_mml
@@ -187,7 +194,7 @@ $VERSION = 1.4 ;
          }
       }
 	; return $node if $no_data
-   ; $$opt{strict} && $$mml =~ $not_escaped_re
+   ; $$opt{strict} && ( $$mml =~ $not_escaped_re )
 	  && croak "Not escaped '$1' found in '$id' data"
 	; $$mml =~ s/\\(.)/$1/g   # unescape
 	; my ($k) = grep $id =~ /$_/, keys %{$$opt{filter}}
@@ -211,6 +218,49 @@ $VERSION = 1.4 ;
    ; $_
    }
    
+############# capturing output #############
+
+; our $output
+   
+; sub capture (&;*)
+   { my $code = shift
+   ; local $output = ''
+   ; my $fh = shift || select
+   ; no strict 'refs'
+   ; if ( my $to = tied *$fh )
+      { my $tc = ref $to
+      ; bless $to, 'IO::Util::Handle'
+      ; $code->()
+      ; bless $to, $tc
+      }
+     else
+      { tie *$fh , 'IO::Util::Handle'
+      ; $code->()
+      ; untie *$fh
+      }
+   ; my $out = $output    # copy to lexical fixes -T bug
+   ; \ $out
+   }
+
+; package IO::Util::Handle
+; use strict
+
+; BEGIN
+   { require Tie::Handle
+   ; our @ISA = qw(Tie::StdHandle)
+   }
+
+; sub PRINT
+   { shift
+   ; $output .= join defined $, ? $, : '', @_
+   ; $output .= $\ if defined $\
+   }
+
+; sub PRINTF
+   { shift
+   ; $output .= sprintf shift, @_
+   }
+
 ; 1
 
 __END__
@@ -219,7 +269,7 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.4
+=head1 VERSION 1.41
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -248,7 +298,7 @@ From the directory where this file is located, type:
 
 capture()
 
-  # captures the selected file handler
+  # captures the selected filehandle
   $output_ref = capture { any_printing_code() } ;
   # now $$output_ref eq 'something'
   
@@ -257,13 +307,13 @@ capture()
   }
   
   
-  # captures FILEHANDLER
+  # captures FILEHANDLE
   $output_ref = capture { any_special_printing_code() } FILEHEANDLER ;
   # now $$output_ref eq 'something'
   
   sub any_special_printing_code {
       print 'to STDOUT';
-      print FILEHANDLER 'something'
+      print FILEHANDLE 'something'
   }
 
 slurp()
@@ -272,7 +322,7 @@ slurp()
   $content_ref = slurp ;
   
   $content_ref = slurp '/path/to/file' ;
-  $content_ref = slurp \*FILEHANDLER ;
+  $content_ref = slurp \*FILEHANDLE ;
 
 Tid(), Lid(), Uid()
 
@@ -284,7 +334,7 @@ A MML file (Minimal Markup Language)
 
    <opt>
     <!-- a multi line
-     coment-->
+     comment-->
        <parA>
            <optA>01</optA>
            <optA>02</optA>
@@ -307,7 +357,6 @@ load_mml()
   $struct = load_mml(\ *MMLFILE) ;
   $struct = load_mml(..., \%options) ;
 
-  # $struct dump
   # $struct = {
   #             'parA' => {
   #                         'optA' => [
@@ -334,19 +383,19 @@ This is a micro-weight module that exports a few functions of general utility in
 
 =head1 CAPTURING OUTPUT
 
-=head2 capture { code } [ FILEHANDLER ]
+=head2 capture { code } [ FILEHANDLE ]
 
-The C<capture> function espects a I<code> block as the first argument and an optional I<FILEHANDLER> as the second argument. If I<FILEHANDLER> is omitted the selected file handler will be used by default (usually C<STDOUT>). The function returns the reference to the captured output.
+The C<capture> function espects a I<code> block as the first argument and an optional I<FILEHANDLE> as the second argument. If I<FILEHANDLE> is omitted the selected filehandle will be used by default (usually C<STDOUT>). The function returns the reference to the captured output.
 
-It executes the code inside the first argument block, and captures the output it sends to the selected file handler (or to a specific file handler). It "hijacks" all the C<print> and C<printf> statements addressed to the captured filehandler, returning the scalar reference to the output. Sort of "print to scalar" function.
+It executes the code inside the first argument block, and captures the output it sends to the selected filehandle (or to a specific filehandle). It "hijacks" all the C<print> and C<printf> statements addressed to the captured filehandle, returning the scalar reference to the output. Sort of "print to scalar" function.
 
-B<Note>: This function ties the I<FILEHANDLER> to IO::Util class and unties it after the execution of the I<code>. If I<FILEHANDLER> is already tied to any other class, it just temporary re-bless the tied object to IO::Util class, re-blessing it again to its original class after the execution of the I<code>, thus preserving the original I<FILEHANDLER> configuration.
+B<Note>: This function ties the I<FILEHANDLE> to IO::Util::Handle class (subclass of Tie::StdHandle) and unties it after the execution of the I<code>. If I<FILEHANDLE> is already tied to any other class, it just temporary re-bless the tied object to IO::Util::Handle class, re-blessing it again to its original class after the execution of the I<code>, thus preserving the original I<FILEHANDLE> configuration.
 
 =head1 SLURPING FILES
 
-=head2 slurp [ file|FILEHANDLER ]
+=head2 slurp [ file|FILEHANDLE ]
 
-The C<slurp> function expects a path to a I<file> or an open I<FILEHANDLER>, and  returns the reference to the whole I<file|FILEHANDLER> content. If no argument is passed it will use $_ as the argument.
+The C<slurp> function expects a path to a I<file> or an open I<FILEHANDLE>, and  returns the reference to the whole I<file|FILEHANDLE> content. If no argument is passed it will use $_ as the argument.
 
 =head1 GENERATING UNIQUE IDs
 
@@ -461,7 +510,9 @@ The C<load_mml> uses just a few lines of recursive code, parsing MML with a simp
 
 =head2 load_mml ( MML [, options] )
 
-This function parses the I<MML> eventually using the I<options>, and returns a perl structure reflecting the MML structure and any custom logic you may need (see L<"options">). It accepts one I<MML> parameter that can be a reference to a SCALAR content, a path to a file or a reference to a filehandle. It accepts also one I<options> parameter, which must be an hash reference.
+This function parses the I<MML> eventually using the I<options>, and returns a perl structure reflecting the MML structure and any custom logic you may need (see L<"options">). It accepts one I<MML> parameter that can be a reference to a SCALAR content, a path to a file or a reference to a filehandle.
+
+This function accepts also one I<options> parameter, which must be a HASH reference.
 
 =head3 options
 
@@ -483,6 +534,10 @@ Boolean. A true value will croak when any unsupported syntax is found, while a f
    
    $structA = load_mml( \$non_strict_mml ); # would croak
    $structB = load_mml( \$non_strict_mml, {strict => 0} );  # ok
+
+=item cache => 1|0
+
+Boolean. if I<MML> is a path, a true value will cache the mml structure in a global (persistent under mod_perl). C<load_mml> will open and parse the file only the first time or if the file has been modified. If for any reason you don't want to cache the structure, set this option to a false value. Default true (cached).
 
 =item keep_root => 0|1
 
@@ -560,7 +615,7 @@ The referenced code will receive I<id>, I<data_reference> and I<active_options_r
 
 This option allows you to execute any code during the parsing of the MML in order to change the returned structure or do any other task. It allows you to implement your own syntax, checks and executions, skip any branch, change the options of any child node, generate nodes or even objects to add to the returned structure.
 
-You must set it to an hash of id/handler. The key id can be the literal element id which content you want to handle, or any compiled RE you want to match against the id elements; the filter must be a CODE reference.
+You must set it to an hash of id/handler. The key id can be the literal element id which content you want to handler, or any compiled RE you want to match against the id elements; the filter must be a CODE reference.
 
 The referenced CODE will be called instead the standard C<IO::Util::parse_mml> handler, and will receive I<id>, I<data_reference> and I<active_options_referece> as the arguments.
 
@@ -594,8 +649,8 @@ Regular parsing and structure:
 
 Skip all the 'a' elements:
 
-   $struct = load_mml( \$mml
-                     , { handler => { a => sub{} } # just for 'a' elements
+   $struct = load_mml( \$mml,
+                       { handler => { a => sub{} } # just for 'a' elements
                        }
                      ) ;
                      
@@ -606,8 +661,8 @@ Skip all the 'a' elements:
 
 Folding an array:
 
-   $struct = load_mml( \$mml
-                     , { handler => { a => \&a_handler } # just for 'a'
+   $struct = load_mml( \$mml,
+                       { handler => { a => \&a_handler } # just for 'a'
                        }
                      ) ;
      
@@ -639,7 +694,7 @@ If you need support or if you want just to send me some feedback or request, ple
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis.
+© 2004-2005 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 
