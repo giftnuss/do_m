@@ -1,5 +1,5 @@
 package IO::Util ;
-$VERSION = 1.21 ;
+$VERSION = 1.22 ;
 
 ; use strict
 ; use Carp
@@ -73,7 +73,7 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.21
+=head1 VERSION 1.22
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

@@ -1,6 +1,9 @@
 IO-Util Latest Versions Changes
 
 
+Version 1.22
+- Changed Makefile.PL version check
+
 Version 1.21
 - Fixed nested capture problem (now the nested capture does not
   capture multiple time the same output)

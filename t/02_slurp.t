@@ -1,13 +1,11 @@
 #!perl -w
 ; use strict
 ; use Test::More tests => 7
+; use IO::Util qw(slurp)
 
 ; BEGIN
    { chdir './t'
    }
-
-; use IO::Util qw(slurp)
-
 
 ; my $out = slurp 'test.txt'
 ; is ($$out, <<'')
