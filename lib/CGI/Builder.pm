@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.23 ;
+$VERSION = 1.24 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -230,9 +230,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.23
+=head1 VERSION 1.24
 
-Included in CGI-Builder 1.23 distribution.
+Included in CGI-Builder 1.24 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -373,6 +373,8 @@ I<(please, use this page to send your message: L<http://perl.4pro.net>)>
 B<Definition>: A "framework" in object-oriented systems, is a set of classes that embodies an abstract design for solutions to a number of related problems.
 
 In simpler and more specific words, CBF is a set of modules providing the structure, the features and the solutions you need to easily write scalable, expandable, reusable and easy to maintain web applications (sometime called just 'CGI script' :-).
+
+In even simpler words: if you invest a few hours in learning this documentation, you will save a lot of hours writing your future CGI scripts ;-).
 
 =head2 Features
 
@@ -739,7 +741,7 @@ CGI::Builder and CGI::Session integration
 
 =item * L<CGI::Builder::SessionManager|CGI::Builder::SessionManager>
 
-CGI::Builder and Apache::SessionManager integration
+CGI::Builder and Apache::SessionManager integration (about to be published by Enrico Sorcinelli)
 
 =item * L<CGI::Builder::CgiAppAPI|CGI::Builder::CgiAppAPI>
 
@@ -749,9 +751,9 @@ Use CGI::Application API with CGI::Builder
 
 CGI::Builder and HTML::Template integration
 
-=item * CGI::Builder::TT
+=item * L<CGI::Builder::TT2|CGI::Builder::TT2>
 
-CGI::Builder and Template::Toolkit integration (development version not published yet)
+CGI::Builder and Template::Toolkit integration (about to be published by Stefano Rodighiero)
 
 =back
 
@@ -833,7 +835,12 @@ B<Note>: The properties in this section are ordered by importance/frequency of u
 
 This property allows you to access and set the cgi object. The default for this property is a CGI.pm object, but you can override this default if you redefine the C<cgi_new()> method.
 
-If, for some reason, you want to use your own cgi object, you can pass this property to the new() method, or you can also directly set it at some point in the process.
+If you use the default you have just to use the C<cgi> property which will return the current CGI object without the need to create it by yourself.
+
+   # in any handler
+   $my_query_param = $s->cgi->param('any_query_parameter')
+
+If, for any reason, you want to use your own cgi object, you can pass this property to the new() method, or you can also directly set it at some point in the process.
 
     $webapp = WebApp
              ->new( cgi => CGI->new({myOwnQuery => 'something'}) )
@@ -846,10 +853,10 @@ This property allows you to access and set the page name. The default for this p
 
 Set the C<page_name> to redefine the default page_name. This default will be used whenever the value of the CGI form parameter specified by the C<cgi_page_param> property is not defined.
 
-    # in init
-    $s->page_name = 'myStart' ;
-    
     $current_page_name = $s->page_name
+    
+    # override default page name in OH_init
+    $s->page_name = 'myStart' ;
 
 =head2 page_content
 
@@ -1011,9 +1018,12 @@ You can use this handlers to check some condition just before the PAGE_PROCESS P
 
 This handlers are prefixed by 'PH_' (i.e. Page Handler). (e.g. If defined, the 'PH_foo' will be executed when the 'foo' page will be requested).
 
-B<Note>: Exception to this rule is the B<AUTOLOAD handler> that will be called IF defined and IF there are no other defined Page Handler for the specific page and UNLESS the page_content_check() return true (i.e. there is no page content so far)
-
 You can use this handlers to do something specific for different pages, such as e.g. executing some specific code just for that specific request (or creating the specific page content when your handler don't use some automagic template integration)
+
+=head3 PH_AUTOLOAD
+
+This is a special Page Handler which will be called IF defined and IF there are no other defined page handler for the specific requested page and UNLESS the page_content_check() return true (i.e. there is no page content so far).
+You can use it for different reasons e.g. as the last chance to redirect the client or switch_to your special 'Not found' page.
 
 =head1 ADVANCED FEATURES
 
@@ -1025,7 +1035,7 @@ If you are using mod_perl, you should know the "Global Variables Persistence" is
 
 More explicitly you should know that the CBF and its extensions may use Global Variables to store certain data which are B<class scoped> (i.e. used for all the processes of your CBB class), thus caching the data and saving some processing.
 
-The Global Variables that the CBF uses are always accessed by an OOTool accessor, they just are B<Class Accessors> instead of B<Object Accessors>: the behaviour of a Class accessors (property or group) is the same, but the underlaying accessed variable is a Global Variable, and so it will behave under mod_perl. (See OOTools documentation if you want more details about the differences).
+The Global Variables that the CBF uses are always accessed by an OOTool accessor, they are just B<Class Accessors> instead of B<Object Accessors>: the behaviour of a Class accessors (property or group) is the same, but the underlaying accessed variable is a Global Variable, and so it will behave under mod_perl. (See OOTools documentation if you want more details about the differences).
 
 Examples of Class Accessors are the L<"Class Property Group Accessors"> of this module, or the C<tm>, C<tm_new_args> and C<tm_lookups_package> accessors of the CGI::Builder::Magic extension (which creates the Template::Magic object just once -the first time it is accessed- and uses the same object for all the successive requests that involve template processing).
 
@@ -1073,7 +1083,7 @@ Used internally to send the C<page_content> to the client.
 
 =head3 AUTOLOAD
 
-This method (not to be confused with the 'AUTOLOAD' Page Handler) implements an handy param accessor. You can store or retrieve some param as it was an object property:
+This method (not to be confused with the 'PH_AUTOLOAD' Page Handler) implements an handy param accessor. You can store or retrieve some param as it was an object property:
 
     # instead of do this
     $s->param(myParam => 'some init value')
@@ -1224,14 +1234,14 @@ This is the classical example of a minimal output, that will produce a page cont
   package My::WebApp;    # your class name
   use CGI::Builder;      # defines a build with no other extension
   
-  sub PH_AUTOLOAD {      # always called for all requested pages
+  sub PH_AUTOLOAD {      # called for all requested pages (no other PH_*)
       my $s = shift;
       $s->page_content = "Hello world!"   # defines the page content
   }
   
   1;
 
-As you see in the CBB, it defines just the PH_AUTOLOAD, the special Page Handler that is automatically called when no other Page Handlers are found for the requested page.
+As you see in the CBB, it defines just the PH_AUTOLOAD, the special Page Handler that is automatically called when no other Page Handlers are found for the requested page (see L<"PH_AUTOLOAD">).
 
 All we have to do in that handler is set the 'page_content' property to the content we want to send to the client, and the CBF will manage automatically all the process.
 
@@ -1266,16 +1276,24 @@ Suppose that we want to send the "hello world!" content just for the specific "H
   sub OH_fixup {
       my $s = shift;
       return $s->redirect('http://my/not/found/page/url')
-        unless length $s->page_content;
+        unless $s->page_content_check;
+  }
+  
+  # third alternative
+  sub PH_AUTOLOAD {
+     my $s = shift;
+     $s->redirect('http://my/not/found/page/url');
   }
   
   1;
 
-As you see, we have changed the PH_AUTOLOAD with the PH_Hello that will be called only when the page_name is 'Hello', then, we have a couple of alternative to choose for the redirection.
+As you see, we have changed the PH_AUTOLOAD with the PH_Hello that will be called only when the page_name is 'Hello', then, we have a few alternatives to choose for the redirection.
 
 The first alternative is very specific, and checks exactly for the 'Hello' C<page_name>, so if we will add another Page Handler in the future, we have to modify accordingly the condition to avoid redirection.
 
 The second alternative is more flexible because it checks for the content of the page in the FIXUP Phase, after the PAGE_HANDLER Phase has been tried, redirecting only if no Page Handlers has set the page_content so far, so if we will add a new Page Handler in the future it will work without any changes.
+
+The third alternative is simpler since it uses the way the PH_AUTOLOAD get called, and just redirect without checking any condition (the conditions are internally checked BEFORE calling the PH_AUTOLOAD).
 
 B<Note>: To request the page "Hello" the client should point to http://domain.com/IScript.cgi?p=Hello. Any other requested page as (e.g. ?p=myTry) will cause a redirection to http://my/not/found/page/url.
 
@@ -1297,10 +1315,9 @@ To add another page we just add another Page Handler:
       $s->page_content = "This is a nice HeLlO WoRlD! :-)"
   }
   
-  sub OH_fixup {
+  sub PH_AUTOLOAD {
       my $s = shift;
       return $s->redirect('http://my/not/found/page/url')
-        unless length $s->page_content;
   }
   
   1;
@@ -1332,21 +1349,18 @@ If instead of a client redirection we want to send a specific page internally ge
       $s->page_content = "The page you requested is not available!"
   }
   
-  sub OH_fixup {
+  sub PH_AUTOLOAD {
       my $s = shift;
       $s->switch_to('no_page')  # switches to the no_page Page Handler
-        unless length $s->page_content
   }
   
   # second alternative
   # you can eliminate the PH_no_Page Handler
-  # and set the page_content directly from the OH_fixup
+  # and set the page_content directly from the PH_AUTOLOAD
   
-  sub OH_fixup {
+  sub PH_AUTOLOAD {
       my $s = shift;
-      unless (length $s->page_content) {
-          $s->page_content = "The page you have requested is not available!"
-      }
+      $s->page_content = "The page you have requested is not available!"
   }
   
   
@@ -1408,6 +1422,12 @@ In this case, notice the C<return switch_to()> to return from the handler on swi
 
 B<Note>: You should consider to use the L<CGI::Builder::DFVCheck|CGI::Builder::DFVCheck> extension that integrates C::B and the C<Data::FormValidator> module.
 
+=head2 More examples
+
+You can find more examples in the mailing list archive and in the F<CBF_examples> dir included in this distribution.
+
+B<Note>: While you are experimenting with the CBF, you are probably creating examples that could be useful to other users. Please submit them to the mailing list, and I will add them to the next CBF release, giving you the credit of your code. Thank you in advance for your collaboration.
+
 =head1 HOW TO...
 
 =head2 Design your application
@@ -1442,7 +1462,7 @@ Set all the defaults of the properties and all the statements common to all page
 
 =item *
 
-Use the param() accessor to store and retrieve the param needed by your application. You can also use the shortcut provided by the L<"AUTOLOAD"> method:
+Use the param() accessor to store and retrieve the param needed by your application. You can also use the shortcut provided by the L<"AUTOLOAD"> method (not to be confused with the L<"PH_AUTOLOAD"> page handler):
 
    # just assign to a new param
    $s->myNewParam = 'something' ;
@@ -1558,7 +1578,7 @@ Writing an extension is usually simpler than what you might expect. Since extens
 
 =item *
 
-Ask for support and advice. Your work will progress faster and smoother.
+Ask in the mailing list if nobody else is writing the same extension you are planning to write. ;-)
 
 =item *
 
@@ -1695,6 +1715,8 @@ Thanks to these people which - in very different ways - have been somehow helpfu
 
 =over
 
+=item * Massimiliano Ciancio
+
 =item * Iain Fairbaim
 
 =item * Maurice Height
@@ -1712,6 +1734,8 @@ Thanks to these people which - in very different ways - have been somehow helpfu
 =item * Mike South
 
 =item * Mark Stosberg
+
+=item * Vincent Veselosky
 
 =back
 

@@ -5,7 +5,7 @@
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'CGI::Builder'
-; my $vers = '1.23'
+; my $vers = '1.24'
 
 ; WriteMakefile
    ( NAME           => $dist
