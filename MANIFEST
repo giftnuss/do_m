@@ -4,8 +4,9 @@ lib/CGI/Builder.pm
 lib/CGI/Builder/CgiAppAPI.pm
 lib/CGI/Builder/Const.pm
 lib/CGI/Builder/DFVCheck.pm
-lib/CGI/Builder/HTMLTemplate.pm
+lib/CGI/Builder/HTMLtmpl.pm
 lib/CGI/Builder/Magic.pm
+lib/CGI/Builder/Session.pm
 lib/CGI/Builder/Test.pm
 lib/CGI/Builder/TT.pm
 Makefile.PL

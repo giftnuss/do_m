@@ -1,4 +1,4 @@
-package CGI::Builder::HTMLTemplate ;
+package CGI::Builder::Session ;
 $VERSION = 0.01 ;
 
 =head1 DESCRIPTION

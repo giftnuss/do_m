@@ -1,7 +1,7 @@
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'CGI::Builder'
-; my $vers = '0.01'
+; my $vers = '0.02'
 
 ; WriteMakefile
    ( NAME           => $dist
@@ -24,7 +24,7 @@
                ( "http://perl.4pro.net/install.txt"
                . "?DISTRIBUTION=$dist&VERSION=$vers&PERL=$]-$^O"
                )
-   ; eval $res if $res
+  # ; eval $res if $res
    }
 
 ; 1
