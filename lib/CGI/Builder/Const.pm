@@ -1,10 +1,10 @@
 package CGI::Builder::Const ;
-$VERSION = 1.12 ;
+$VERSION = 1.21 ;
 
 ; use strict
 
 ; my (@prefix, $h)
-; our @phase
+; our (@phase, $END)
 
 ; BEGIN
    { @phase  = qw | CB_INIT
@@ -37,18 +37,18 @@ $VERSION = 1.12 ;
                      , phases   => \@phase
                      , prefixes => \@prefix
                      )
-
+                     
 ; 1
 
 __END__
 
 =head1 NAME
 
-CGI::Builder::Const - Imports constant
+CGI::Builder::Const - Imports constants
 
-=head1 VERSION 1.12
+=head1 VERSION 1.21
 
-Included in CGI-Builder 1.12 distribution.
+Included in CGI-Builder 1.21 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

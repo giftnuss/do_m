@@ -1,5 +1,5 @@
 package Bundle::CGI::Builder::Complete;
-$VERSION = 1.12;
+$VERSION = 1.21;
 __END__
 
 =head1 NAME
@@ -59,12 +59,12 @@ CGI::Builder::Session   - CGI::Session integration
 
 =head1 DESCRIPTION
 
-This bundle gathers together all the modules plus all related prerequisites for the CGI::Builder framework.
+This bundle gathers together all the modules plus all related prerequisites for the CGI::Builder framework. Please, notice that the Bundle will install A LOT of modules that you might not need, so use it specially if you want to extensively try the CBF.
 
 Note: A Bundle is a module that simply defines a collection of other modules. It is used by the CPAN module to automate the fetching, building and installing of modules from the CPAN ftp archive sites.
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis (http://perl.4pro.net)
+© 2004 by Domizio Demichelis (L<http://perl.4pro.net>)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.

@@ -1,6 +1,12 @@
 CGI-Builder Latest Versions Changes
 
 
+Version 1.21
+- Changed Makefile.PL version check
+- Internal code adjustments
+- Added some POD notes
+- Updated Extensions List
+
 Version 1.2
 - Added internal phase check to the redirect() method
 - Simplified the page_content_check goal

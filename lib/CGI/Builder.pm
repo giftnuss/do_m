@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.2 ;
+$VERSION = 1.21 ;
 
 ; use strict
 ; use 5.006_001
@@ -118,7 +118,7 @@ $VERSION = 1.2 ;
    { require CGI
    ; CGI->new()
    }
-              
+
 ; sub process
    { my ($s, $p) = @_
    ; local $SIG{__DIE__} = sub{$s->die_handler(@_)}
@@ -226,9 +226,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.2
+=head1 VERSION 1.21
 
-Included in CGI-Builder 1.2 distribution.
+Included in CGI-Builder 1.21 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -265,13 +265,13 @@ To have the complete list of all the extensions of the CBF, see L<"Extensions Li
 
     Perl version >= 5.6.1
     OOTools      >= 1.62
-    IO::Util     >= 1.2
+    IO::Util     >= 1.21
 
 =item CPAN
 
-    perl -MCPAN -e 'install CGI::Builder'
+    perl -MCPAN -e 'install Apache::CGI::Builder'
 
-If you want to install all the extensions and prerequisites of the CBF, all in one easy step:
+You have also the possibility to use the Bundle to install all the extensions and prerequisites of the CBF in just one step. Please, notice that the Bundle will install A LOT of modules that you might not need, so use it specially if you want to extensively try the CBF.
 
     perl -MCPAN -e 'install Bundle::CGI::Builder::Complete'
 
@@ -304,11 +304,11 @@ This is the starting point of the documentation of the CGI::Builder framework (C
 
 =item *
 
-A simple and useful navigation system between the various CBF extensions is available at this URL: http://perl.4pro.net
+A simple and useful navigation system between the various CBF extensions is available at this URL: L<http://perl.4pro.net>
 
 =item *
 
-More practical topics are probably discussed in the mailing list at this URL: http://lists.sourceforge.net/lists/listinfo/cgi-builder-users
+More practical topics are probably discussed in the mailing list at this URL: L<http://lists.sourceforge.net/lists/listinfo/cgi-builder-users>
 
 =back
 
@@ -356,11 +356,11 @@ means Switch Handler
 
 =head2 A Personal Note
 
-I don't ask you any money to use this software! I am happy if you find it useful for your needs, but I would be a lot more happy if I could know anything about you and/or about the specific usage you give to my modules.
+I don't ask you any money to use my modules: I just ask you to write me a simple message telling me something about you and/or about the specific usage you give them ;-).
 
-Please, write me a simple message: like this software, it does not cost you any money, but it will give me one more reason to keep publishing modules like this framework. Thank you.
+Please, write me a few lines: it does not cost you any money and it will give me one more reason to keep publishing my works. Thank you.
 
-I<(please, use this page to send your message: http://perl.4pro.net)>
+I<(please, use this page to send your message: L<http://perl.4pro.net>)>
 
 =head1 CGI Builder Framework (CBF)
 
@@ -731,6 +731,10 @@ CGI::Builder and Data::FormValidator integration
 
 CGI::Builder and CGI::Session integration
 
+=item * L<CGI::Builder::SessionManager|CGI::Builder::SessionManager>
+
+CGI::Builder and Apache::SessionManager integration
+
 =item * L<CGI::Builder::CgiAppAPI|CGI::Builder::CgiAppAPI>
 
 Use CGI::Application API with CGI::Builder
@@ -743,10 +747,6 @@ CGI::Builder and HTML::Template integration
 
 CGI::Builder and Template::Toolkit integration (development version not published yet)
 
-=item * CGI::Builder::Tutorial
-
-CGI::Builder Tutorial (under construction)
-
 =back
 
 =head1 METHODS
@@ -756,6 +756,8 @@ CGI::Builder Tutorial (under construction)
 The new() method construct a new instance of your application. It accepts and sets any known object property, storing any unknow property as a new param.
 
 Use this feature to set the default of the properties of the new object before any other method calls.
+
+For example you could install just one CBB on your server but use it in different domains, and you want to give the possibility to the webmasters that use it to pass different parameters to your CBB.
 
 This feature just adds a flexible possibility to configure your application from the cgi script that uses it instead from the usual CBB C<OH_init>:
 
@@ -1018,7 +1020,7 @@ The Global Variables that the CBF uses are always accessed by an OOTool accessor
 
 Examples of Class Accessors are the L<"Class Property Group Accessors"> of this module, or the C<tm>, C<tm_new_args> and C<tm_lookups_package> accessors of the CGI::Builder::Magic extension (which creates the Template::Magic object just once -the first time it is accessed- and uses the same object for all the successive requests that involve template processing).
 
-B<Note>: You should clearly distinguish the B<lass accessors> among the others because this particular feature is usually written in B<bold> at the start of the accessor doc.
+B<Note>: You should clearly distinguish the B<class accessors> among the others because this particular feature is usually written in B<bold> at the start of the accessor doc.
 
 =head2 Advanced Methods
 
@@ -1091,7 +1093,7 @@ The page_content_check() method is overridden by other extensions such as CGI::B
 
 =head3 die_handler
 
-Used internally to implement a localized $SIG{__DIE__}. This method adds useful informations to the error messages (even to those generated by other used modules). It adds the page name and the phase at the moment of the error plus a Data::Dumper() of the object itself if the CGI::Builder::Test is included in the build.
+Used internally to implement a localized $SIG{__DIE__}. This method adds useful informations to the error messages (even to those generated by other used modules). It adds the page name and the phase at the moment of the error plus a Data::Dumper::Dumper() of the object itself if the CGI::Builder::Test is included in the build.
 
 If you need to implement your own $SIG{__DIE__} you should override this handler in your own CBB.
 
@@ -1421,7 +1423,7 @@ Consider to use some integration with a template system that could speed up your
 
 =item *
 
-Unless you overwrite the new_cgi() method with one which does not use CGI.pm, include the 'use CGI' statement in your CBB to save some loading time. (The new_cgi() method requires the CGI.pm only at run-time)
+Unless you override the new_cgi() method with one which does not use CGI.pm, include the 'use CGI' statement in your CBB to save some loading time. (The new_cgi() method requires the CGI.pm only at run-time)
 
 =item *
 
@@ -1480,11 +1482,11 @@ Prefix the methods and the param keys of your own CBB with a simple 'my' or '_'.
 
 =item *
 
-Don't interact with the internal hash structure with any dirty statement aimed to add some data to the object. Use the C<param> accessor to hold the param of your application. (Note: you have just to set some property and it will be added as a new param even without using the param accessor explicitly. See L<"AUTOLOAD"> method)
+Don't interact with the internal hash structure with any dirty statement aimed to B<add> some data to the object. Use the C<param> accessor to hold the param of your application. (Note: you have just to set some property and it will be added as a new param even without using the param accessor explicitly. See L<"AUTOLOAD"> method)
 
 =item *
 
-Don't interact with the internal hash structure with any dirty statement aimed to use some data of the object. Override the accessors or methods anywere you need some very severe customization.
+Don't interact with the internal hash structure with any dirty statement aimed to B<use> some data of the object. Override the accessors or methods anywere you need some very severe customization.
 
 =back
 
@@ -1667,12 +1669,12 @@ Support for all the modules of the CBF is via the mailing list. The list is used
 
 You can join the CBF mailing list at this url:
 
-http://lists.sourceforge.net/lists/listinfo/cgi-builder-users
+L<http://lists.sourceforge.net/lists/listinfo/cgi-builder-users>
 
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis (http://perl.4pro.net)
+© 2004 by Domizio Demichelis (L<http://perl.4pro.net>)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 

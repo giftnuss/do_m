@@ -1,10 +1,33 @@
 package CGI::Builder::Test ;
-$VERSION = 1.12 ;
+$VERSION = 1.21 ;
 
 ; use strict
 ; $Carp::Internal{+__PACKAGE__}++
+;
+=comment
+
+; use CGI::Builder::Const qw| :all |
    
-   
+; use Object::props
+        { name        => 'PHASE'
+        , default     => CB_INIT
+        , allowed     => qr/^CGI::Builder/  # only settable from CBF
+        , validation  => 
+          sub
+           { my $s = shift   
+           ; my $phase = $CGI::Builder::Const::phase[$_]
+           ; warn "$phase\n" if grep /$phase/, @{$s->trace->{PHASES}}
+           ; 1 
+           }
+        }
+
+; use Class::groups
+        { name        => 'trace'
+        , default     => { PHASES => \@CGI::Builder::Const::phase 
+                         }
+        }
+=cut
+             
 ; sub dump
    { my ($s, @args) = @_
    ; $s->page_content    .= qq(\nPage name: '${\$s->page_name}'\n)
@@ -59,9 +82,9 @@ __END__
 
 CGI::Builder::Test - Adds some testing methods to your build
 
-=head1 VERSION 1.12
+=head1 VERSION 1.21
 
-Included in CGI-Builder 1.12 distribution.
+Included in CGI-Builder 1.21 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -122,7 +145,7 @@ Support for all the modules of the CBF is via the mailing list. The list is used
 
 You can join the CBF mailing list at this url:
 
-http://lists.sourceforge.net/lists/listinfo/cgi-builder-users
+L<http://lists.sourceforge.net/lists/listinfo/cgi-builder-users>
 
 =head1 AUTHOR and COPYRIGHT
 
