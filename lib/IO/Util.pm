@@ -1,5 +1,5 @@
 package IO::Util ;
-$VERSION = 1.42 ;
+our $VERSION = 1.43 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -28,12 +28,12 @@ $VERSION = 1.42 ;
       { $content = do { local $/; <$_> }
       }
      elsif ( defined && length && not ref )
-      { open _ or croak "$^E"
+      { open _ or croak $^E
       ; $content = do { local $/; <_> }
       ; close _
       }
      else
-      { croak 'Wrong argument type: "'. ( ref || 'UNDEF' ) . '"'
+      { croak sprintf 'Wrong argument type: "%s", died' , ref || 'UNDEF'
       }
    ; \ $content
    }
@@ -59,7 +59,7 @@ $VERSION = 1.42 ;
                    ? $$args{chars}
                    : exists $charset{$$args{chars}}
                      ? $charset{$$args{chars}}
-                     : croak 'Invalid chars'
+                     : croak 'Invalid chars, died'
                  : $charset{base34}
    ; my $result = ''
    ; my $dnum = @$chars
@@ -101,11 +101,11 @@ $VERSION = 1.42 ;
 ; our %PARSING_CACHE
 
 ; sub _path_mtime
-     { my $path  = File::Spec->rel2abs($_[0])
-     ; my $mtime = ( stat($path) )[9]
-       or croak qq(Unable to find modification time for "$path", died)
-     ; $path, $mtime
-     }
+   { my $path  = File::Spec->rel2abs($_[0])
+   ; my $mtime = ( stat($path) )[9]
+        or croak qq(Unable to find modification time for "$path", died)
+   ; $path, $mtime
+   }
 
 ; sub _set_parsing_cache
    { my $type = shift
@@ -143,7 +143,9 @@ $VERSION = 1.42 ;
 ; my $not_escaped_re = qr/( (?<!\\) < | (?<!\\) > )/xs
 
 ; sub load_mml
-   { my ($mml, $opt) = @_
+   { my $mml = shift
+   ; my ($opt) = @_
+   ; $opt = { @_ } unless ref $opt eq 'HASH'
    ; my $struct
    ; defined $$opt{cache} or $$opt{cache} = 1
    ; if ( $$opt{cache} && not ref $mml )
@@ -154,8 +156,12 @@ $VERSION = 1.42 ;
    ; my $content = ref $mml eq 'SCALAR' ? $mml : slurp $mml
    ; $$content =~ s/<!--.*?-->//sg
    ; $struct = parse_mml( '', $content,  $opt )
-   ; $struct = $$struct{(keys %$struct)[0]}
-               unless $$opt{keep_root}
+   ; unless ( $$opt{keep_root} )
+      { ref $struct eq 'HASH'
+        or croak 'Parsed structure is not a HASH reference: '
+               . 'check your MML or set keep_root, died'
+      ; $struct = $$struct{(keys %$struct)[0]}
+      }
    ; $$opt{cache} &&! ref($mml)
      && _set_parsing_cache 'mml_struct', $mml, $struct
    ; $struct
@@ -168,12 +174,13 @@ $VERSION = 1.42 ;
       { $no_data = 1
       ; my ( $garb, $child_id, $attr, $child_mml ) = ($1, $2, $3, $4)
       ; if ( $$opt{strict} )
-         { $garb =~ /\S/
-           && croak "Garbage '$garb' found parsing element $child_id"
-         ; length $attr
-           && croak "Attributes '$attr' found parsing element $child_id"
+         { $garb =~ /\S/ && croak
+           "Garbage '$garb' found parsing element '$child_id', died"
+         ; length $attr && croak
+           "Attributes '$attr' found parsing element '$child_id', died"
          }
-      ; my ($k) = grep $child_id =~ /$_/, keys %{$$opt{handler}}
+      ; my ($k) = grep $child_id =~ /$_/
+                , keys %{$$opt{handler}}
       ; my $parser_sub = defined $k
                          ? $$opt{handler}{$k}
                          : \&parse_mml
@@ -193,11 +200,12 @@ $VERSION = 1.42 ;
          ; $$control{$child_id} ++
          }
       }
-	; return $node if $no_data
+   ; return $node if $no_data
    ; $$opt{strict} && ( $$mml =~ $not_escaped_re )
-	  && croak "Not escaped '$1' found in '$id' data"
+	  && croak "Not escaped '$1' found in '$id' data, died"
 	; $$mml =~ s/\\(.)/$1/g   # unescape
-	; my ($k) = grep $id =~ /$_/, keys %{$$opt{filter}}
+	; my ($k) = grep $id =~ /$_/
+	          , keys %{$$opt{filter}}
    ; my $filter_sub = $$opt{filter}{$k} if defined $k
    ; $filter_sub
      ? do{ local $_ = $$mml
@@ -262,7 +270,7 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.42
+=head1 VERSION 1.43
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -319,9 +327,9 @@ slurp()
 
 Tid(), Lid(), Uid()
 
-  $temporarily_unique_id = Tid() ; # 'Q9MU1N_NVRM'
-  $locally_unique_id     = Lid() ; # '2MS_Q9MU1N_P5F6'
-  $universally_unique_id = Uid() ; # 'MGJFSBTK_2MS_Q9MU1N_PWES'
+  $temporarily_unique_id = Tid ; # 'Q9MU1N_NVRM'
+  $locally_unique_id     = Lid ; # '2MS_Q9MU1N_P5F6'
+  $universally_unique_id = Uid ; # 'MGJFSBTK_2MS_Q9MU1N_PWES'
 
 A MML file (Minimal Markup Language)
 
@@ -345,10 +353,10 @@ A MML file (Minimal Markup Language)
 
 load_mml()
 
-  $struct = load_mml('path/to/mml_file') ;
-  $struct = load_mml(\ $mml_string) ;
-  $struct = load_mml(\ *MMLFILE) ;
-  $struct = load_mml(..., \%options) ;
+  $struct = load_mml 'path/to/mml_file' ;
+  $struct = load_mml \ $mml_string ;
+  $struct = load_mml \ *MMLFILE ;
+  $struct = load_mml ..., %options ;
 
   # $struct = {
   #             'parA' => {
@@ -443,14 +451,14 @@ Applies to C<Uid> only. This option allows to pass the IP number used generating
 
 =back
 
-   $ui = Tid()                         # Q9MU1N_NVRM
-   $ui = Lid()                         # 2MS_Q9MU1N_P5F6
-   $ui = Uid()                         # MGJFSBTK_2MS_Q9MU1N_PWES
-   $ui = Uid(separator=>'-')           # MGJFSBTK-2DH-Q9MU6H-7Z1Y
-   $ui = Tid(chars=>'base62')          # 1czScD_2h0v
-   $ui = Lid(chars=>'base62')          # rq_1czScD_2jC1
-   $ui = Uid(chars=>'base62')          # jQaB98R_rq_1czScD_2rqA
-   $ui = Lid(chars=>[ 0..9, 'A'..'F']) # 9F4_41AF2B34_62E76
+   $ui = Tid                           # Q9MU1N_NVRM
+   $ui = Lid                           # 2MS_Q9MU1N_P5F6
+   $ui = Uid                           # MGJFSBTK_2MS_Q9MU1N_PWES
+   $ui = Uid separator=>'-'            # MGJFSBTK-2DH-Q9MU6H-7Z1Y
+   $ui = Tid chars=>'base62'           # 1czScD_2h0v
+   $ui = Lid chars=>'base62'           # rq_1czScD_2jC1
+   $ui = Uid chars=>'base62'           # jQaB98R_rq_1czScD_2rqA
+   $ui = Lid chars=>[ 0..9, 'A'..'F']  # 9F4_41AF2B34_62E76
 
 B<IMPORT NOTE>: If you really want to use any C<IO::Util::*id> from its package without importing any symbol (and only in that case), you must explicitly load C<Time::HiRes>. You must also load C<Sys::Hostname> if you use C<IO::Util::Uid>:
 
@@ -458,7 +466,7 @@ B<IMPORT NOTE>: If you really want to use any C<IO::Util::*id> from its package 
    use Time::HiRes   ; # used by any IO::Util::*id
    use Sys::Hostname ; # used only by IO::Util::Uid
    
-   $uniqid = IO::Util::Uid()
+   $uniqid = IO::Util::Uid
 
 =head1 Minimal Markup Language (MML)
 
@@ -505,7 +513,7 @@ The C<load_mml> uses just a few lines of recursive code, parsing MML with a simp
 
 This function parses the I<MML> eventually using the I<options>, and returns a perl structure reflecting the MML structure and any custom logic you may need (see L<"options">). It accepts one I<MML> parameter that can be a reference to a SCALAR content, a path to a file or a reference to a filehandle.
 
-This function accepts also one I<options> parameter, which must be a HASH reference.
+This function accepts also a few I<options> which could be passed as plain name=>value pairs or as a HASH reference.
 
 =head3 options
 
@@ -525,8 +533,8 @@ Boolean. A true value will croak when any unsupported syntax is found, while a f
    </opt>'
    EOS
    
-   $structA = load_mml( \$non_strict_mml ); # would croak
-   $structB = load_mml( \$non_strict_mml, {strict => 0} );  # ok
+   $structA = load_mml \$non_strict_mml ; # would croak
+   $structB = load_mml \$non_strict_mml, strict=>0 ;  # ok
 
 =item cache => 1|0
 
@@ -537,7 +545,7 @@ Boolean. if I<MML> is a path, a true value will cache the mml structure in a glo
 Boolean. A true value will keep the root element, while a false value will strip the root. Default false (root stripped)
 
    $mml = '<opt><a>01</a></opt>';
-   $structA = load_mml( \$mml );
+   $structA = load_mml \$mml ;
    
    $$struct{a} eq '01'; # true
    
@@ -545,7 +553,7 @@ Boolean. A true value will keep the root element, while a false value will strip
    #              'a' => '01'
    #            };
    
-   $structB = load_mml( \$mml, {keep_root => 1} );
+   $structB = load_mml \$mml, keep_root=>1 ;
    
    $$struct{opt}{a} eq '01'; # true
    
@@ -575,15 +583,11 @@ The referenced code will receive I<id>, I<data_reference> and I<active_options_r
    </opt>
    EOS
    
-   $struct = load_mml( \$mml,
-                       {
-                         filter => {
-                                     foo         => sub{uc},
-                                     qr/^b/      => sub{lc},
-                                     multi_line  => 'TRIM_BLANKS',
-                                     other_stuff => \&my_filter
-                                   }
-                       } );
+   $struct = load_mml \$mml, filter=>{ foo         => sub{uc},
+                                       qr/^b/      => sub{lc},
+                                       multi_line  => 'TRIM_BLANKS',
+                                       other_stuff => \&my_filter
+                                     };
    
    sub my_filter {
        my ($id, $data_ref, $opt) = @_ ;
@@ -628,7 +632,7 @@ A few examples using this same MML string:
 
 Regular parsing and structure:
 
-   $struct = load_mml( \$mml ) # no options
+   $struct = load_mml \$mml # no options
    
    # $struct = {
    #             'a' => {
@@ -642,22 +646,15 @@ Regular parsing and structure:
 
 Skip all the 'a' elements:
 
-   $struct = load_mml( \$mml,
-                       { handler => { a => sub{} } # just for 'a' elements
-                       }
-                     ) ;
+   $struct = load_mml \$mml, handler=>{ a => sub{} } ; # just for 'a' elements
                      
-   # $struct = {
-   #             'c' => 'something'
-   #           } ;
+   # $struct = { 'c' => 'something' } ;
 
 
 Folding an array:
 
-   $struct = load_mml( \$mml,
-                       { handler => { a => \&a_handler } # just for 'a'
-                       }
-                     ) ;
+   $struct = load_mml \$mml, handler => { a => \&a_handler } ; # just for 'a'
+
      
    sub a_handler {
        # get the original branch
@@ -677,7 +674,7 @@ Folding an array:
 
 =head2 IO::Util::parse_mml (id, MML [, options])
 
-Used internally and eventually by any handler, in order to parse any I<MML> chunk and return its branch structure. It requires the element I<id>, the reference to the I<MML> chunk, and accepts eventually the options hash reference to use for the branch.
+Used internally and eventually by any handler, in order to parse any I<MML> chunk and return its branch structure. It requires the element I<id>, the reference to the I<MML> chunk, eventually accepting the options hash reference to use for the branch.
 
 B<Note>: You can escape any character (specially < and >) by using the backslash '\'. XML comments can be added to the MML and will be ignored by the parser.
 

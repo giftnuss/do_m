@@ -1,8 +1,13 @@
 IO-Util Latest Versions Changes
 
 
+Version 1.43
+- Added HASH reference check of parsed MML.
+- load_mml options are now passable as plain name=>value pairs
+- A few test and POD changes
+
 Version 1.42
-- Little improvement of the capture function (syswrite)
+- Little improvement of the capture function (syswrite support)
 
 Version 1.41
 - Fixed capture bug related to unimplemented tied methods
