@@ -1,5 +1,12 @@
 CGI-Builder Latest Versions Changes
 
+
+Version 1.25
+- Eliminated version check and installation feedback system
+  ("phone home" opt-out) from Makefile.PL to make Randal L Schwartz happy :-)
+  and sad the author :-(
+- Added requested_page property
+
 Version 1.24
 - Added the CBF_examples dir in the distributed files
 - Some POD improvements (EXAMPLES section and other)

@@ -1,5 +1,5 @@
 package CGI::Builder::Test ;
-$VERSION = 1.24 ;
+$VERSION = 1.25 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -61,9 +61,9 @@ __END__
 
 CGI::Builder::Test - Adds some testing methods to your build
 
-=head1 VERSION 1.24
+=head1 VERSION 1.25
 
-Included in CGI-Builder 1.24 distribution.
+Included in CGI-Builder 1.25 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

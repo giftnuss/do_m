@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.24 ;
+$VERSION = 1.25 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -97,6 +97,9 @@ $VERSION = 1.24 ;
       , { name       => 'page_name'
         , default    => 'index'
         }
+      , { name       => 'requested_page'
+        , allowed    => qw/^CGI::Builder::process$/
+        }
       , { name       => 'page_path'
         , default    => './tm'
         , no_strict  => 1    # doesn't croak if ./tm is not a valid path
@@ -127,10 +130,10 @@ $VERSION = 1.24 ;
    ; local $SIG{__DIE__} = sub{$s->die_handler(@_)}
    ; $s->PHASE = GET_PAGE
    ; if ( defined $p && length $p )
-      { $s->page_name = $p
+      { $s->requested_page = $s->page_name = $p
       }
      else
-      { $s->get_page_name()
+      { $s->requested_page = $s->get_page_name()
       }
    ; if ($s->PHASE < PRE_PROCESS)
       { $s->PHASE = PRE_PROCESS
@@ -230,9 +233,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.24
+=head1 VERSION 1.25
 
-Included in CGI-Builder 1.24 distribution.
+Included in CGI-Builder 1.25 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -287,8 +290,6 @@ From the directory where this file is located, type:
     make
     make test
     make install
-
-B<Note>: The installation of this module runs an automatic version check connection which will warn you in case a newer version is available: please don't use old versions, because I can give you full support only for current versions. Besides, since CPAN does not provide any download statistic to the authors, this check allows me also to keep my own installation counter. Version checking is transparent to regular users, while CPAN testers should skip it by running the Makefile.PL with NO_VERSION_CHECK=1.
 
 =back
 
@@ -753,7 +754,7 @@ CGI::Builder and HTML::Template integration
 
 =item * L<CGI::Builder::TT2|CGI::Builder::TT2>
 
-CGI::Builder and Template::Toolkit integration (about to be published by Stefano Rodighiero)
+CGI::Builder and Template::Toolkit integration
 
 =back
 
@@ -846,7 +847,7 @@ If, for any reason, you want to use your own cgi object, you can pass this prope
              ->new( cgi => CGI->new({myOwnQuery => 'something'}) )
     
     $s->cgi = CGI->new({myOwnQuery => 'something'}) ;
-
+    
 =head2 page_name
 
 This property allows you to access and set the page name. The default for this property is 'index'. This means that the 'index' page will be requested if no other page has been explicitly requested.
@@ -857,6 +858,10 @@ Set the C<page_name> to redefine the default page_name. This default will be use
     
     # override default page name in OH_init
     $s->page_name = 'myStart' ;
+
+=head2 requested_page
+
+This property holds the original requested page name. Read only.
 
 =head2 page_content
 
