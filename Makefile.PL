@@ -1,14 +1,14 @@
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'IO::Util'
-; my $vers = '1.2'
+; my $vers = '1.21'
 
 ; WriteMakefile
    ( NAME           => $dist
    , VERSION        => $vers
    , ( $] ge '5.005' )
      ? ( AUTHOR     => 'Domizio Demichelis - perl.4pro.net'
-       , ABSTRACT   => 'Captures the output sent to a file handler'
+       , ABSTRACT   => 'A selection of general-utility IO function'
        )
      : ()
    )

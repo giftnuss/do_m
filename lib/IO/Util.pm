@@ -1,5 +1,5 @@
 package IO::Util ;
-$VERSION = 1.2 ;
+$VERSION = 1.21 ;
 
 ; use strict
 ; use Carp
@@ -9,11 +9,11 @@ $VERSION = 1.2 ;
 ; our @EXPORT_OK = qw| capture
                        slurp
                      |
-; my $output
+; our $output
 
 ; sub capture (&;*)
    { my $code = shift
-   ; $output = ''
+   ; local $output
    ; my $fh = shift || select
    ; no strict 'refs'
    ; if ( my $to = tied *$fh )
@@ -73,7 +73,7 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.2
+=head1 VERSION 1.21
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
