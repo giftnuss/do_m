@@ -1,6 +1,12 @@
 CGI-Builder Latest Versions Changes
 
 
+Version 1.12
+- Improved exception handling for CBB definition
+- Eliminated the dependency from base.pm
+- Minor CGI::Builder::Test fixing
+- Minor POD fixing
+
 Version 1.11
 - This version contains the real 1.1 files: the 1.1 distribution
   file was a wrong outdated file. Sorry for the mismatch.
@@ -10,7 +16,7 @@ Version 1.1
 - Added advanced method 'page_content_check' with automatic handling
   of 'unknown' page_name(s) (204 status header)
 - Fixed OH_* handlers execution problem under mod_perl
-- Eliminated the definition/dependance of any INIT blocks
+- Eliminated the definition/dependency of any INIT blocks
 - Eliminated content check in send_content method
 - Lot of code optimization (now the C::B source is just 200 lines)
 - Added the perl version check to the Makefile.PL
@@ -22,7 +28,7 @@ Version 1.01
 - Fixed POD errors in the Examples sections
 - Fixed POD errors in the page_content and page_prefix properties sections
 - Fixed a weird PH_AUTOLOAD bug (probably related with the use of constant.pm)
-- Eliminated dependance from constant.pm in CGI::Builder::Const
+- Eliminated dependency from constant.pm in CGI::Builder::Const
  
 Version 1.0
 - First public release

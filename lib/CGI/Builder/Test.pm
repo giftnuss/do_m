@@ -1,14 +1,13 @@
 package CGI::Builder::Test ;
-$VERSION = 1.11 ;
+$VERSION = 1.12 ;
 
 ; use strict
-# statements from now on are needed just when testing
-# and they are never used in real job
 ; $Carp::Internal{+__PACKAGE__}++
-
+   
+   
 ; sub dump
-   { my $s = shift
-   ; $s->page_content    .= qq(Page name: "${\$s->page_name}"\n)
+   { my ($s, @args) = @_
+   ; $s->page_content    .= qq(\nPage name: '${\$s->page_name}'\n)
    ; $s->page_content    .= "\nQuery Parameters:\n"
    ; foreach my $p ( sort $s->cgi->param() )
       { my $data_str      = "'"
@@ -20,12 +19,15 @@ $VERSION = 1.11 ;
    ; foreach my $k ( sort keys %ENV )
       { $s->page_content .= "\t$k => '".$ENV{$k}."'\n"
       }
+   ;
    }
 
 ; sub dump_html
    { my $s = shift
+   ; my $c = ref $s
+   ; $s->page_content     = "<HTML><HEAD><title>$c Dump</title></HEAD><BODY>"
    ; $s->page_content    .= qq(<P><B>Page name:</B> ${\$s->page_name}</P>\n)
-   ; $s->page_content    .= "<P><B>\nQuery Parameters:<B><BR>\n<OL>\n"
+   ; $s->page_content    .= "<P><B>\nQuery Parameters:</B><BR>\n<OL>\n"
    ; foreach my $p ( sort $s->cgi->param() )
       { my $data_str      = "'"
                           . join "', '" , $s->cgi->param($p)
@@ -37,7 +39,7 @@ $VERSION = 1.11 ;
    ; foreach my $ek ( sort keys %ENV )
       { $s->page_content .= "<LI> <B>$ek</B> => ".$ENV{$ek}."\n"
       }
-   ; $s->page_content    .= "</OL>\n</P>\n";
+   ; $s->page_content    .= "</OL>\n</P>\n</BODY></HTML>\n";
    }
    
 ; sub die_handler
@@ -57,9 +59,9 @@ __END__
 
 CGI::Builder::Test - Adds some testing methods to your build
 
-=head1 VERSION 1.11
+=head1 VERSION 1.12
 
-Included in CGI-Builder 1.11 distribution.
+Included in CGI-Builder 1.12 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -114,9 +116,13 @@ Useful for outputting to STDERR.
 
 The dump_html() method returns a chunk of text which contains all the environment and CGI form data of the request, formatted for human readability via a web browser. Useful for outputting to a browser.
 
-=head1 SUPPORT and FEEDBACK
+=head1 SUPPORT
 
-If you need support or if you want just to send me some feedback or request, please use this link: http://perl.4pro.net/?CGI::Builder::Test.
+Support for all the modules of the CBF is via the mailing list. The list is used for general support on the use of the CBF, announcements, bug reports, patches, suggestions for improvements or new features. The API to the CBF is stable, but if you use the CBF in a production environment, it's probably a good idea to keep a watch on the list.
+
+You can join the CBF mailing list at this url:
+
+    http://lists.sourceforge.net/lists/listinfo/cgi-builder-users
 
 =head1 AUTHOR and COPYRIGHT
 

@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.11 ;
+$VERSION = 1.12 ;
 
 ; use strict
 ; use 5.006_001
@@ -15,23 +15,28 @@ $VERSION = 1.11 ;
    }
 
 ; sub import
-   { my ($cbb, undef, @req) = (caller, @_)
-   ; eval "require $_" for @req
+   { my ($cbb, $CB, @ext) = (scalar caller, @_)
    ; no strict 'refs'
-   ; push @{"$cbb\::ISA"}, reverse @_
-   ; my @build = (@_, $cbb)
+   ; foreach my $i (@ext)
+      { eval "require $i"
+      ; $@ && croak $@ if $@ !~ /^Can't locate $i\.pm in \@INC/
+                       || not defined %{"$i\::"}
+      }
+   ; foreach my $c (reverse @_)
+      { push @{"$cbb\::ISA"}, $c unless $cbb->isa($c)
+      }
    ; my $sub = sub
                 { return { map
-                           { my $h = $_
-                           ; my @op = grep
-                                       { defined &{$_.'::'.OH.$h}
-                                       }
-                                       $h =~ /up$/   # ;-)
-                                       ? reverse @build
-                                       : @build
-                           ; @op ? ($h => \@op) : ()
-                           }
-                           qw| init pre_process pre_page fixup cleanup |
+                            { my $h = $_
+                            ; my @op = grep
+                                        { defined &{$_.'::'.OH.$h}
+                                        }
+                                        $h =~ /up$/   # ;-)
+                                        ? reverse ($CB, @ext, $cbb)
+                                        : ($CB, @ext, $cbb)
+                            ; @op ? ($h => \@op) : ()
+                            }
+                            qw| init pre_process pre_page fixup cleanup |
                          }
                 }
    ; eval qq
@@ -43,7 +48,6 @@ $VERSION = 1.11 ;
    ; *import = sub{} unless defined &import
    !
    }
-
 
 ; my $exec = \&CGI::Builder::_::exec
 ; sub CGI::Builder::_::exec
@@ -142,7 +146,7 @@ $VERSION = 1.11 ;
    ; $s->page_name = $p
    ; $s->PHASE     = SWITCH_HANDLER
    ; my $shm       = $s->switch_handler_map
-   ; my $SH        = $$shm{$p} || $s->can(SH.$p)
+   ; my $SH        = $$shm{$p} || $s->can(do{SH.$p})
    ; $s->$SH() if $SH
    ; if ($s->PHASE < PRE_PAGE)
       { $s->PHASE = PRE_PAGE
@@ -211,9 +215,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.11
+=head1 VERSION 1.12
 
-Included in CGI-Builder 1.11 distribution.
+Included in CGI-Builder 1.12 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -345,7 +349,7 @@ The CBF implements a pre-structured and customizable CGI process, subdivided in 
 
 =item * Memory Efficient
 
-The whole CGI::Builder module is written in just 200 lines of code, very fast to load, very small footprint and very easy to maintain ;-). (see L<"The Internal Structure">)
+The whole CGI::Builder module is written in just 210 lines of code, very fast to load, very small footprint and very easy to maintain ;-). (see L<"Internal Structure">)
 
 =item * Homogeneous Accessors
 
@@ -369,7 +373,7 @@ Your application can take the advantage of a broad L<"Extensions List"> already 
 
 =item * Consistent interface and internal structure
 
-The internal structure mirrors the public interface, so no mistakes about public or private keys which often cause conflict in other frameworks. (see L<"The Internal Structure">)
+The internal structure mirrors the public interface, so no mistakes about public or private keys which often cause conflict in other frameworks. (see L<"Internal Structure">)
 
 =item * Clear Conventions and Guide Lines
 
@@ -377,7 +381,7 @@ The CBF clearly states the conventions and the guide lines to use in your code o
 
 =back
 
-=head2 The Concept
+=head2 Concept
 
 In a (very simplified) web client-server transaction, when a client requests a static html page to the server, the server sends that page to the client; when the object of the request is a CGI script, that script is supposed to somehow create the 'page' to be sent to the client.
 
@@ -391,13 +395,13 @@ B<Note>: You will find this technique very familiar if you have some knowledge a
 
 As for most CGI frameworks, a complete CGI application is usually composed by 2 parts: B<The Instance Script> and B<CGI Builder Build (CBB)>.
 
-=head2 The Instance Script
+=head2 Instance Script
 
 The instance script is used as the CGI script that manage the client's request: it is usually a very short script that just creates a new instance of your application class, and executes the process() method. This is a complete typical instance script needed to use e.g. the 'My::WebApp' CBB:
 
     #!/usr/bin/perl -w
     use My::WebApp ;
-    $weebapp = My::WebApp->new() ;
+    $webapp = My::WebApp->new() ;
     $webapp->process() ;
 
 B<Note>: This script could be completely eliminated by the use of the C<Apache::CGI::Builder> extension (usable under mod_perl) which transparently executes the process.
@@ -424,7 +428,7 @@ It can inherit from more extensions or super classes including them in the 'use'
         ...
       |;
 
-B<WARNING>: B<Don't use the statement 'use base 'CGI::Builder;'>. You must just B<'use'> C::B because the CGI::Builder::import sub has to setup the overruning methods and will internally call the 'base' module on its own (see details in the L<"import">advanced method).
+B<WARNING>: B<Don't use the statement 'use base 'CGI::Builder;'>. You must just B<'use'> C::B because the CGI::Builder::import sub has to setup the overruning methods and will internally update @ISA on its own (see details in the L<"import"> advanced method).
 
 A complete CBB module is usually as simple as this one:
 
@@ -467,7 +471,7 @@ A complete CBB module is usually as simple as this one:
     
     1;
 
-=head2 The Internal Structure
+=head2 Internal Structure
 
 The CBF uses B<properties> and B<property groups> accessors to store and retrieve B<all> the internal data into and from the object.
 
@@ -595,7 +599,7 @@ B<Known Issue>: At the moment, if you don't use a 5.8.x perl version, a fatal er
 
 =head3 No page content
 
-Since the CBF 1.11, an empty page_content does not produce a fatal error. It just produce a "204 No Content" http status header or - if you are using the Apache::CGI::Builder integration - a "404 Not Found" http status header, if no other status has been set until the RESPONSE phase.
+Since the CBF 1.1, an empty page_content does not produce a fatal error. It just produce a "204 No Content" http status header or - if you are using the Apache::CGI::Builder integration - a "404 Not Found" http status header, if no other status has been set until the RESPONSE phase.
 
 This means that if your application doesn't implement some system to handle unknown page_names on its own (i.e. page names that don't produce any page conent), the CBF will handle them automatically. (see also the L<"page_content_check"> advanced method)
 
@@ -785,7 +789,7 @@ B<Note>: The properties in this section are ordered by importance/frequency of u
 
 This property allows you to access and set the cgi object. The default for this property is a CGI.pm object, but you can override this default if you redefine the C<cgi_new()> method.
 
-If, for some reason, you want to use your own cgi object, you can pass this property to the new() method, or you can also directly set it at same point in the process.
+If, for some reason, you want to use your own cgi object, you can pass this property to the new() method, or you can also directly set it at some point in the process.
 
     $webapp = new WebApp
              ->( cgi => CGI->new({myOwnQuery => 'something'}) )
@@ -1139,7 +1143,7 @@ All the examples in this section will use the following Instance Script that use
 
     #!/usr/bin/perl -w
     use My::WebApp ;
-    $weebapp = My::WebApp->new() ;
+    $webapp = My::WebApp->new() ;
     $webapp->process() ;
 
 =head2 Hello world!
@@ -1596,7 +1600,9 @@ No exception will blame your module and your user will have always a meaningful 
 
 =back
 
-=head1 SUPPORT and FEEDBACK
+=head1 SUPPORT
+
+Support for all the modules of the CBF is via the mailing list. The list is used for general support on the use of the CBF, announcements, bug reports, patches, suggestions for improvements or new features. The API to the CBF is stable, but if you use the CBF in a production environment, it's probably a good idea to keep a watch on the list.
 
 You can join the CBF mailing list at this url:
 

@@ -1,5 +1,5 @@
 package CGI::Builder::Const ;
-$VERSION = 1.11 ;
+$VERSION = 1.12 ;
 
 ; use strict
 
@@ -46,9 +46,9 @@ __END__
 
 CGI::Builder::Const - Imports constant
 
-=head1 VERSION 1.11
+=head1 VERSION 1.12
 
-Included in CGI-Builder 1.11 distribution.
+Included in CGI-Builder 1.12 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -109,9 +109,13 @@ These constants return the handler prefixes:
   PH  'PH_'
   SH  'SH_'
 
-=head1 SUPPORT and FEEDBACK
+=head1 SUPPORT
 
-If you need support or if you want just to send me some feedback or request, please use this link: http://perl.4pro.net/?CGI::Builder::Const.
+Support for all the modules of the CBF is via the mailing list. The list is used for general support on the use of the CBF, announcements, bug reports, patches, suggestions for improvements or new features. The API to the CBF is stable, but if you use the CBF in a production environment, it's probably a good idea to keep a watch on the list.
+
+You can join the CBF mailing list at this url:
+
+    http://lists.sourceforge.net/lists/listinfo/cgi-builder-users
 
 =head1 AUTHOR and COPYRIGHT
 

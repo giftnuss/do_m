@@ -1,5 +1,5 @@
 package Bundle::CGI::Builder::Complete;
-$VERSION = 1.11;
+$VERSION = 1.12;
 __END__
 
 =head1 NAME
@@ -65,6 +65,6 @@ Note: A Bundle is a module that simply defines a collection of other modules. It
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis.
+© 2004 by Domizio Demichelis (http://perl.4pro.net)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
