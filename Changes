@@ -1,6 +1,9 @@
 IO-Util Latest Versions Changes
 
 
+Version 1.25
+- Fixed bug in the slurp function when run with -T
+
 Version 1.24
 - Eliminated version check and installation feedback system
   ("phone home" opt-out) from Makefile.PL to make Randal L Schwartz happy :-)

@@ -1,5 +1,5 @@
 package IO::Util ;
-$VERSION = 1.24 ;
+$VERSION = 1.25 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -48,25 +48,26 @@ $VERSION = 1.24 ;
    ; my $fmt = shift
    ; $output .= sprintf $fmt, @_
    }
-   
+ 
 ; sub slurp
    { local ($_) = @_ ? $_[0] : $_
+   ; my $content
    ; if (  ref     eq 'GLOB'
         || ref \$_ eq 'GLOB'
         )
-      { $_ = do { local $/; <$_> }
+      { $content = do { local $/; <$_> }
       }
      elsif ( defined && length && not ref )
       { open _ or croak "$^E"
-      ; $_ = do { local $/; <_> }
+      ; $content = do { local $/; <_> }
       ; close _
       }
      else                     # it's something else
       { croak 'Wrong argument type: "'. ( ref || 'UNDEF' ) . '"'
       }
-   ; \$_
+   ; \ $content
    }
-      
+
 ; 1
 
 __END__
@@ -75,7 +76,7 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.24
+=head1 VERSION 1.25
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
