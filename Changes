@@ -1,5 +1,14 @@
 IO-Util Latest Versions Changes
 
 
+Version 1.1
+- Fixed catching for already tied filehandlers
+- Fixed appending of output record separator
+- Added 'prinf' catching
+- POD fixes
+
 Version 1.01
 - More strict coding, trying to avoid test failure on MSWin32-x86-multi-thread
+
+Version 1.0
+- first public release

@@ -5,7 +5,7 @@ IO::Util README File
 Description
 -----------
 
-This is a micro-weight module that export just the 'capture' function. It executes the code inside the first argument block, and captures the output it sends to the selected file handler (or to a specific file handler). It "hijacks" all the write and print statements addressed to the captured filehandler, returning the scalar reference of the output. Sort of "print to scalar" function.
+This is a micro-weight module that export just the 'capture' function. It executes the code inside the first argument block, and captures the output it sends to the selected file handler (or to a specific file handler). It "hijacks" all the print and printf statements addressed to the captured filehandler, returning the scalar reference of the output. Sort of "print to scalar" function.
   
     
 Installation
