@@ -1,14 +1,14 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         CGI-Builder
-version:      1.12
+version:      1.2
 version_from: 
 installdirs:  site
 requires:
     Class::constr:                 1.62
     Class::groups:                 1.62
     Class::props:                  1.62
-    IO::Util:                      1.11
+    IO::Util:                      1.2
     Object::groups:                1.62
     Object::props:                 1.62
 

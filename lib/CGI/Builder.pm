@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.12 ;
+$VERSION = 1.2 ;
 
 ; use strict
 ; use 5.006_001
@@ -25,6 +25,8 @@ $VERSION = 1.12 ;
    ; foreach my $c (reverse @_)
       { push @{"$cbb\::ISA"}, $c unless $cbb->isa($c)
       }
+   ; $cbb->isa('Apache::CGI::Builder') && $Apache::CGI::Builder::usage
+     && carp $Apache::CGI::Builder::usage
    ; my $sub = sub
                 { return { map
                             { my $h = $_
@@ -66,8 +68,18 @@ $VERSION = 1.12 ;
                            }
         , no_strict  => 1
         }
-; use Class::groups  qw | switch_handler_map page_handler_map overrun_handler_map |
-; use Object::groups qw | param header page_error |
+; use Class::groups  qw | overrun_handler_map
+                          switch_handler_map
+                          page_handler_map
+                        |
+; use Object::groups qw | param
+                          header
+                          page_error
+                        |
+; use Class::props
+        { name       => 'no_page_content_status'
+        , default    => '204 No Content'
+        }
 ; use Object::props
       ( { name       => 'PHASE'
         , default    => CB_INIT
@@ -94,7 +106,7 @@ $VERSION = 1.12 ;
       )
 
 ; our $AUTOLOAD
-; sub AUTOLOAD : lvalue                 # param AUTOLOADING
+; sub AUTOLOAD ($;$) : lvalue              # param AUTOLOADING
    { (my $n = $AUTOLOAD) =~ s/.*://
    ; return if $n eq 'DESTROY'
    ; @_ == 2
@@ -106,7 +118,7 @@ $VERSION = 1.12 ;
    { require CGI
    ; CGI->new()
    }
-
+              
 ; sub process
    { my ($s, $p) = @_
    ; local $SIG{__DIE__} = sub{$s->die_handler(@_)}
@@ -131,6 +143,8 @@ $VERSION = 1.12 ;
    ; if ($s->PHASE < RESPONSE)
       { $s->PHASE = RESPONSE
       ; my $has_content = $s->page_content_check
+      ; $s->header( -status => $s->no_page_content_status )
+            unless $has_content || defined $s->header->{-status}
       ; $s->send_header() unless $s->dont_send_header
       ; $s->send_content() if $has_content
       }
@@ -168,13 +182,7 @@ $VERSION = 1.12 ;
    }
 
 ; sub page_content_check
-   { my $s = shift
-   ; unless (length $s->page_content)
-      { $s->header( -status => '204 No Content' )
-            unless defined $s->header->{-status}
-      ; return 0
-      }
-   ; 1
+   { length $_[0]->page_content
    }
    
 ; sub send_header
@@ -196,8 +204,11 @@ $VERSION = 1.12 ;
 
 ; sub redirect
    { my ($s, $url) = @_
+   ; $s->PHASE < GET_PAGE        && croak qq(Too early to call redirect())
+   ; $s->PHASE > RESPONSE        && croak qq(Too late to call redirect())
+   ; defined $url && length $url || croak qq(No URL passed)
    ; $s->PHASE = REDIR
-   ; $s->header(-url => $url) if $url
+   ; $s->header(-url => $url)
    ; print $s->cgi->redirect( %{$s->header} )
    }
 
@@ -215,9 +226,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.12
+=head1 VERSION 1.2
 
-Included in CGI-Builder 1.12 distribution.
+Included in CGI-Builder 1.2 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -254,7 +265,7 @@ To have the complete list of all the extensions of the CBF, see L<"Extensions Li
 
     Perl version >= 5.6.1
     OOTools      >= 1.62
-    IO::Util     >= 1.11
+    IO::Util     >= 1.2
 
 =item CPAN
 
@@ -286,6 +297,20 @@ From the directory where this file is located, type:
 =head1 DESCRIPTION
 
 This is the starting point of the documentation of the CGI::Builder framework (CBF). You should read this documentation before any other documentation in any other module that extends the CBF.
+
+=head2 Useful links
+
+=over
+
+=item *
+
+A simple and useful navigation system between the various CBF extensions is available at this URL: http://perl.4pro.net
+
+=item *
+
+More practical topics are probably discussed in the mailing list at this URL: http://lists.sourceforge.net/lists/listinfo/cgi-builder-users
+
+=back
 
 =head2 About CGI::Application and CGI::Application::Plus
 
@@ -328,6 +353,14 @@ means Page Handler
 means Switch Handler
 
 =back
+
+=head2 A Personal Note
+
+I don't ask you any money to use this software! I am happy if you find it useful for your needs, but I would be a lot more happy if I could know anything about you and/or about the specific usage you give to my modules.
+
+Please, write me a simple message: like this software, it does not cost you any money, but it will give me one more reason to keep publishing modules like this framework. Thank you.
+
+I<(please, use this page to send your message: http://perl.4pro.net)>
 
 =head1 CGI Builder Framework (CBF)
 
@@ -373,7 +406,7 @@ Your application can take the advantage of a broad L<"Extensions List"> already 
 
 =item * Consistent interface and internal structure
 
-The internal structure mirrors the public interface, so no mistakes about public or private keys which often cause conflict in other frameworks. (see L<"Internal Structure">)
+The internal structure mirrors the public interface, so no mistakes about public or private methods and keys which often cause conflict in other frameworks. (see L<"Internal Structure">)
 
 =item * Clear Conventions and Guide Lines
 
@@ -764,6 +797,8 @@ This method will redirect the client to the I<url>, bypassing all the remaining 
 
    return $s->redirect('http://domain.com/some/url');
 
+B<Note>: You can use this method from the GET_PAGE phase until the RESPONSE phase.
+
 =head1 PROPERTY ACCESSORS
 
 A CBF B<property> is a lvalue accessor to an object value. 'lvalue' means that you can create a reference to it, assign to it and apply a regex to it; besides, a property can have a default value, some validation entry rules, etc. and you can use them as an argument to the new() method as well.
@@ -791,8 +826,8 @@ This property allows you to access and set the cgi object. The default for this 
 
 If, for some reason, you want to use your own cgi object, you can pass this property to the new() method, or you can also directly set it at some point in the process.
 
-    $webapp = new WebApp
-             ->( cgi => CGI->new({myOwnQuery => 'something'}) )
+    $webapp = WebApp
+             ->new( cgi => CGI->new({myOwnQuery => 'something'}) )
     
     $s->cgi = CGI->new({myOwnQuery => 'something'}) ;
 
@@ -844,7 +879,7 @@ This property allows you to access and set the suffix string used by some templa
 
 =head1 PROPERTY GROUP ACCESSORS
 
-A property group accessor is simply an accessor which can handle multiple data (or properties) of a same group. With all the property group accessors you can set, add, retrieve, delete, check for existance with only one method. You can use them as an argument to the new() method as well.  See below for examples
+A property group accessor is simply an accessor which can handle multiple data (or properties) of a same group. With all the property group accessors you can set, add, retrieve, delete, check for existance with only one method. You can use them as an argument to the new() method as well.  See the param() method to learn the feature of the group accessors (remember that all the property group accessors use the same interface).
 
 =head2 param ( [ key | hash ] )
 
@@ -853,14 +888,23 @@ This accessor handles the parameters of your application
     # pass a parameter to the new object
     $webapp = WebApp->new(param => {myParam => 'myD'})
     
+    # sets or adds several params
     $s->param(myParam1=>'myDATA1',
               myParam2=>'myDATA2') ;
     
+    # sets or adds several params
     $s->param(\%other_param) ;
     
-    $D = $s->param ;
-    while ( my ($p, $v) = each %$D )
+    # retrieve a value
+    $myParam1 =  $s->param('myParam1')
+    
+    # retrieve the reference to the param hash
+    $param_ref = $s->param ;
+    while ( my ($p, $v) = each %$param_ref )
     { do_something_useful }
+    
+    # retrieve the keys of the param hash
+    @param_keys = $s->param ;
     
     # check if exists some param
     exists $s->param->{myParam} ;
@@ -870,17 +914,15 @@ This accessor handles the parameters of your application
 
 A special feature only for the param() accessor, is the automatic loading and retrieving using the parameter key as it was a defined property or method. This feature uses the L<"AUTOLOAD"> method:
 
-    # with the AUTOLOAD of param, this
-    $webapp = WebApp->new(param => {myParam => 'myD'})
+    # with the automatic AUTOLOAD of param, these statements
+    $webapp = WebApp->new(param => {myParam => 'myD'}) ;
+    $s->param( myParam=>'myD') ;
+    $p = $s->param('myParam') ;
     
     # can be written simply as
     $webapp = WebApp->new(myParam => 'myD') ;
-    
-    # and this
-    $s->param( myParam=>'myD');
-    
-    # can be written as
     $s->myParam = 'myD';
+    $p = $s->myParam ;
 
 B<Important Note>: If you use the AUTOLOAD feature, and if you want to write code that will not break, you should always follow the CBF convention and name your param with the 'my' or '_' prefixes. If you don't do that, it might happen that in the future, your 'special_data' parameter loaded with AUTOLOAD (C<< $s->special_data >>) will call instead a special_data() method implemented by any new release of any extension :-). The 'my_special_data' or '_special_data' are safer choices.
 
@@ -966,6 +1008,18 @@ You can use this handlers to do something specific for different pages, such as 
 
 In this section you can find all the most advanced or less used features that document all the details of the CBF. In most cases you don't need to use them, anyway, knowing them will not hurt.
 
+=head2 Global Variables Persistence
+
+If you are using mod_perl, you should know the "Global Variables Persistence" issue: this is something that you must consider when your CBB is running under mod_perl, even when your CBB doesn't use Apache::CGI::Builder.
+
+More explicitly you should know that the CBF and its extensions may use Global Variables to store certain data which are B<class scoped> (i.e. used for all the processes of your CBB class), thus caching the data and saving some processing.
+
+The Global Variables that the CBF uses are always accessed by an OOTool accessor, they just are B<Class Accessors> instead of B<Object Accessors>: the behaviour of a Class accessors (property or group) is the same, but the underlaying accessed variable is a Global Variable, and so it will behave under mod_perl. (See OOTools documentation if you want more details about the differences).
+
+Examples of Class Accessors are the L<"Class Property Group Accessors"> of this module, or the C<tm>, C<tm_new_args> and C<tm_lookups_package> accessors of the CGI::Builder::Magic extension (which creates the Template::Magic object just once -the first time it is accessed- and uses the same object for all the successive requests that involve template processing).
+
+B<Note>: You should clearly distinguish the B<lass accessors> among the others because this particular feature is usually written in B<bold> at the start of the accessor doc.
+
 =head2 Advanced Methods
 
 =head3 capture( CODE )
@@ -1031,9 +1085,9 @@ B<Important Note>: If you use this feature, and if you want to write code that d
 
 =head3 page_content_check
 
-This method is called at the very start of the RESPONSE phase. It checks if the page_content contains some content to be sent. It should return 1 or 0. This method is used also to set the C<-status> header to '204 No Content' but ONLY if the status header is not defined yet. For this reason you don't need to override it if you want just to send a different header status.
+This method is called at the very start of the RESPONSE phase. It checks if the page_content contains some content to be sent. A true returned value will send the C<page_content>, while a false returned value will prevent the sending of the C<page_content>, and will set the C<-status> header to the value of the C<no_page_content_status> property if no status header has ben set yet.
 
-The page_content_check() method is overridden by other extensions such as Apache::CGI::Builder, which set a '404 Not Found' status for pages that do not produce any output, or CGI::Builder::Magic, that checks also if the template file exists before using its template print method.
+The page_content_check() method is overridden by other extensions such as CGI::Builder::Magic, that checks also if the template file exists before using its template print method.
 
 =head3 die_handler
 
@@ -1051,17 +1105,21 @@ The C::B module use the import() method to setup inheritance and overrunning of 
 
 Set to a true value, this property will prevent the sending of the header. Undefined by default.
 
+=head3 no_page_content_status
+
+This B<Class property> is used to supply the default C<-status> header that the CBF send in the RESPONSE phase when the C<page_content> is empty, but ONLY if the status header is not defined yet. The default of this property is '204 No Content', but other extensions (such as Apache::CGI::Builder) could set it otherwise.
+
 =head3 PHASE
 
 Internal read only property used to control the process and the exceptions. B<Don't override it unless you know exactly what you are doing!>.
 
 =head2 Class Property Group Accessors
 
-The accessors in this section are class accessors, which are accessors to package variables (i.e. not instance variables) which are class scoped. Usually you sould use them at the start of the CBB code.
+The accessors in this section are B<Class Accessors>, which are accessors to package variables (i.e. not instance variables) which are B<class scoped>. Usually you sould use them at the start of the CBB code (and out of any handler or method).
 
 =head3 page_handler_map( [ page => page_handler ] )
 
-With this accessor you can map some page name to a specific Page Handler:
+With this B<Class Accessor> you can map some page name to a specific Page Handler:
 
     __PACKAGE__->page_handler_map
                  ( thisPage => \&special_Phandler,
@@ -1070,7 +1128,7 @@ With this accessor you can map some page name to a specific Page Handler:
 
 =head3 switch_handler_map( [ page => switch_handler ] )
 
-With this accessor you can map some page name to a specific Switch Handler:
+With this B<Class Accessor> you can map some page name to a specific Switch Handler:
 
     __PACKAGE__->switch_handler_map
                  ( thisPage => \&special_Shandler,
@@ -1079,7 +1137,7 @@ With this accessor you can map some page name to a specific Switch Handler:
 
 =head3 overrun_handler_map
 
-The purpose of this accessor is giving you the possibility to override the automatic overrunning of CBF if you want to change the order (or skip) any Overrun Handler defined by some extension or super class.
+The purpose of this B<Class Accessor> is giving you the possibility to override the automatic overrunning of CBF if you want to change the order (or skip) any Overrun Handler defined by some extension or super class.
 
 Consider this CBB:
 
@@ -1110,7 +1168,7 @@ In the CB_INIT Phase the following handlers will be automatically executed with 
 
 As you can see the OH_init() handlers are executed with the same order of the CBB inclusion order, while the OH_cleanup() execution order is reversed. This way it is created a sort of nested execution so that the class that first inits is the last that ends/destroys. See each handler description to know the execution order.
 
-If you want to change the execution order of the Overrun Handlers, you can use the overrun_handler_map() class accessor to change that order:
+If you want to change the execution order of the Overrun Handlers, you can use this class accessor to change that order:
 
         __PACKAGE__->overrun_handler_map
                      ( init => [ 'My::SuperClassC',
@@ -1229,9 +1287,8 @@ To add another page we just add another Page Handler:
   sub OH_fixup {
       my $s = shift;
       return $s->redirect('http://my/not/found/page/url')
-        unless length $s->page_content; # no page will be '0' ;-)
+        unless length $s->page_content;
   }
-
   
   1;
 
@@ -1364,6 +1421,10 @@ Consider to use some integration with a template system that could speed up your
 
 =item *
 
+Unless you overwrite the new_cgi() method with one which does not use CGI.pm, include the 'use CGI' statement in your CBB to save some loading time. (The new_cgi() method requires the CGI.pm only at run-time)
+
+=item *
+
 Set all the defaults of the properties and all the statements common to all pages in the C<OH_init()> method that is executed even before the start of the process(), just after the creation of the new object
 
 =item *
@@ -1488,7 +1549,7 @@ Ask for support and advice. Your work will progress faster and smoother.
 
 =item *
 
-Don't inherit neither from C::B base class nor from other extensions: all the inheritance business is done in the CBB definition. If your extension uses any other extension, just specify to include it in the CBB definition and eventually check if the module is loaded by checking its $VERSION.
+Don't inherit neither from C::B base class nor from other extensions: all the inheritance business is done in the CBB definition. If your extension uses any other extension, just specify to include it in the CBB definition and eventually check if the module is loaded by checking $s->isa('anyExtension').
 
 =item *
 
@@ -1606,11 +1667,38 @@ Support for all the modules of the CBF is via the mailing list. The list is used
 
 You can join the CBF mailing list at this url:
 
-    http://lists.sourceforge.net/lists/listinfo/cgi-builder-users
+http://lists.sourceforge.net/lists/listinfo/cgi-builder-users
+
 
 =head1 AUTHOR and COPYRIGHT
 
 © 2004 by Domizio Demichelis (http://perl.4pro.net)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
+
+=head1 CREDITS
+
+Thanks to these people which - in very different ways - have been somehow helpful with their feedback, suggestions or criticism:
+
+=over
+
+=item * Iain Fairbaim
+
+=item * Maurice Height
+
+=item * Cees Hek
+
+=item * Philipp Knobel
+
+=item * Carlos Molina Garcia
+
+=item * Stefano Rodighiero
+
+=item * Reto Schuettel
+
+=item * Mike South
+
+=item * Mark Stosberg
+
+=back
 

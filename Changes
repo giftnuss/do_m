@@ -1,6 +1,16 @@
 CGI-Builder Latest Versions Changes
 
 
+Version 1.2
+- Added internal phase check to the redirect() method
+- Simplified the page_content_check goal
+- Added the no_page_content_status advanced class property used internally
+  and overridable by other extensions
+- Added a compile time check for deprecated usage of Apache::CGI::Builder
+- Improved documentation of group accessors (see param() method)
+- Added "Global Variables Persistence" topic in ADVANCED FEATURES section
+- Added a CREDIT section in POD
+
 Version 1.12
 - Improved exception handling for CBB definition
 - Eliminated the dependency from base.pm

@@ -115,7 +115,7 @@ Support for all the modules of the CBF is via the mailing list. The list is used
 
 You can join the CBF mailing list at this url:
 
-    http://lists.sourceforge.net/lists/listinfo/cgi-builder-users
+http://lists.sourceforge.net/lists/listinfo/cgi-builder-users
 
 =head1 AUTHOR and COPYRIGHT
 
