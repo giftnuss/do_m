@@ -4,8 +4,8 @@
 ; use CGI
 
 ; BEGIN
-  { chdir './t'
-  ; require './Test.pm'
+  { eval { require './t/Test.pm' }
+        || require './Test.pm'
   }
 
 ###### QUERY #######

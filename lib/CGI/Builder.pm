@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.22 ;
+$VERSION = 1.23 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -38,20 +38,20 @@ $VERSION = 1.22 ;
                                         }
                                         $h =~ /up$/   # ;-)
                                         ? reverse ($CB, @ext, $cbb)
-                                        : ($CB, @ext, $cbb)
+                                        :         ($CB, @ext, $cbb)
                             ; @op ? ($h => \@op) : ()
                             }
                             qw| init pre_process pre_page fixup cleanup |
                          }
                 }
    ; eval qq
-   ! package $cbb
-   ; use Class::groups
-       { name    => 'overrun_handler_map'
-       , default => \$sub
-       }
-   ; *import = sub{} unless defined &import
-   !
+      ! package $cbb
+      ; use Class::groups
+          { name    => 'overrun_handler_map'
+          , default => \$sub
+          }
+      ; *import = sub{} unless defined &import
+      !
    }
 
 ; my $exec = \&CGI::Builder::_::exec
@@ -60,7 +60,7 @@ $VERSION = 1.22 ;
    ; return unless my $over = $s->overrun_handler_map($h)
    ; foreach my $pkg ( @$over )
       { no strict 'refs'
-      ; &{$pkg."::".OH.$h}($s, @args)
+      ; &{$pkg.'::'.OH.$h}($s, @args)
       }
    }
 
@@ -155,7 +155,7 @@ $VERSION = 1.22 ;
    ; $s->$exec('cleanup') # done however
    }
 
-; sub switch_to     # PHASE must be PRE_PROCESS or FIXUP
+; sub switch_to
    { my ($s, $p, @args) = @_
    ; $s->PHASE < PRE_PROCESS && croak qq(Too early to call switch_to())
    ; $s->PHASE > FIXUP       && croak qq(Too late to call switch_to())
@@ -173,7 +173,8 @@ $VERSION = 1.22 ;
       { $s->PHASE = PAGE_HANDLER
       ; my $phm   = $s->page_handler_map
       ; my $PH    =  $$phm{$p}       || $s->can(do{PH.$p})
-                  || $$phm{AUTOLOAD} || $s->can(do{PH.'AUTOLOAD'})
+                  || ! $s->page_content_check
+                  && ($$phm{AUTOLOAD} || $s->can(do{PH.'AUTOLOAD'}))
       ; $s->$PH(@args) if $PH
       }
    }
@@ -229,9 +230,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.22
+=head1 VERSION 1.23
 
-Included in CGI-Builder 1.22 distribution.
+Included in CGI-Builder 1.23 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -313,7 +314,7 @@ A simple and useful navigation system between the various CBF extensions is avai
 
 =item *
 
-More practical topics are probably discussed in the mailing list at this URL: L<http://lists.sourceforge.net/lists/listinfo/cgi-builder-users>
+More examples and more practical topics are available in the mailing list at this URL: L<http://lists.sourceforge.net/lists/listinfo/cgi-builder-users>
 
 =back
 
@@ -599,8 +600,8 @@ B<Important Note>: Remember that your CBB does not need to use each and all thes
     Y   | - PH_foo           |   page will be requested; the 'PH_bar' when
     C   | - PH_bar           |   the 'bar' page... If defined and if no other
     L   | - PH_baz           |   Page Handler has been found, the optional
-    E   | - ......           |   'PH_AUTOLOAD' will be executed instead.
-        | - PH_AUTOLOAD      |
+    E   | - ......           |   'PH_AUTOLOAD' will be executed instead
+        | - PH_AUTOLOAD      |   unless the page has some content already
     |   +====================+
     |       |
     |-------+
@@ -800,11 +801,12 @@ B<Note>: You can use this method from the PRE_PROCESS phase until the FIXUP phas
 
 =head2 redirect( url )
 
-This method will redirect the client to the I<url>, bypassing all the remaining phases until the CLEANUP phase that will be executed as usual after the client has been redirect to the I<url>.
+This method will redirect the client to the I<url>, bypassing all the remaining phases until the CLEANUP phase that will be executed as usual after the client has been redirect to the I<url>. You can use this method from the GET_PAGE phase until the RESPONSE phase.
 
    return $s->redirect('http://domain.com/some/url');
 
-B<Note>: You can use this method from the GET_PAGE phase until the RESPONSE phase.
+B<Note>: This method will add the url to the header, and will use the CGI::redirect() method to redirect the client, passing it also the whole header hash you set so far (see also L<header() method|header( [ header ] )>).
+
 
 =head1 PROPERTY ACCESSORS
 
@@ -878,7 +880,7 @@ This property allows you to access and set the name of the query parameter used 
 
 =head2 page_path
 
-This property allows you to access and set the path of the page (e.g used to address a template or a web directory). The default for this property is './tm', but your code or other extensions may set it otherwise.
+This property allows you to access and set the path of the page (e.g used to address a template or a web directory). The default for this property is './tm' (relative to the Instance Script), but your code or other extensions may set it otherwise.
 
 =head2 page_suffix
 
@@ -936,6 +938,8 @@ B<Important Note>: If you use the AUTOLOAD feature, and if you want to write cod
 =head2 header( [ header ] )
 
 This accessor works for header exactly like param() works for param. You can use it to change the header that your application will use in the RESPONSE phase.
+
+B<Note>: The keys/values pairs you are setting as the headers will be internally passed to the C<CGI::header()> method at the correct time, so you should always use the leading '-' character as you do for C<CGI::header> (please, refer also to the documentation of the header() method in CGI.pm, or other module if you have overridden the C<cgi_new()> method in order to return a different CGI object).
 
 =head2 page_error
 
@@ -1007,7 +1011,7 @@ You can use this handlers to check some condition just before the PAGE_PROCESS P
 
 This handlers are prefixed by 'PH_' (i.e. Page Handler). (e.g. If defined, the 'PH_foo' will be executed when the 'foo' page will be requested).
 
-B<Note>: Exception to this rule is the B<AUTOLOAD handler> that will be called IF defined and IF there are no other defined Page Handler for the specific page.
+B<Note>: Exception to this rule is the B<AUTOLOAD handler> that will be called IF defined and IF there are no other defined Page Handler for the specific page and UNLESS the page_content_check() return true (i.e. there is no page content so far)
 
 You can use this handlers to do something specific for different pages, such as e.g. executing some specific code just for that specific request (or creating the specific page content when your handler don't use some automagic template integration)
 
@@ -1095,6 +1099,8 @@ B<Important Note>: If you use this feature, and if you want to write code that d
 This method is called at the very start of the RESPONSE phase. It checks if the page_content contains some content to be sent. A true returned value will send the C<page_content>, while a false returned value will prevent the sending of the C<page_content>, and will set the C<-status> header to the value of the C<no_page_content_status> property if no status header has ben set yet.
 
 The page_content_check() method is overridden by other extensions such as CGI::Builder::Magic, that checks also if the template file exists before using its template print method.
+
+This method is used also to handle the AUTOLOAD page handler, which will not be called unless there is no C<page_content> so far.
 
 =head3 die_handler
 
