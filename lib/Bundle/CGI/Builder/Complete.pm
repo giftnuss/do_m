@@ -1,5 +1,5 @@
 package Bundle::CGI::Builder::Complete;
-$VERSION = 1.01;
+$VERSION = 1.1;
 __END__
 
 =head1 NAME

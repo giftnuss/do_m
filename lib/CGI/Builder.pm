@@ -1,82 +1,67 @@
 package CGI::Builder ;
-$VERSION = 1.01 ;
+$VERSION = 1.1 ;
 
 ; use strict
+; use 5.006_001
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
 ; $Carp::Internal{'CGI::Builder::_'}++
-; $Carp::Internal{'IO::Util'}++
 ; use CGI::Builder::Const qw| :all |
+; use IO::Util
+
+; sub capture
+   { my ($s, $h, @args) = @_
+   ; IO::Util::capture{ $s->$h(@args) }
+   }
 
 ; sub import
-   { my (undef, @ext) = @_
-   ; my $callpkg = caller
-   ; my $OH = OH
+   { my $cbb = caller
+   ; my @build = (@_, $cbb)
    ; no strict 'refs'
-   ; eval qq
-     ! sub $callpkg\::INIT
-        { __PACKAGE__->overrun_handler_map
-                       ( map
-                          { my \$h = \$_
-                          ; my \@op = grep
-                                       { defined &{"\$_\\::$OH\$h"}
+   ; my $sub = sub
+                { return { map
+                           { my $h = $_
+                           ; my @op = grep
+                                       { defined &{$_.'::'.OH.$h}
                                        }
-                                       qw(@_ $callpkg)
-                          ; \@op ? (\$h => \\\@op) : ()
-                          }
-                          qw| init
-                              pre_process
-                              pre_page
-                              fixup
-                              cleanup
-                            |
-                       )
-        }
-     !
-   ; require base
-   ; @_ = ( 'base', reverse @_ )
-   ; goto &base::import
+                                       $h =~ /up$/   # ;-)
+                                       ? reverse @build
+                                       : @build
+                           ; @op ? ($h => \@op) : ()
+                           }
+                           qw| init pre_process pre_page fixup cleanup |
+                         }
+                }
+   ; eval qq
+   ! package $cbb
+   ; use Class::groups
+       { name    => 'overrun_handler_map'
+       , default => \$sub
+       }
+   ; *import = sub{} unless defined &import
+   ; use base reverse qw(@_)
+   !
    }
 
 ; my $exec = \&CGI::Builder::_::exec
 ; sub CGI::Builder::_::exec
-   { my ($s, $n, @args) = @_
-   ; if ( my $over = $s->overrun_handler_map($n) )
-      { foreach my $c ( @$over )
-         { no strict 'refs'
-         ; &{$c."::".OH.$n}($s, @args)
-         }
+   { my ($s, $h, @args) = @_
+   ; return unless my $over = $s->overrun_handler_map($h)
+   ; foreach my $pkg ( @$over )
+      { no strict 'refs'
+      ; &{$pkg."::".OH.$h}($s, @args)
       }
    }
 
 ; use Class::constr
-      ( { init       => sub{ my $s = shift
+        { init       => sub{ my $s = shift
                            ; local $SIG{__DIE__} = sub{$s->die_handler(@_)}
                            ; $s->$exec('init', @_)
                            }
-                           
         , no_strict  => 1
         }
-      )
-
-; use Class::groups
-      ( { name       => [ qw | overrun_handler_map
-                               switch_handler_map
-                               page_handler_map
-                             |
-                        ]
-        }
-      )
-
-; use Object::groups
-      ( { name       => [ qw | param
-                               header
-                               page_error
-                             |
-                        ]
-        }
-      )
-
+; use Class::groups  qw | switch_handler_map page_handler_map |
+; use Object::groups qw | param header page_error |
 ; use Object::props
       ( { name       => 'PHASE'
         , default    => CB_INIT
@@ -85,10 +70,10 @@ $VERSION = 1.01 ;
       , { name       => 'cgi_page_param'
         , default    => 'p'
         }
-      , { name       => 'cgi'   # also query
+      , { name       => 'cgi'
         , default    => sub{ shift()->cgi_new(@_) }
         }
-      , { name       => 'page_name'      # also page
+      , { name       => 'page_name'
         , default    => 'index'
         }
       , { name       => 'page_path'
@@ -116,15 +101,6 @@ $VERSION = 1.01 ;
    ; CGI->new()
    }
 
-######### METHODS ############
-
-; use IO::Util
-
-; sub capture
-   { my ($s, $h) = @_
-   ; IO::Util::capture{ no strict 'refs'; &{$h}($s) }
-   }
-
 ; sub process
    { my ($s, $p) = @_
    ; local $SIG{__DIE__} = sub{$s->die_handler(@_)}
@@ -146,10 +122,11 @@ $VERSION = 1.01 ;
       { $s->PHASE = FIXUP
       ; $s->$exec('fixup')
       }
-   ; if($s->PHASE < RESPONSE)
+   ; if ($s->PHASE < RESPONSE)
       { $s->PHASE = RESPONSE
+      ; my $has_content = $s->page_content_check
       ; $s->send_header() unless $s->dont_send_header
-      ; $s->send_content()
+      ; $s->send_content() if $has_content
       }
    ; $s->PHASE = CLEANUP
    ; $s->$exec('cleanup') # done however
@@ -157,52 +134,51 @@ $VERSION = 1.01 ;
 
 ; sub switch_to     # PHASE must be PRE_PROCESS or FIXUP
    { my ($s, $p, @args) = @_
-   ; $s->PHASE < PRE_PROCESS && croak
-     qq(Too early to call switch_to())
-   ; $s->PHASE > FIXUP && croak
-     qq(Too late to call switch_to())
-   ; defined $p && length $p  || croak qq(No page_name name passed)
+   ; $s->PHASE < PRE_PROCESS && croak qq(Too early to call switch_to())
+   ; $s->PHASE > FIXUP       && croak qq(Too late to call switch_to())
+   ; defined $p && length $p || croak qq(No page_name name passed)
    ; $s->page_name = $p
-   ; $s->PHASE = SWITCH_HANDLER
-   ; my $shm   = $s->switch_handler_map
-   ; my $switch_handler = do {  $$shm{$p}
-                             || do{$s->can(SH.$p) && SH.$p}
-                             }
-   ; $s->$switch_handler() if $switch_handler
+   ; $s->PHASE     = SWITCH_HANDLER
+   ; my $shm       = $s->switch_handler_map
+   ; my $SH        = $$shm{$p} || $s->can(SH.$p)
+   ; $s->$SH() if $SH
    ; if ($s->PHASE < PRE_PAGE)
       { $s->PHASE = PRE_PAGE
       ; $s->$exec('pre_page')
       }
-   ; if ( $s->PHASE < PAGE_HANDLER )
+   ; if ($s->PHASE < PAGE_HANDLER)
       { $s->PHASE = PAGE_HANDLER
       ; my $phm   = $s->page_handler_map
-      ; my $PHA = PH.'AUTOLOAD'
-      ; my $page_handler = do {  $$phm{$p}
-                              || do{my $ref = $s->can(PH.$p); $ref}
-                              || do{$$phm{'AUTOLOAD'} && $$phm{'AUTOLOAD'}}
-                              || do{my $ref = $s->can($PHA); $ref}
-                              }
-      ; $s->$page_handler(@args) if $page_handler
+      ; my $PH    =  $$phm{$p}       || $s->can(do{PH.$p})
+                  || $$phm{AUTOLOAD} || $s->can(do{PH.'AUTOLOAD'})
+      ; $s->$PH(@args) if $PH
       }
    }
 
 ; sub get_page_name
    { my $s = shift
    ; my $p = $s->cgi->param($s->cgi_page_param)
-   ; $s->page_name = $p if ( defined $p && length $p )
+   ; $s->page_name = $p if defined($p) && length($p)
    }
 
-; sub send_header
+; sub page_content_check
    { my $s = shift
-   ; print $s->cgi->header( %{$s->header} )
+   ; unless (length $s->page_content)
+      { $s->header( -status => '204 No Content' )
+            unless defined $s->header->{-status}
+      ; return 0
+      }
+   ; 1
+   }
+   
+; sub send_header
+   { print $_[0]->cgi->header( %{$_[0]->header} )
    }
 
 ; sub send_content
-   { my $s = shift
-   ; my $pc = \ $s->page_content
-   ; length $$pc || croak qq(No page content)
+   { my $pc = \ $_[0]->page_content
    ; if ( ref $$pc eq 'CODE' )
-      { $$pc->($s)
+      { $_[0]->$$pc
       }
      elsif ( ref $$pc eq 'SCALAR' )
       { print $$$pc
@@ -233,9 +209,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.01
+=head1 VERSION 1.1
 
-Included in CGI-Builder 1.01 distribution.
+Included in CGI-Builder 1.1 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -271,7 +247,7 @@ To have the complete list of all the extensions of the CBF, see L<"Extensions Li
 =item Prerequisites
 
     Perl version >= 5.6.1
-    OOTools      >= 1.61
+    OOTools      >= 1.62
     IO::Util     >= 1.11
 
 =item CPAN
@@ -367,7 +343,7 @@ The CBF implements a pre-structured and customizable CGI process, subdivided in 
 
 =item * Memory Efficient
 
-The whole CGI::Builder module is written in just 230 lines of code, very fast to load, very small footprint and very easy to maintain ;-). (see L<"The Internal Structure">)
+The whole CGI::Builder module is written in just 200 lines of code, very fast to load, very small footprint and very easy to maintain ;-). (see L<"The Internal Structure">)
 
 =item * Homogeneous Accessors
 
@@ -424,8 +400,6 @@ The instance script is used as the CGI script that manage the client's request: 
 
 B<Note>: This script could be completely eliminated by the use of the C<Apache::CGI::Builder> extension (usable under mod_perl) which transparently executes the process.
 
-B<Warning>: You should always load a CBB module (e.g. your My/WebApp.pm) at compile time (i.e. always 'use' the module, or 'require' it always inside a BEGIN block). If you receive a warning like 'Too late to run INIT block at...' this means that you are trying to load the CBB at run time, so just load it in the canonical way and everything will work fine.
-
 =head2 CGI Builder Build (CBB)
 
 This is the part of your application that implements the CBF features.
@@ -448,7 +422,7 @@ It can inherit from more extensions or super classes including them in the 'use'
         ...
       |;
 
-B<WARNING>: B<Don't use the statement 'use base 'CGI::Builder;'>. You must just B<'use'> C::B because the CGI::Builder::import sub has to setup the overruning methods and will internally call the 'base' module on its own and defines an INIT block in your CBB.
+B<WARNING>: B<Don't use the statement 'use base 'CGI::Builder;'>. You must just B<'use'> C::B because the CGI::Builder::import sub has to setup the overruning methods and will internally call the 'base' module on its own (see details in the L<"import">advanced method). Besides don't instantiate the CGI::Builder class directly or a fatal error will occur. (never do C<< CGI::Builder->new() >>)
 
 A complete CBB module is usually as simple as this one:
 
@@ -593,12 +567,13 @@ B<Important Note>: Remember that your CBB does not need to use each and all thes
     |   | - OH_fixup() |  before the RESPONSE Phase.
     |   +--------------+
     |
-    |   +------------------+
-    |-->| RESPONSE phase   |   This phase provides to generate the response.
-    |   |------------------|   It is internally handled so no need to
-    |   | - send_header()  |   use the methods in your applications unless
-    |   | - send_content() |   you really need severe overriding
-    |   +------------------+
+    |   +------------------------+
+    |-->| RESPONSE phase         |   This phase provides to generate the response.
+    |   |------------------------|   It is internally handled so no need to
+    |   | - page_content_check() |   use the methods in your applications unless
+    |   | - send_header()        |   you really need severe overriding
+    |   | - send_content()       |
+    |   +------------------------+
     |
     |   +----------------+
     +-->| CLEANUP phase  |  This optional hook is called at the end of
@@ -615,6 +590,12 @@ If your CBB doesn't include any template integration extension, the only mandato
 All the fatal errors (even those originated by other used modules) are trapped and wrapped with the indication of the Phase name which was running and the page name defined at the moment of the error. (see L<"die_handler">)
 
 B<Known Issue>: At the moment, if you don't use a 5.8.x perl version, a fatal error might trace also the CGI::Builder internal packages instead of just the line that generates it in your own code. Besides, under certain circumstances and for certain handlers, the error line number might refer to the original call in the Instance Script instead to the statement in the CBB; in this case, the phase name shown in the error message should however point you to the handler that generated the error.
+
+=head3 No page content
+
+Since the CBF 1.1, an empty page_content does not produce a fatal error. It just produce a "204 No Content" http status header or - if you are using the Apache::CGI::Builder integration - a "404 Not Found" http status header, if no other status has been set until the RESPONSE phase.
+
+This means that if your application doesn't implement some system to handle unknown page_names on its own (i.e. page names that don't produce any page conent), the CBF will handle them automatically. (see also the L<"page_content_check"> advanced method)
 
 =head1 The Extension System
 
@@ -722,6 +703,10 @@ CGI::Builder and HTML::Template integration
 =item * CGI::Builder::TT
 
 CGI::Builder and Template::Toolkit integration (development version not published yet)
+
+=item * CGI::Builder::Tutorial
+
+CGI::Builder Tutorial (under construction)
 
 =back
 
@@ -927,21 +912,31 @@ The handlers in this category - if defined in your CBB - are executed at each re
 
 This handler is executed in the CB_INIT Phase (i.e. just after the creation of the new object) and it is internally called by the new() method. You can use it to initialize some properties or param of your application, or to connect with a DB.
 
+B<Note>: The OH_init() handlers defined in different classes are executed with the same order as the CBB inclusion order.
+
 =head3 OH_pre_process
 
 This handler is executed in the PRE_PROCESS Phase (i.e. at the very start of the process). You can use it to control AAA (Authentication and Authorization, and Access) and eventually switch_to() another page on failure.
+
+B<Note>: The OH_pre_process() handlers defined in different classes are executed with the same order as the CBB inclusion order.
 
 =head3 OH_pre_page
 
 This handler is executed in the PAGE_PROCESS Phase (i.e. after the SWITCH_HANDLER Phase, and just before the PAGE_HANDLER Phase) at each switching cycle. This is the only Overrun Handler that may be executed multiple times in the same process (i.e. each time the switch_to() method is internally or explicitly called and no Switch Handler has been set). You can use it e.g. to centrally handle page errors with a single handler.
 
+B<Note>: The OH_pre_page() handlers defined in different classes are executed with the same order as the CBB inclusion order.
+
 =head3 OH_fixup
 
 This handler is executed in the FIXUP Phase (i.e. after the PAGE_HANDLER Phase, and just before the RESPONSE Phase). It gives the last chance to do things before the response is generated (e.g. modify the header or the page_content just before they are sent to the client).
 
+B<Note>: The OH_fixup() handlers defined in different classes are executed with a reversed CBB inclusion order.
+
 =head3 OH_cleanup
 
 This handler is executed in the CLEANUP Phase (i.e. after the RESPONSE Phase). At this Phase, the page has already been sent to the client, and you can use it to cleanup e.g. closing some opened DB connection or logging execution.
+
+B<Note>: The OH_cleanup() handlers defined in different classes are executed with a reversed CBB inclusion order.
 
 =head2 Per Page Handlers
 
@@ -1028,11 +1023,21 @@ B<Note>: If you don't like this feature, just override the AUTOLOAD method. If y
 
 B<Important Note>: If you use this feature, and if you want to write code that does not break, you should always follow the CBF convention and name your param with the 'my' or '_' prefixes. If you don't do that, it might happen that in the future your 'special_data' parameter loaded with AUTOLOAD (C<< $s->special_data >>) will call instead a special_data() method implemented by any new release of any extension :-). The 'my_special_data' or '_special_data' are safer choices.
 
+=head3 page_content_check
+
+This method is called at the very start of the RESPONSE phase. It checks if the page_content contains some content to be sent. It should return 1 or 0. This method is used also to set the C<-status> header to '204 No Content' but ONLY if the status header is not defined yet. For this reason you don't need to override it if you want just to send a different header status.
+
+The page_content_check() method is overridden by other extensions such as Apache::CGI::Builder, which set a '404 Not Found' status for pages that do not produce any output, or CGI::Builder::Magic, that checks also if the template file exists before using its template print method.
+
 =head3 die_handler
 
-Used internally to implements a localized $SIG{__DIE__}. This method adds useful informations to the error messages (even to those generated by other used modules). It adds the page name and the phase at the moment of the error plus a Data::Dumper() of the object itself if the CGI::Builder::Test is included in the build.
+Used internally to implement a localized $SIG{__DIE__}. This method adds useful informations to the error messages (even to those generated by other used modules). It adds the page name and the phase at the moment of the error plus a Data::Dumper() of the object itself if the CGI::Builder::Test is included in the build.
 
 If you need to implement your own $SIG{__DIE__} you should override this handler in your own CBB.
+
+=head3 import
+
+The C::B module use the import() method to setup inheritance and overrunning of your CBB, and undefines the import() method in your CBB (to avoid inheritance and overrunning propagation). If for any very exotic reason you need to define an import method in your own CBB, you should define it BEFORE the definition of the build, or it will not work.
 
 =head2 Advanced Property Accessors
 
@@ -1046,7 +1051,7 @@ Internal read only property used to control the process and the exceptions. B<Do
 
 =head2 Class Property Group Accessors
 
-The accessors in this section are class accessors, which are accessors to package variables (i.e. not instance variables) which are class scoped. Usually you sould use them inside an C<INIT> block, which will be executed just once in the module-life (under mod_perl you will save some process).
+The accessors in this section are class accessors, which are accessors to package variables (i.e. not instance variables) which are class scoped. Usually you sould use them at the start of the CBB code.
 
 =head3 page_handler_map( [ page => page_handler ] )
 
@@ -1074,30 +1079,38 @@ Consider this CBB:
 
     package My::WebApp;
     use CGI::Builder
-    qw| My::SuperClassA    # class that defines its own OH_init()
-        My::SuperClassB    # class that defines its own OH_init()
-        My::SuperClassC    # class that defines its own OH_init()
+    qw| My::SuperClassA # defines its own OH_init() and OH_cleanup()
+        My::SuperClassB # defines its own OH_init() and OH_cleanup()
+        My::SuperClassC # defines its own OH_init() and OH_cleanup()
       |;
     
     sub OH_init
     { ... }
+    
+    sub OH_cleanup
+    { ... }
 
 In the CB_INIT Phase the following handlers will be automatically executed with this order:
 
-    My::SuperClassA::OH_init
-    My::SuperClassB::OH_init
-    My::SuperClassC::OH_init
-    My::WebApp::OH_init
+    1 My::SuperClassA::OH_init
+    2 |  My::SuperClassB::OH_init
+    3 |  |  My::SuperClassC::OH_init
+    4 |  |  |  My::WebApp::OH_init
+      |  |  |  |
+    5 |  |  |  My::WebApp::OH_cleanup
+    6 |  |  My::SuperClassC::OH_cleanup
+    7 |  My::SuperClassB::OH_cleanup
+    8 My::SuperClassA::OH_cleanup
 
-If you want to change the execution order of the Overrun Handlers, you can set an INIT block (which will be executed just one time at run time, after the internal overrun and prefix initialization) and use the overrun_handler_map() class accessor to change that order:
+As you can see the OH_init() handlers are executed with the same order of the CBB inclusion order, while the OH_cleanup() execution order is reversed. This way it is created a sort of nested execution so that the class that first inits is the last that ends/destroys. See each handler description to know the execution order.
 
-    INIT {
+If you want to change the execution order of the Overrun Handlers, you can use the overrun_handler_map() class accessor to change that order:
+
         __PACKAGE__->overrun_handler_map
                      ( init => [ 'My::SuperClassC',
                                  'My::SuperClassB',
                                  'My::WebApp',
                                  'My::SuperClassA'] );
-    }
 
 After that change the execution order of the handlers will be:
 
@@ -1109,16 +1122,14 @@ After that change the execution order of the handlers will be:
 
 Remember also that you can change the order of all the Overrun Handlers in a single step:
 
-  INIT {
       __PACKAGE__->overrun_handler_map
                    ( init  => [ 'My::SuperClassC',
                                 'My::SuperClassB',
                                 'My::SuperClassA'],
                      fixup => [ 'My::SuperClassB',
                                 'My::SuperClassA']);
-  }
 
-B<Important Note>: The keys of this accessor are the handler identifier WITHOUT the 'OH_' overrun handler prefix .
+B<Important Note>: The keys of this accessor are the handler identifier WITHOUT the 'OH_' overrun handler constant prefix.
 
 =head1 EXAMPLES
 
@@ -1167,7 +1178,7 @@ Suppose that we want to send the "hello world!" content just for the specific "H
   sub OH_pre_process {
       my $s = shift;
       if ($s->page_name ne 'Hello') {
-          return $s->redirect('http://my/not/fond/page/url')
+          return $s->redirect('http://my/not/found/page/url')
       }
   }
   
@@ -1177,8 +1188,8 @@ Suppose that we want to send the "hello world!" content just for the specific "H
   
   sub OH_fixup {
       my $s = shift;
-      return $s->redirect('http://my/not/fond/page/url')
-        unless $s->page_content; # no page will be '0' ;-)
+      return $s->redirect('http://my/not/found/page/url')
+        unless length $s->page_content;
   }
   
   1;
@@ -1189,7 +1200,7 @@ The first alternative is very specific, and checks exactly for the 'Hello' C<pag
 
 The second alternative is more flexible because it checks for the content of the page in the FIXUP Phase, after the PAGE_HANDLER Phase has been tried, redirecting only if no Page Handlers has set the page_content so far, so if we will add a new Page Handler in the future it will work without any changes.
 
-B<Note>: To request the page "Hello" the client should point to http://domain.com/IScript.cgi?p=Hello. Any other requested page as (e.g. ?p=myTry) will cause a redirection to http://my/not/fond/page/url.
+B<Note>: To request the page "Hello" the client should point to http://domain.com/IScript.cgi?p=Hello. Any other requested page as (e.g. ?p=myTry) will cause a redirection to http://my/not/found/page/url.
 
 =head2 Hello world! Variant 2
 
@@ -1211,8 +1222,8 @@ To add another page we just add another Page Handler:
   
   sub OH_fixup {
       my $s = shift;
-      return $s->redirect('http://my/not/fond/page/url')
-        unless $s->page_content; # no page will be '0' ;-)
+      return $s->redirect('http://my/not/found/page/url')
+        unless length $s->page_content; # no page will be '0' ;-)
   }
 
   
@@ -1248,7 +1259,7 @@ If instead of a client redirection we want to send a specific page internally ge
   sub OH_fixup {
       my $s = shift;
       $s->switch_to('no_page')  # switches to the no_page Page Handler
-        unless $s->page_content
+        unless length $s->page_content
   }
   
   # second alternative
@@ -1257,8 +1268,8 @@ If instead of a client redirection we want to send a specific page internally ge
   
   sub OH_fixup {
       my $s = shift;
-      unless ($s->page_content) {
-          $s->page_content = "The page you requested is not available!"
+      unless (length $s->page_content) {
+          $s->page_content = "The page you have requested is not available!"
       }
   }
   

@@ -1,6 +1,6 @@
 #!perl -w
 ; use strict
-; use Test::More tests => 9
+; use Test::More tests => 12
 ; use CGI
 
 ; BEGIN
@@ -48,8 +48,23 @@
 
 ; my $ap9 = Test8->new( cgi => CGI->new({ p => 'redirect' }) )
 ; my $o9 = $ap9->capture('process')
-; ok(  ($$o9 =~ /^Status\:\ 302\ Moved/)
+; ok(  ($$o9 =~ /302 Moved/)
     && ($$o9 !~ /never printed/)
     && ($$o9 !~ /fixup/)
     && ($$o9 !~ /madness/)
     )
+
+; my $ap10 = Test1->new( )
+; my $o10 = $ap10->capture('process', 'not_found')
+; ok($$o10 =~ /204 No Content/)
+
+; my $ap11 = Test11->new( )
+; $ap11->capture('process', 'myPage')
+; ok( $ap11->test =~ /initpre_processSHpre_pagePHfixupcleanup/ )
+
+; my $ap12 = Test11->new( )
+; $ap12->capture('process', 'Auto')
+; ok( $ap12->test =~ /initpre_processpre_pageAUTOLOADfixupcleanup/ )
+
+
+

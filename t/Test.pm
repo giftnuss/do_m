@@ -99,5 +99,43 @@
    { $_[0]->page_content .= 'fixup'
    ; $_[0]->header(-private=>'madness')
    }
+   
+; package Test11
+; use CGI::Builder
+
+; use Object::props 'test'
+
+; sub OH_init
+   { $_[0]->test = 'init'
+   }
+
+; sub OH_pre_process
+   { $_[0]->test .= 'pre_process'
+   }
+
+; sub SH_myPage
+   { $_[0]->test .= 'SH'
+   }
+
+; sub OH_pre_page
+   { $_[0]->test .= 'pre_page'
+   }
+
+; sub PH_myPage
+   { $_[0]->test .= 'PH'
+   }
+
+; sub PH_AUTOLOAD
+   { $_[0]->test .= 'AUTOLOAD'
+   }
+
+; sub OH_fixup
+   { $_[0]->test .= 'fixup'
+   }
+
+; sub OH_cleanup
+   { $_[0]->test .= 'cleanup'
+   }
+
 
 ; 1

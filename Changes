@@ -1,5 +1,19 @@
 CGI-Builder Latest Versions Changes
 
+
+Version 1.1
+- Reversed the overrun execution order for OH_fixup and OH_cleanup
+- Added advanced method 'page_content_check' with automatic handling
+  of 'unknown' page_name(s) (204 status header)
+- Fixed OH_* handlers execution problem under mod_perl
+- Eliminated the definition/dependance of any INIT blocks
+- Eliminated content check in send_content method
+- Lot of code optimization (now the C::B source is just 200 lines)
+- Added the perl version check to the Makefile.PL
+- Updated OOTools 1.62 as prerequisite
+- Updated POD with the new feature/fixing
+- Added several tests
+
 Version 1.01
 - Fixed POD errors in the Examples sections
 - Fixed POD errors in the page_content and page_prefix properties sections

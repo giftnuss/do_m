@@ -1,5 +1,5 @@
 package CGI::Builder::Test ;
-$VERSION = 1.01 ;
+$VERSION = 1.1 ;
 
 ; use strict
 # statements from now on are needed just when testing
@@ -57,9 +57,9 @@ __END__
 
 CGI::Builder::Test - Adds some testing methods to your build
 
-=head1 VERSION 1.01
+=head1 VERSION 1.1
 
-Included in CGI-Builder 1.01 distribution.
+Included in CGI-Builder 1.1 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

@@ -1,7 +1,8 @@
+; use 5.006_001
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'CGI::Builder'
-; my $vers = '1.01'
+; my $vers = '1.1'
 
 ; WriteMakefile
    ( NAME           => $dist
@@ -11,11 +12,11 @@
        , ABSTRACT   => 'Framework to build simple or complex web-apps'
        )
      : ()
-   , PREREQ_PM      => { 'Class::constr'  => '1.61'
-                       , 'Class::props'   => '1.61'
-                       , 'Class::groups'  => '1.61'
-                       , 'Object::props'  => '1.61'
-                       , 'Object::groups' => '1.61'
+   , PREREQ_PM      => { 'Class::constr'  => '1.62'
+                       , 'Class::props'   => '1.62'
+                       , 'Class::groups'  => '1.62'
+                       , 'Object::props'  => '1.62'
+                       , 'Object::groups' => '1.62'
                        , 'IO::Util'       => '1.11'
                        }
    )
