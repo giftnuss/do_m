@@ -1,5 +1,3 @@
-#!/usr/bin/perl -w
-
 package Test;
 use CGI;
 use CGI::Builder

@@ -1,9 +1,6 @@
 CGI-Builder Latest Versions Changes
 
 Version 1.26
-- Changed the page_content_check method: it does not use the page_content
-  accessor any more. That fixes the PH_AUTOLOAD problem with
-  CGI::Builder::HTMLtmpl.
 - Changed the private and protected 'my' suffix to the more useful and
   consistent 'my_'
 - Added a warning in AUTOLOAD sub for unprefixed autoloaded params
