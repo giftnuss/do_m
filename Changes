@@ -1,6 +1,9 @@
 IO-Util Latest Versions Changes
 
 
+Version 1.3
+- Added Tid(), Lid() and Uid() functions and tests
+
 Version 1.26
 - Fixed bug in the capture function when run with -T
 

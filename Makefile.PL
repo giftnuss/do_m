@@ -3,15 +3,14 @@
 
 ; use ExtUtils::MakeMaker
 
-; my $dist = 'IO::Util'
-; my $vers = '1.26'
+; my $pm = 'lib/IO/Util.pm'
 
 ; WriteMakefile
-   ( NAME           => $dist
-   , VERSION        => $vers
+   ( NAME           => 'IO::Util'
+   , VERSION_FROM   => $pm
    , ( $] ge '5.005' )
-     ? ( AUTHOR     => 'Domizio Demichelis - perl.4pro.net'
-       , ABSTRACT   => 'A selection of general-utility IO function'
+     ? ( AUTHOR          => 'Domizio Demichelis - perl.4pro.net'
+       , ABSTRACT_FROM   => $pm
        )
      : ()
    )
@@ -19,8 +18,3 @@
 
 ; 1
 
-__END__
-
-Note: While I did removed the "phone home opt-out only logic" from all my distributions since 2004-24-06, the related ratings have not been removed so far. Sorry for the inconvenience.
-
-Domizio Demichelis

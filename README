@@ -5,7 +5,7 @@ IO::Util README File
 Description
 -----------
 
-This is a micro-weight module that exports just a couple of functions of general utility in IO operations. 
+This is a micro-weight module that exports a few functions of general utility in IO operations.
   
     
 Installation
@@ -26,4 +26,4 @@ Installation
 
 --
 Domizio Demichelis - perl.4pro.net
-2004-02-02
+2004-12-02
