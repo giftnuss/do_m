@@ -1,14 +1,16 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         CGI-Builder
-version:      0.02
+version:      1.0
 version_from: 
 installdirs:  site
 requires:
-    Class::constr:                 1.6
-    Class::props:                  1.6
-    IO::Util:                      1.0
-    Object::props:                 1.6
+    Class::constr:                 1.61
+    Class::groups:                 1.61
+    Class::props:                  1.61
+    IO::Util:                      1.1
+    Object::groups:                1.61
+    Object::props:                 1.61
 
 distribution_type: module
 generated_by: ExtUtils::MakeMaker version 6.17

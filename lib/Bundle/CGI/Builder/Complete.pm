@@ -1,9 +1,67 @@
-package Bundle::CGI::Builder::Complete ;
-$VERSION = 0.01 ;
+package Bundle::CGI::Builder::Complete;
+$VERSION = 1.0;
+__END__
+
+=head1 NAME
+
+Bundle::CGI::Builder::Complete - A bundle to install the complete CGI::Builder framework.
+
+=head1 SYNOPSIS
+
+    perl -MCPAN -e 'install Bundle::CGI::Builder::Complete'
+
+=head1 CONTENTS
+
+HTML::Tagset            - used by HTML::Parser
+
+HTML::Parser            - used by HTML::FillInForm and HTML::TableTiler
+
+HTML::TableTiler        - used by Template::Magic::HTML
+
+HTML::FillInForm        - used by Template::Magic::HTML
+
+Class::constr           - used by Template::Magic::Zone
+
+Class::props            - used by Template::Magic::Zone
+
+Class::groups           - used by Template::Magic::Zone
+
+Object::groups          - used by Template::Magic::Zone
+
+Object::props           - used by Template::Magic::Zone
+
+IO::Util                - used by Template::Magic
+
+File::Spec              - used by Template::Magic
+
+CGI::Builder            - main distribution
+
+CGI::Builder::CgiAppAPI - cgiapp compatible API
+
+Apache::CGI::Builder    - Apache/mod_perl integration
+
+Template::Magic         - used by CGI::Builder::Magic
+
+CGI::Builder::Magic     - Template::Magic integration
+
+Data::FormValidator     - used by CGI::Builder::DFVCheck
+
+CGI::Builder::DFVCheck  - Data::FormValidator integration
+
+HTML::Template          - used by CGI::Builder::HTMLtmpl
+
+CGI::Builder::HTMLtmpl  - HTML::Template integration
+
+CGI::Session				        - used by CGI::Builder::Session
+
+CGI::Builder::Session   - CGI::Session integration
+
 
 =head1 DESCRIPTION
 
-Right now this distribution is just a placeholder. the real distribution will be uploaded ASAP.
+This bundle gathers together all the modules plus all related prerequisites for the CGI::Builder framework.
+
+Note: A Bundle is a module that simply defines a collection of other modules. It is used by the CPAN module to automate the fetching, building and installing of modules from the CPAN ftp archive sites.
 
 =head1 AUTHOR and COPYRIGHT
 

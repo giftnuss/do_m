@@ -1,0 +1,55 @@
+#!perl -w
+; use strict
+; use Test::More tests => 9
+; use CGI
+
+; BEGIN
+  { chdir './t'
+  ; require './Test.pm'
+  }
+
+###### QUERY #######
+
+; my $ap1 = Test1->new( cgi => CGI->new({ p => 'mm' }) )
+; my $o1 = $ap1->capture('process')
+; ok($$o1 =~ /MM/)
+
+; my $ap2 = Test2->new()
+; my $o2 = $ap2->capture('process')
+; ok($$o2 =~ /MM/)
+
+; my $ap3 = Test3->new( cgi => CGI->new({ p => 'mm' }) )
+; my $o3 = $ap3->capture('process')
+; ok($$o3 =~ /ST/)
+
+; my $ap4 = Test4->new( )
+; my $o4 = $ap4->capture('process')
+; ok($$o4 =~ /ST/)
+
+; my $ap5 = Test5->new()
+; my $o5 = $ap5->capture('process')
+; ok($$o5 =~ /STST/)
+
+; my $ap6 = Test6->new()
+; my $o6 =$ap6->capture('process')
+; ok($$o6 =~ /legal/)
+
+# set param from new
+; my $ap7 = Test5->new( myData => 'myData' )
+; is( $ap7->data('myData')
+    , 'myData'
+    )
+
+; my $ap8 = Test8->new( cgi => CGI->new({ p => 'one' }) )
+; my $o8 = $ap8->capture('process')
+; ok(  ($$o8 =~ /AoneAtwofixup/)
+    && ($$o8 =~ /madness/)
+    )
+
+; my $ap9 = Test8->new( cgi => CGI->new({ p => 'redirect' }) )
+; my $o9 = $ap9->capture('process')
+; ok(  ($$o9 =~ /^Status\:\ 302\ Moved/)
+    && ($$o9 !~ /never printed/)
+    && ($$o9 !~ /fixup/)
+    && ($$o9 !~ /madness/)
+    )
