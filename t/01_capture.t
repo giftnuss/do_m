@@ -1,6 +1,6 @@
 #!perl -w
 ; use strict
-; use Test::More tests => 4
+; use Test::More tests => 5
 
 
 ; use IO::Util qw(capture)
@@ -52,6 +52,12 @@
     , 'X*Y#<     a>Z#'
     )
 
+; $out = capture { syswrite STDOUT, 'X'
+                 ; syswrite STDOUT, 'Y'
+                 }
 
+; is( $$out
+    , 'XY'
+    )
 
 

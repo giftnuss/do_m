@@ -1,6 +1,9 @@
 IO-Util Latest Versions Changes
 
 
+Version 1.42
+- Little improvement of the capture function (syswrite)
+
 Version 1.41
 - Fixed capture bug related to unimplemented tied methods
 - Created the internal IO::Util::Handle class based on Tie::StdHandle

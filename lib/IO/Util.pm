@@ -1,5 +1,5 @@
 package IO::Util ;
-$VERSION = 1.41 ;
+$VERSION = 1.42 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -249,16 +249,9 @@ $VERSION = 1.41 ;
    { require Tie::Handle
    ; our @ISA = qw(Tie::StdHandle)
    }
-
-; sub PRINT
-   { shift
-   ; $output .= join defined $, ? $, : '', @_
-   ; $output .= $\ if defined $\
-   }
-
-; sub PRINTF
-   { shift
-   ; $output .= sprintf shift, @_
+                      
+; sub WRITE
+   { $output .= substr($_[1],0,$_[2])
    }
 
 ; 1
@@ -269,7 +262,7 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.41
+=head1 VERSION 1.42
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -387,7 +380,7 @@ This is a micro-weight module that exports a few functions of general utility in
 
 The C<capture> function espects a I<code> block as the first argument and an optional I<FILEHANDLE> as the second argument. If I<FILEHANDLE> is omitted the selected filehandle will be used by default (usually C<STDOUT>). The function returns the reference to the captured output.
 
-It executes the code inside the first argument block, and captures the output it sends to the selected filehandle (or to a specific filehandle). It "hijacks" all the C<print> and C<printf> statements addressed to the captured filehandle, returning the scalar reference to the output. Sort of "print to scalar" function.
+It executes the code inside the first argument block, and captures the output it sends to the selected filehandle (or to a specific filehandle). It "hijacks" all the C<print>, C<printf> and C<syswrite> statements addressed to the captured filehandle, returning the scalar reference to the output. Sort of "print to scalar" function.
 
 B<Note>: This function ties the I<FILEHANDLE> to IO::Util::Handle class (subclass of Tie::StdHandle) and unties it after the execution of the I<code>. If I<FILEHANDLE> is already tied to any other class, it just temporary re-bless the tied object to IO::Util::Handle class, re-blessing it again to its original class after the execution of the I<code>, thus preserving the original I<FILEHANDLE> configuration.
 
