@@ -1,6 +1,9 @@
 IO-Util Latest Versions Changes
 
 
+Version 1.26
+- Fixed bug in the capture function when run with -T
+
 Version 1.25
 - Fixed bug in the slurp function when run with -T
 

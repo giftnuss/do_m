@@ -1,5 +1,5 @@
 package IO::Util ;
-$VERSION = 1.25 ;
+$VERSION = 1.26 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -30,7 +30,8 @@ $VERSION = 1.25 ;
       ; &{$code}()
       ; untie *$fh
       }
-   ; \$output
+   ; my $out = $output    # copy to lexical fixes -T bug
+   ; \ $out
    }
                   
 ; sub TIEHANDLE
@@ -76,7 +77,7 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.25
+=head1 VERSION 1.26
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
