@@ -1,5 +1,8 @@
 package CGI::Builder::Const ;
-$VERSION = 1.21 ;
+$VERSION = 1.22 ;
+
+# This file uses the "Perlish" coding style
+# please read http://perl.4pro.net/perlish_coding_style.html
 
 ; use strict
 
@@ -46,9 +49,9 @@ __END__
 
 CGI::Builder::Const - Imports constants
 
-=head1 VERSION 1.21
+=head1 VERSION 1.22
 
-Included in CGI-Builder 1.21 distribution.
+Included in CGI-Builder 1.22 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

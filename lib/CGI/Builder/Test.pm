@@ -1,32 +1,11 @@
 package CGI::Builder::Test ;
-$VERSION = 1.21 ;
+$VERSION = 1.22 ;
+
+# This file uses the "Perlish" coding style
+# please read http://perl.4pro.net/perlish_coding_style.html
 
 ; use strict
 ; $Carp::Internal{+__PACKAGE__}++
-;
-=comment
-
-; use CGI::Builder::Const qw| :all |
-   
-; use Object::props
-        { name        => 'PHASE'
-        , default     => CB_INIT
-        , allowed     => qr/^CGI::Builder/  # only settable from CBF
-        , validation  => 
-          sub
-           { my $s = shift   
-           ; my $phase = $CGI::Builder::Const::phase[$_]
-           ; warn "$phase\n" if grep /$phase/, @{$s->trace->{PHASES}}
-           ; 1 
-           }
-        }
-
-; use Class::groups
-        { name        => 'trace'
-        , default     => { PHASES => \@CGI::Builder::Const::phase 
-                         }
-        }
-=cut
              
 ; sub dump
    { my ($s, @args) = @_
@@ -82,9 +61,9 @@ __END__
 
 CGI::Builder::Test - Adds some testing methods to your build
 
-=head1 VERSION 1.21
+=head1 VERSION 1.22
 
-Included in CGI-Builder 1.21 distribution.
+Included in CGI-Builder 1.22 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

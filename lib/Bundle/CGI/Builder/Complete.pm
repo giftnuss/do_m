@@ -1,5 +1,9 @@
 package Bundle::CGI::Builder::Complete;
 $VERSION = 1.21;
+
+# If you have any problem with the coding style used here
+# you should read http://perl.4pro.net/perlish_coding_style.html
+
 __END__
 
 =head1 NAME

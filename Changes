@@ -1,6 +1,9 @@
 CGI-Builder Latest Versions Changes
 
 
+Version 1.22
+- Minor POD changes
+
 Version 1.21
 - Changed Makefile.PL version check
 - Internal code adjustments
