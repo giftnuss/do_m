@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.1 ;
+$VERSION = 1.11 ;
 
 ; use strict
 ; use 5.006_001
@@ -15,9 +15,11 @@ $VERSION = 1.1 ;
    }
 
 ; sub import
-   { my $cbb = caller
-   ; my @build = (@_, $cbb)
+   { my ($cbb, undef, @req) = (caller, @_)
+   ; eval "require $_" for @req
    ; no strict 'refs'
+   ; push @{"$cbb\::ISA"}, reverse @_
+   ; my @build = (@_, $cbb)
    ; my $sub = sub
                 { return { map
                            { my $h = $_
@@ -39,9 +41,9 @@ $VERSION = 1.1 ;
        , default => \$sub
        }
    ; *import = sub{} unless defined &import
-   ; use base reverse qw(@_)
    !
    }
+
 
 ; my $exec = \&CGI::Builder::_::exec
 ; sub CGI::Builder::_::exec
@@ -60,7 +62,7 @@ $VERSION = 1.1 ;
                            }
         , no_strict  => 1
         }
-; use Class::groups  qw | switch_handler_map page_handler_map |
+; use Class::groups  qw | switch_handler_map page_handler_map overrun_handler_map |
 ; use Object::groups qw | param header page_error |
 ; use Object::props
       ( { name       => 'PHASE'
@@ -209,9 +211,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.1
+=head1 VERSION 1.11
 
-Included in CGI-Builder 1.1 distribution.
+Included in CGI-Builder 1.11 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -422,7 +424,7 @@ It can inherit from more extensions or super classes including them in the 'use'
         ...
       |;
 
-B<WARNING>: B<Don't use the statement 'use base 'CGI::Builder;'>. You must just B<'use'> C::B because the CGI::Builder::import sub has to setup the overruning methods and will internally call the 'base' module on its own (see details in the L<"import">advanced method). Besides don't instantiate the CGI::Builder class directly or a fatal error will occur. (never do C<< CGI::Builder->new() >>)
+B<WARNING>: B<Don't use the statement 'use base 'CGI::Builder;'>. You must just B<'use'> C::B because the CGI::Builder::import sub has to setup the overruning methods and will internally call the 'base' module on its own (see details in the L<"import">advanced method).
 
 A complete CBB module is usually as simple as this one:
 
@@ -593,7 +595,7 @@ B<Known Issue>: At the moment, if you don't use a 5.8.x perl version, a fatal er
 
 =head3 No page content
 
-Since the CBF 1.1, an empty page_content does not produce a fatal error. It just produce a "204 No Content" http status header or - if you are using the Apache::CGI::Builder integration - a "404 Not Found" http status header, if no other status has been set until the RESPONSE phase.
+Since the CBF 1.11, an empty page_content does not produce a fatal error. It just produce a "204 No Content" http status header or - if you are using the Apache::CGI::Builder integration - a "404 Not Found" http status header, if no other status has been set until the RESPONSE phase.
 
 This means that if your application doesn't implement some system to handle unknown page_names on its own (i.e. page names that don't produce any page conent), the CBF will handle them automatically. (see also the L<"page_content_check"> advanced method)
 
@@ -1582,7 +1584,7 @@ If you use internal created objects, always provide a C<foo> property, a C<foo_n
 
 =item *
 
-Check if the CBB is including Apache/mod_perl integration by checking $Apache::CGI::Builder::VERSION; checking C<$ENV{MOD_PERL}> or C<$mod_perl::VERSION> would tell you just that mod_perl is running.
+Check if the CBB is including Apache/mod_perl integration by checking C<< $s->isa('Apache::CGI::Builder') >>; checking C<$ENV{MOD_PERL}> or C<$mod_perl::VERSION> would tell you just that mod_perl is running.
 
 =item *
 

@@ -1,6 +1,10 @@
 CGI-Builder Latest Versions Changes
 
 
+Version 1.11
+- This version contains the real 1.1 files: the 1.1 distribution
+  file was a wrong outdated file. Sorry for the mismatch.
+  
 Version 1.1
 - Reversed the overrun execution order for OH_fixup and OH_cleanup
 - Added advanced method 'page_content_check' with automatic handling

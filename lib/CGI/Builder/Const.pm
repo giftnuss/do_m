@@ -1,5 +1,5 @@
 package CGI::Builder::Const ;
-$VERSION = 1.1 ;
+$VERSION = 1.11 ;
 
 ; use strict
 
@@ -46,9 +46,9 @@ __END__
 
 CGI::Builder::Const - Imports constant
 
-=head1 VERSION 1.1
+=head1 VERSION 1.11
 
-Included in CGI-Builder 1.1 distribution.
+Included in CGI-Builder 1.11 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
