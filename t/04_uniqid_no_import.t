@@ -12,6 +12,10 @@
     && ! defined &Uid
     )
 
+; SKIP:
+   { skip("Time::HiRes is not installed", 3)
+     unless eval{require Time::HiRes}
+
 ; my $u1 = IO::Util::Tid()
 ; my $u2 = IO::Util::Lid()
 ; my $u3 = IO::Util::Uid()
@@ -35,3 +39,5 @@
      && length($u7)<length($u8)
      && length($u8)<length($u9)
      )
+     
+   }

@@ -1,79 +1,27 @@
 package IO::Util ;
-$VERSION = 1.3 ;
+$VERSION = 1.4 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
 ; use strict
 ; use Carp
-; $Carp::Internal{'IO::Util'}++
+; $Carp::Internal{+__PACKAGE__}++
 ; require Exporter
 ; our @ISA = 'Exporter'
 ; our @EXPORT_OK = qw| capture
                        slurp
                        Tid Lid Uid
+                       load_mml
                      |
+                     
+############# capturing output #############
+
 ; our $output
-; my %charset = ( base34 => [ 1..9, 'A'..'N', 'P'..'Z' ]
-                , base62 => [ 0..9, 'a'..'z', 'A'..'Z' ]
-                )
-; my $separator = '_'
-
-; sub import
-   { my ($pkg, @subs) = @_
-   ; require Time::HiRes   if grep /id$/  , @subs
-   ; require Sys::Hostname if grep /^Uid$/, @subs
-   ; $pkg->export_to_level(1, @_)
-   }
- 
-; sub _convert
-   { my ( $num, $args ) = @_
-   ; my $chars = defined $$args{chars}
-                 ? ref($$args{chars}) eq 'ARRAY'
-                   ? $$args{chars}
-                   : exists $charset{$$args{chars}}
-                     ? $charset{$$args{chars}}
-                     : croak 'Invalid chars'
-                 : $charset{base34}
-   ; my $result = ''
-   ; my $dnum = @$chars
-   ; while ( $num > 0 )
-      { substr($result, 0, 0)
-        = $$chars[ $num % $dnum]
-      ; $num = int($num/$dnum)
-      }
-   ; $result
-   }
-
-; sub Tid
-   { my %args = @_
-   ; my $sep = $args{separator} || $separator
-   ; my($sec, $usec) = Time::HiRes::gettimeofday()
-   ; my($new_sec, $new_usec)
-   ; do{ ($new_sec, $new_usec) = Time::HiRes::gettimeofday() }
-       until ( $new_usec != $usec || $new_sec != $sec )
-   ; join $sep, map _convert($_, \%args), $sec , $usec
-   }
-   
-; sub Lid
-   { my %args = @_
-   ; my $sep = $args{separator} || $separator
-   ; join $sep, _convert($$, \%args), Tid(@_)
-   }
-
-; sub Uid
-   { my %args = @_
-   ; my $sep = $args{separator} || $separator
-   ; my $ip = sprintf '1%03d%03d%03d%03d'
-            , $args{IP}
-              ? @{$args{IP}}
-              : unpack( "C4", (gethostbyname(Sys::Hostname::hostname()))[4] )
-   ; join $sep, _convert($ip, \%args), Lid(@_)
-   }
    
 ; sub capture (&;*)
    { my $code = shift
-   ; local $output
+   ; local $output = ''
    ; my $fh = shift || select
    ; no strict 'refs'
    ; if ( my $to = tied *$fh )
@@ -106,6 +54,8 @@ $VERSION = 1.3 ;
    ; my $fmt = shift
    ; $output .= sprintf $fmt, @_
    }
+
+############# slurping files #############
            
 ; sub slurp
    { local ($_) = @_ ? $_[0] : $_
@@ -120,13 +70,147 @@ $VERSION = 1.3 ;
       ; $content = do { local $/; <_> }
       ; close _
       }
-     else                     # it's something else
+     else
       { croak 'Wrong argument type: "'. ( ref || 'UNDEF' ) . '"'
       }
    ; \ $content
    }
 
+############# unique ids #############
 
+; my %charset = ( base34 => [ 1..9, 'A'..'N', 'P'..'Z' ]
+                , base62 => [ 0..9, 'a'..'z', 'A'..'Z' ]
+                )
+; my $separator = '_'
+
+; sub import
+   { my ($pkg, @subs) = @_
+   ; require Time::HiRes   if grep /id$/  , @subs
+   ; require Sys::Hostname if grep /^Uid$/, @subs
+   ; $pkg->export_to_level(1, @_)
+   }
+ 
+; sub _convert
+   { my ( $num, $args ) = @_
+   ; my $chars = defined $$args{chars}
+                 ? ref($$args{chars}) eq 'ARRAY'
+                   ? $$args{chars}
+                   : exists $charset{$$args{chars}}
+                     ? $charset{$$args{chars}}
+                     : croak 'Invalid chars'
+                 : $charset{base34}
+   ; my $result = ''
+   ; my $dnum = @$chars
+   ; while ( $num > 0 )
+      { substr($result, 0, 0) = $$chars[ $num % $dnum]
+      ; $num = int($num/$dnum)
+      }
+   ; $result
+   }
+
+; sub Tid
+   { my %args = @_
+   ; my $sep = defined $args{separator} ? $args{separator} : $separator
+   ; my($sec, $usec) = Time::HiRes::gettimeofday()
+   ; my($new_sec, $new_usec)
+   ; do{ ($new_sec, $new_usec) = Time::HiRes::gettimeofday() }
+       until ( $new_usec != $usec || $new_sec != $sec )
+   ; join $sep, map _convert($_, \%args), $sec , $usec
+   }
+   
+; sub Lid
+   { my %args = @_
+   ; my $sep = defined $args{separator} ? $args{separator} : $separator
+   ; join $sep, _convert($$, \%args), Tid(@_)
+   }
+
+; sub Uid
+   { my %args = @_
+   ; my $sep = defined $args{separator} ? $args{separator} : $separator
+   ; my $ip = sprintf '1%03d%03d%03d%03d'
+            , $args{IP}
+              ? @{$args{IP}}
+              : unpack( "C4", (gethostbyname(Sys::Hostname::hostname()))[4] )
+   ; join $sep, _convert($ip, \%args), Lid(@_)
+   }
+
+############# loading MML #############
+
+; my $parser_re = qr/ \G(.*?)   # elements and text outside blocks are ignored
+                      (?<!\\)<  # not excaped '<'
+                        (\w+?)([^>]*?)  # id + attributes
+                      (?<!\\)>  # not escaped '>'
+                      (.*?)     # content
+                      <\/\2>    # end
+                    /xs
+; my $not_escaped_re = qr/( (?<!\\) < | (?<!\\) > )/xs
+
+; sub load_mml
+   { my ($mml, $opt) = @_
+   ; defined $$opt{strict} or $$opt{strict} = 1
+   ; $mml = IO::Util::slurp $mml unless ref $mml
+   ; $$mml =~ s/<!--.*?-->//sg
+   ; my $struct = parse_mml( '', $mml,  $opt )
+   ; $$opt{keep_root} ? $struct : $$struct{(keys %$struct)[0]}
+   }
+
+; sub parse_mml
+   { my ($id, $mml, $opt) = @_
+   ; my ($node, $control, $no_data)
+   ; while ( $$mml =~ /$parser_re/g )
+      { $no_data = 1
+      ; my ( $garb, $child_id, $attr, $child_mml ) = ($1, $2, $3, $4)
+      ; if ( $$opt{strict} )
+         { $garb =~ /\S/
+           && croak "Garbage '$garb' found parsing element $child_id"
+         ; length $attr
+           && croak "Attributes '$attr' found parsing element $child_id"
+         }
+      ; my ($k) = grep $child_id =~ /$_/, keys %{$$opt{handler}}
+      ; my $parser_sub = defined $k
+                         ? $$opt{handler}{$k}
+                         : \&parse_mml
+      ; my $child = &{$parser_sub}($child_id, \$child_mml, $opt)
+      ; if ( defined $child )
+         { if ( defined $$control{$child_id} )
+            { if ( $$control{$child_id} > 1 )
+               { push @{$$node{$child_id}}, $child
+               }
+              else
+               { $$node{$child_id} = [ $$node{$child_id}, $child ]
+               }
+            }
+           else
+            { $$node{$child_id} = $child
+            }
+         ; $$control{$child_id} ++
+         }
+      }
+	; return $node if $no_data
+   ; $$opt{strict} && $$mml =~ $not_escaped_re
+	  && croak "Not escaped '$1' found in '$id' data"
+	; $$mml =~ s/\\(.)/$1/g   # unescape
+	; my ($k) = grep $id =~ /$_/, keys %{$$opt{filter}}
+   ; my $filter_sub = $$opt{filter}{$k} if defined $k
+   ; $filter_sub
+     ? do{ local $_ = $$mml
+         ; no strict 'refs'
+         ; &{$filter_sub}($id, $mml, $opt)
+         }
+     : $$mml
+   }
+
+; sub TRIM_BLANKS
+   { s/^\s+//gm
+   ; s/\s+$//gm
+   ; $_
+   }
+
+; sub ONE_LINE
+   { s/\n+/ /g
+   ; $_
+   }
+   
 ; 1
 
 __END__
@@ -135,7 +219,7 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.3
+=head1 VERSION 1.4
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -160,8 +244,10 @@ From the directory where this file is located, type:
 
 =head1 SYNOPSIS
 
-  use IO::Util qw(capture slurp uniqid);
-  
+  use IO::Util qw(capture slurp Tid Lid Uid load_mml);
+
+capture()
+
   # captures the selected file handler
   $output_ref = capture { any_printing_code() } ;
   # now $$output_ref eq 'something'
@@ -179,23 +265,74 @@ From the directory where this file is located, type:
       print 'to STDOUT';
       print FILEHANDLER 'something'
   }
-  
-  
+
+slurp()
+
   $_ = '/path/to/file' ;
   $content_ref = slurp ;
   
   $content_ref = slurp '/path/to/file' ;
   $content_ref = slurp \*FILEHANDLER ;
-  
-  $temporarily_unique_id = Tid()  # like 'Q9MU1N_NVRM'
-  $locally_unique_id     = Lid()  # like '2MS_Q9MU1N_P5F6'
-  $universally_unique_id = Uid()  # like 'MGJFSBTK_2MS_Q9MU1N_PWES'
+
+Tid(), Lid(), Uid()
+
+  $temporarily_unique_id = Tid() ; # 'Q9MU1N_NVRM'
+  $locally_unique_id     = Lid() ; # '2MS_Q9MU1N_P5F6'
+  $universally_unique_id = Uid() ; # 'MGJFSBTK_2MS_Q9MU1N_PWES'
+
+A MML file (Minimal Markup Language)
+
+   <opt>
+    <!-- a multi line
+     coment-->
+       <parA>
+           <optA>01</optA>
+           <optA>02</optA>
+           <optA>03</optA>
+       </parA>
+       <parB>
+           <optA>04</optA>
+           <optA>05</optA>
+           <optA>06</optA>
+           <optB>
+              <key>any key</key>
+           </optB>
+       </parB>
+   </opt>
+
+load_mml()
+
+  $struct = load_mml('path/to/mml_file') ;
+  $struct = load_mml(\ $mml_string) ;
+  $struct = load_mml(\ *MMLFILE) ;
+  $struct = load_mml(..., \%options) ;
+
+  # $struct dump
+  # $struct = {
+  #             'parA' => {
+  #                         'optA' => [
+  #                                     '01',
+  #                                     '02',
+  #                                     '03'
+  #                                   ]
+  #                       },
+  #             'parB' => {
+  #                         'optA' => [
+  #                                     '04',
+  #                                     '05',
+  #                                     '06'
+  #                                   ],
+  #                         'optB' => {
+  #                                     'key' => 'any key'
+  #                                   }
+  #                      }
+  #           }
 
 =head1 DESCRIPTION
 
 This is a micro-weight module that exports a few functions of general utility in IO operations.
 
-=head1 FUNCTIONS
+=head1 CAPTURING OUTPUT
 
 =head2 capture { code } [ FILEHANDLER ]
 
@@ -205,31 +342,31 @@ It executes the code inside the first argument block, and captures the output it
 
 B<Note>: This function ties the I<FILEHANDLER> to IO::Util class and unties it after the execution of the I<code>. If I<FILEHANDLER> is already tied to any other class, it just temporary re-bless the tied object to IO::Util class, re-blessing it again to its original class after the execution of the I<code>, thus preserving the original I<FILEHANDLER> configuration.
 
+=head1 SLURPING FILES
+
 =head2 slurp [ file|FILEHANDLER ]
 
 The C<slurp> function expects a path to a I<file> or an open I<FILEHANDLER>, and  returns the reference to the whole I<file|FILEHANDLER> content. If no argument is passed it will use $_ as the argument.
 
-=head2 *id ([ options ])
+=head1 GENERATING UNIQUE IDs
 
-The C<*id> functions (C<Tid>, C<Lid> and C<Uid>) return an unique ID string useful to name temporary files, or use for other purposes.
+The C<Tid>, C<Lid> and C<Uid> functions return an unique ID string useful to name temporary files, or use for other purposes.
 
-=over
-
-=item Tid
+=head2 Tid ( [options] )
 
 This function returns a temporary ID valid for the current process only. Different temporarily-unique strings are granted to be unique for the current process only ($$)
 
-=item Lid
+=head2 Lid ( [options] )
 
 This function returns a local ID valid for the local host only. Different locally-unique strings are granted to be unique when generated by the same local host
 
-=item Uid
+=head2 Uid ( [options] )
 
-This function returns an universal ID. Different universally-unique strings are granted to be unique also when generated by different hosts. use this function if you have more than one machine generating the IDs for the same context. This function includes the host IP number in the id algorithm.
+This function returns an universal ID. Different universally-unique strings are granted to be unique also when generated by different hosts. Use this function if you have more than one machine generating the IDs for the same context. This function includes the host IP number in the id algorithm.
 
-=back
+=head2 *id options
 
-They accepts an optional hash of named arguments:
+The above functions accept an optional hash of named arguments:
 
 =over
 
@@ -241,11 +378,11 @@ You can specify the set of characters used to generate the uniquid string. You h
 
 =item chars => 'base34'
 
-uses [1..9, 'A'..'N', 'P'..'Z']. No lowercase chars, no number 0 no capital 'o'. Useful to avoid human mistakes when the uniqid may be represented by non-electronical means (e.g. communicated by voice or read from paper). This is the default (used if you don't specify any chars option).
+uses [1..9, 'A'..'N', 'P'..'Z']. No lowercase chars, no number 0 no capital 'o'. Useful to avoid human mistakes when the id may be represented by non-electronical means (e.g. communicated by voice or read from paper). This is the default (used if you don't specify any chars option).
 
 =item  chars => 'base62'
 
-Uses C<[0..9, 'a'..'z', 'A'..'Z']>. This option tryes to generate shorter ids.
+Uses C<[0..9, 'a'..'z', 'A'..'Z']>. This option tries to generate shorter ids.
 
 =item chars => \@chars
 
@@ -256,7 +393,7 @@ Any reference to an array of arbitrary characters.
 
 =item separator
 
-The character used to separate group of cheracters in the id. Default '_'.
+The character used to separate group of characters in the id. Default '_'.
 
 =item IP
 
@@ -273,13 +410,228 @@ Applies to C<Uid> only. This option allows to pass the IP number used generating
    $ui = Uid(chars=>'base62')          # jQaB98R_rq_1czScD_2rqA
    $ui = Lid(chars=>[ 0..9, 'A'..'F']) # 9F4_41AF2B34_62E76
 
-B<IMPORT NOTE>: If you really want to use C<IO::Util::*id> from its package without importing any symbol (and only in that case), you must explicitly load C<Time::HiRes>. You must also load C<Sys::Hostname> if you use C<IO::Util::Uid>:
+B<IMPORT NOTE>: If you really want to use any C<IO::Util::*id> from its package without importing any symbol (and only in that case), you must explicitly load C<Time::HiRes>. You must also load C<Sys::Hostname> if you use C<IO::Util::Uid>:
 
    use IO::Util ()   ; # no symbol imported
    use Time::HiRes   ; # used by any IO::Util::*id
-   use Sys::Hostname ; # used by IO::Util::Uid
+   use Sys::Hostname ; # used only by IO::Util::Uid
    
    $uniqid = IO::Util::Uid()
+
+=head1 Minimal Markup Language (MML)
+
+A lot of programmers use (I<de facto>) a subset of canonical XML which is characterized by:
+
+ No Attributes
+ No mixed Data and Element content
+ No Processing Instructions (PI)
+ No Document Type Declaration (DTD)
+ No non-character entity-references
+ No CDATA marked sections
+ Support for only UTF-8 character encoding
+ No optional features
+
+That subset has no official standard, so in this description we will generically refer to it as 'Minimal Markup Language' or MML. Please, note that MML is just an unofficial and generic way to name that minimal XML subset, avoiding any possible MXML, SML, MinML, /.+ML$/ specificity.
+
+=head2 MML advantages
+
+If you need just to store configuration parameters and construct any perl data structure, MLM is all what you need. Using it instead full featured XML gives you a few very interesting advantages:
+
+=over
+
+=item *
+
+it is really simple to use/edit and understand also by any unskilled people
+
+=item  *
+
+you can parse it with very lite, fast and simple RE, thus avoiding to load and execute several thousands of perl code needed to parse full featured XML
+
+=item *
+
+anyway any canonical XML parser will be able to parse it as well
+
+=back
+
+=head2 About XML parsing and structure reduction
+
+The C<load_mml> function produces perl structures exactly like other CPAN modules (e.g. L<XML::Simple|XML::Simple>, L<XML::Smart|XML::Smart>) but use the opposite approach. That modules usually require a canonical XML parser to achieve a full XML tree, then prune all the unwanted branches. That means thousands of line of code loaded and executed, and a potentially big structure to reduce, which probably is a waste of resources when you have just to deal with simple MML.
+
+The C<load_mml> uses just a few lines of recursive code, parsing MML with a simple RE. It builds up only the branches it needs, optionally ignoring all the unwanted nodes. That is exactly what you need for MML, but it is obviously completely inappropriate for full XML files (e.g. HTML) which use attributes and other features unsupported by MML.
+
+=head2 load_mml ( MML [, options] )
+
+This function parses the I<MML> eventually using the I<options>, and returns a perl structure reflecting the MML structure and any custom logic you may need (see L<"options">). It accepts one I<MML> parameter that can be a reference to a SCALAR content, a path to a file or a reference to a filehandle. It accepts also one I<options> parameter, which must be an hash reference.
+
+=head3 options
+
+You can customize the process by setting a few option, which will allow you to gain B<full control> over the process and the resulting structure (see also the F<t/05_load_mml.t> test file for a few examples):
+
+=over
+
+=item strict => 1|0
+
+Boolean. A true value will croak when any unsupported syntax is found, while a false value will quitely ignore unsupported syntax. Default true (strict).
+
+   $strict_mml = '<opt><a>01</a></opt>';
+   $non_strict_mml = << 'EOS';
+   <opt>
+       mixed content ignored
+       <elem attr="ignored">01</elem>
+   </opt>'
+   EOS
+   
+   $structA = load_mml( \$non_strict_mml ); # would croak
+   $structB = load_mml( \$non_strict_mml, {strict => 0} );  # ok
+
+=item keep_root => 0|1
+
+Boolean. A true value will keep the root element, while a false value will strip the root. Default false (root stripped)
+
+   $mml = '<opt><a>01</a></opt>';
+   $structA = load_mml( \$mml );
+   
+   $$struct{a} eq '01'; # true
+   
+   # $structA = {
+   #              'a' => '01'
+   #            };
+   
+   $structB = load_mml( \$mml, {keep_root => 1} );
+   
+   $$struct{opt}{a} eq '01'; # true
+   
+   # $structB = {
+   #              'opt' => {
+   #                         'a' => '01'
+   #                       }
+   #            };
+
+=item filter => { id|re => CODE|'TRIM_BLANKS'|'ONE_LINE' }
+
+This option allows to filter data from the MML to the structure. You must set it to an hash of id/filter. The key id can be the literal element id which content you want to filter, or any compiled RE you want to match against the id elements; the filter can be a CODE reference (or the name of a couple of literal built-in filters: 'TRIM_BLANKS', 'ONE_LINE').
+
+The referenced code will receive I<id>, I<data_reference> and I<active_options_referece> as the arguments; besides for regexing convenience the data is aliased in C<$_>.
+
+   $mml = << 'EOS';
+   <opt>
+      <foo>aaa</foo>
+      <bar>bBB</bar>
+      <baz>ZZz</baz>
+      <multi_line>
+        other
+        data
+      </multi_line>
+      <other_stuff>something</other_stuff>
+      <anything_else>not filtered</anything_else>
+   </opt>
+   EOS
+   
+   $struct = load_mml( \$mml,
+                       {
+                         filter => {
+                                     foo         => sub{uc},
+                                     qr/^b/      => sub{lc},
+                                     multi_line  => 'TRIM_BLANKS',
+                                     other_stuff => \&my_filter
+                                   }
+                       } );
+   
+   sub my_filter {
+       my ($id, $data_ref, $opt) = @_ ;
+       # $_ contains the actual data
+       # so you could use it instead of $$data_ref
+       ....
+       # return $_ (if modified it with any s///)
+       # or any arbitrarily modified data
+       return 'something else';
+   }
+       
+   # $struct = {
+   #             'foo' => 'AAA', # it was 'aaa'
+   #             'bar' => 'bbb', # it was 'bBB'
+   #             'baz' => 'zzz', # it was 'ZZz'
+   #             'multi_line' => "other\ndata",  # it was "\n  other\n  data\n"
+   #             'other_stuff' => 'something else', # it was 'something'
+   #             'anything_else' => 'not filtered'  # the same
+   #           }
+
+=item handler => { id|re => CODE }
+
+This option allows you to execute any code during the parsing of the MML in order to change the returned structure or do any other task. It allows you to implement your own syntax, checks and executions, skip any branch, change the options of any child node, generate nodes or even objects to add to the returned structure.
+
+You must set it to an hash of id/handler. The key id can be the literal element id which content you want to handle, or any compiled RE you want to match against the id elements; the filter must be a CODE reference.
+
+The referenced CODE will be called instead the standard C<IO::Util::parse_mml> handler, and will receive I<id>, I<data_reference> and I<active_options_referece> as the arguments.
+
+It is expected to return the branch to add to the returned structure. If the referenced CODE needs to refers to the original branch structure, it could retrieve it by using IO::Util::parse_mml().
+
+A few examples using this same MML string:
+
+   $mml = << 'EOS';
+   <opt>
+     <a>
+        <b>Foo</b>
+        <b>Bar</b>
+     </a>
+     <c>something</c>
+   </opt>
+   EOS
+
+Regular parsing and structure:
+
+   $struct = load_mml( \$mml ) # no options
+   
+   # $struct = {
+   #             'a' => {
+   #                      'b' => [
+   #                               'Foo',
+   #                               'Bar'
+   #                             ]
+   #                    },
+   #             'c' => 'something'
+   #           } ;
+
+Skip all the 'a' elements:
+
+   $struct = load_mml( \$mml
+                     , { handler => { a => sub{} } # just for 'a' elements
+                       }
+                     ) ;
+                     
+   # $struct = {
+   #             'c' => 'something'
+   #           } ;
+
+
+Folding an array:
+
+   $struct = load_mml( \$mml
+                     , { handler => { a => \&a_handler } # just for 'a'
+                       }
+                     ) ;
+     
+   sub a_handler {
+       # get the original branch
+       my $branch = IO::Util::parse_mml( @_ );
+       $$branch{b} # ['Foo','Bar']
+   }
+   
+   # $structB = {
+   #              'a' => [
+   #                       'Foo',
+   #                       'Bar'
+   #                     ],
+   #              'c' => 'something'
+   #            } ;
+
+=back
+
+=head2 IO::Util::parse_mml (id, MML [, options])
+
+Used internally and eventually by any handler, in order to parse any I<MML> chunk and return its branch structure. It requires the element I<id>, the reference to the I<MML> chunk, and accepts eventually the options hash reference to use for the branch.
+
+B<Note>: You can escape any character (specially < and >) by using the backslash '\'. XML comments can be added to the MML and will be ignored by the parser.
 
 =head1 SUPPORT and FEEDBACK
 

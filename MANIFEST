@@ -8,5 +8,6 @@ t/01_capture.t
 t/02_slurp.t
 t/03_uniqid.t
 t/04_uniqid_no_import.t
+t/05_load_mml.t
 t/test.txt
 META.yml                                 Module meta-data (added by MakeMaker)

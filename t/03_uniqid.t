@@ -10,6 +10,9 @@
     && defined &Uid
     )
 
+; SKIP:
+   { skip("Time::HiRes is not installed", 3)
+     unless eval{require Time::HiRes}
 
 ; my $u1 = Tid()
 ; my $u2 = Lid()
@@ -34,3 +37,5 @@
      && length($u7)<length($u8)
      && length($u8)<length($u9)
      )
+     
+   }
