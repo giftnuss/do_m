@@ -1,7 +1,7 @@
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'IO::Util'
-; my $vers = '1.11'
+; my $vers = '1.2'
 
 ; WriteMakefile
    ( NAME           => $dist

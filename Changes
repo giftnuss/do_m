@@ -1,5 +1,10 @@
 IO-Util Latest Versions Changes
 
+Version 1.2
+- Extended compatibility with perl 5.6.1 (it didn't work on some build)
+- Added the slurp function
+- Some POD fixing
+
 Version 1.11
 - Fixed $IO::Util::VERSION required by CGI::Builder and Template::Magic
 

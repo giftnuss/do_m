@@ -16,7 +16,7 @@
      
 ; select STDERR
 
-; $out = capture { print_something('c'); print_something('d')} STDERR
+; $out = capture { print_something('c'); print_something('d')} \*STDERR
 ; is ( $$out
      , 'cd'
      )
@@ -37,11 +37,11 @@
 ; $\ = '#'
 
 ; $out = capture { print 'X', 'Y'
-                 ; printf '%2$d %1$d', 12, 34
+                 ; printf '<%6s>', "a"
                  ; print_something('Z');
                  }
 ; is( $$out
-    , 'X*Y#34 12Z#'
+    , 'X*Y#<     a>Z#'
     )
 
 ; package My::test_tie
