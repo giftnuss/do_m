@@ -1,5 +1,5 @@
 package IO::Util ;
-$VERSION = 1.23 ;
+$VERSION = 1.24 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -61,7 +61,6 @@ $VERSION = 1.23 ;
       ; $_ = do { local $/; <_> }
       ; close _
       }
-
      else                     # it's something else
       { croak 'Wrong argument type: "'. ( ref || 'UNDEF' ) . '"'
       }
@@ -76,7 +75,7 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.23
+=head1 VERSION 1.24
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -97,8 +96,6 @@ From the directory where this file is located, type:
     make test
     make install
 
-B<Note>: The installation of this module runs an automatic version check connection which will warn you in case a newer version is available: please don't use old versions, because I can give you full support only for current versions. Besides, since CPAN does not provide any download statistic to the authors, this check allows me also to keep my own installation counter. Version checking is transparent to regular users, while CPAN testers should skip it by running the Makefile.PL with NO_VERSION_CHECK=1.
-
 =back
 
 =head1 SYNOPSIS
@@ -118,6 +115,9 @@ B<Note>: The installation of this module runs an automatic version check connect
     sub some_special_printing_code {
         print FILEHANDLER 'something'
     }
+    
+    $_ = '/path/to/file' ;
+    $content_ref = slurp ;
     
     $content_ref = slurp '/path/to/file' ;
     $content_ref = slurp \*FILEHANDLER ;
