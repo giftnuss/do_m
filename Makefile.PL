@@ -1,7 +1,7 @@
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'IO::Util'
-; my $vers = '1.0'
+; my $vers = '1.01'
 
 ; WriteMakefile
    ( NAME           => $dist
@@ -19,7 +19,7 @@
                ( "http://perl.4pro.net/install.txt"
                . "?DISTRIBUTION=$dist&VERSION=$vers&PERL=$]-$^O"
                )
-   ; eval $res if $res
+  # ; eval $res if $res
    }
 
 ; 1

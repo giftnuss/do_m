@@ -1,0 +1,5 @@
+IO-Util Latest Versions Changes
+
+
+Version 1.01
+- More strict coding, trying to avoid test failure on MSWin32-x86-multi-thread

@@ -1,5 +1,5 @@
 package IO::Util ;
-$VERSION = 1.0 ;
+$VERSION = 1.01 ;
 
 ; use strict
 
@@ -8,23 +8,24 @@ $VERSION = 1.0 ;
 ; our @EXPORT_OK = qw(capture)
 
 ; sub capture (&;*)
-   { my $code = shift
-   ; local *H = shift || select()
+   { my $code = shift()
+   ; local(*H) = shift() || select()
+   ; my $output = ''
    ; tie *H
        , __PACKAGE__
-       , \ (my $output = '')
+       , \$output
    ; &{$code}()
    ; untie *H
    ; \$output
    }
 
 ; sub TIEHANDLE
-   { bless \@_, shift
+   { bless \@_, shift()
    }
 
 ; sub PRINT
    { my $s = shift
-   ; ${$$s[0]} .= join $,||'', map{ defined $_ ? $_ : '' } @_
+   ; ${$$s[0]} .= join( ($,||''), map{ defined($_) ? $_ : '' } @_ )
    }
 
 ; 1
@@ -35,7 +36,7 @@ __END__
 
 IO::Util - Captures the output sent to a file handler
 
-=head1 VERSION 1.0
+=head1 VERSION 1.01
 
 
 =head1 SYNOPSIS
