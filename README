@@ -1,0 +1,29 @@
+IO::Util README File
+====================
+
+
+Description
+-----------
+
+This is a micro-weight module that export just the 'capture' function. It executes the code inside the first argument block, and captures the output it sends to the selected file handler (or to a specific file handler). It "hijacks" all the write and print statements addressed to the captured filehandler, returning the scalar reference of the output. Sort of "print to scalar" function.
+  
+    
+Installation
+------------
+
+1. CPAN installation
+
+    perl -MCPAN -e 'install IO::Util'
+
+
+2. Standard installation
+- from the directory where this file is located, type:
+
+        perl Makefile.PL
+        make
+        make test
+        make install
+
+--
+Domizio Demichelis - perl.4pro.net
+2004-02-02
