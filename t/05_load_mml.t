@@ -1,7 +1,7 @@
 #!perl -w
 ; use strict
 ; use warnings
-; use Test::More tests => 21
+; use Test::More tests => 22
 
 ; use IO::Util qw(load_mml)
 ; use Data::Dumper
@@ -263,3 +263,18 @@ EOS
 
 
 
+; my $str7 = << 'EOS'
+<opt>
+  <a_b>01</a_b>
+  <a>02</a>
+</opt>
+EOS
+
+; my $r16 = load_mml \$str7
+
+#; warn Dumper $r3
+
+; is_deeply $r16
+          , { a_b => '01'
+            , a => '02'
+            }

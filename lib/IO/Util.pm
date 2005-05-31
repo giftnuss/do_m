@@ -1,5 +1,5 @@
 package IO::Util ;
-our $VERSION = 1.43 ;
+our $VERSION = 1.44 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -15,7 +15,7 @@ our $VERSION = 1.43 ;
                        Tid Lid Uid
                        load_mml
                      |
-                     
+; use File::Spec
 
 ############# slurping files #############
            
@@ -28,7 +28,7 @@ our $VERSION = 1.43 ;
       { $content = do { local $/; <$_> }
       }
      elsif ( defined && length && not ref )
-      { open _ or croak $^E
+      { open _ or croak "$^E, died"
       ; $content = do { local $/; <_> }
       ; close _
       }
@@ -102,8 +102,7 @@ our $VERSION = 1.43 ;
 
 ; sub _path_mtime
    { my $path  = File::Spec->rel2abs($_[0])
-   ; my $mtime = ( stat($path) )[9]
-        or croak qq(Unable to find modification time for "$path", died)
+   ; my $mtime = ( stat($path) )[9] or croak "$^E, died"
    ; $path, $mtime
    }
 
@@ -135,17 +134,20 @@ our $VERSION = 1.43 ;
 
 ; my $parser_re = qr/ \G(.*?)   # elements and text outside blocks are ignored
                       (?<!\\)<  # not excaped '<'
-                        (\w+?)([^>]*?)  # id + attributes
+                        (\w+)([^>]*?)  # id + attributes
                       (?<!\\)>  # not escaped '>'
                       (.*?)     # content
                       <\/\2>    # end
                     /xs
 ; my $not_escaped_re = qr/( (?<!\\) < | (?<!\\) > )/xs
-
+   
 ; sub load_mml
    { my $mml = shift
    ; my ($opt) = @_
    ; $opt = { @_ } unless ref $opt eq 'HASH'
+   ; if ( $$opt{optional} && not ref $mml )
+      { return unless -f $mml
+      }
    ; my $struct
    ; defined $$opt{cache} or $$opt{cache} = 1
    ; if ( $$opt{cache} && not ref $mml )
@@ -250,7 +252,9 @@ our $VERSION = 1.43 ;
    ; \ $out
    }
 
-; package IO::Util::Handle
+; package
+  IO::Util::Handle  # don't bother PAUSE
+  
 ; use strict
 
 ; BEGIN
@@ -259,7 +263,7 @@ our $VERSION = 1.43 ;
    }
                       
 ; sub WRITE
-   { $output .= substr($_[1],0,$_[2])
+   { $output .= substr $_[1], 0, $_[2]
    }
 
 ; 1
@@ -270,7 +274,7 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.43
+=head1 VERSION 1.44
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -521,6 +525,10 @@ You can customize the process by setting a few option, which will allow you to g
 
 =over
 
+=item optional => 0|1
+
+Boolean. This option applies when the MML argument is a path to a file: a true value will not try to load a file that doesn't exists; a false value will croak on error. False by default.
+
 =item strict => 1|0
 
 Boolean. A true value will croak when any unsupported syntax is found, while a false value will quitely ignore unsupported syntax. Default true (strict).
@@ -538,7 +546,7 @@ Boolean. A true value will croak when any unsupported syntax is found, while a f
 
 =item cache => 1|0
 
-Boolean. if I<MML> is a path, a true value will cache the mml structure in a global (persistent under mod_perl). C<load_mml> will open and parse the file only the first time or if the file has been modified. If for any reason you don't want to cache the structure, set this option to a false value. Default true (cached).
+Boolean. if I<MML> is a path, a true value will cache the mml structure in a global (persistent under mod_perl). C<load_mml> will open and parse the file only the first time or if the file has been modified. If for any reason you don't want to cache the structure set this option to a false value. Default true (cached).
 
 =item keep_root => 0|1
 
@@ -565,7 +573,7 @@ Boolean. A true value will keep the root element, while a false value will strip
 
 =item filter => { id|re => CODE|'TRIM_BLANKS'|'ONE_LINE' }
 
-This option allows to filter data from the MML to the structure. You must set it to an hash of id/filter. The key id can be the literal element id which content you want to filter, or any compiled RE you want to match against the id elements; the filter can be a CODE reference (or the name of a couple of literal built-in filters: 'TRIM_BLANKS', 'ONE_LINE').
+This option allows to filter data from the MML to the structure. You must set it to an hash of id/filter. The key id can be the literal element id which content you want to filter, or any compiled RE you want to match against the id elements; the filter can be a CODE reference or the name of a couple of literal built-in filters: 'TRIM_BLANKS', 'ONE_LINE'.
 
 The referenced code will receive I<id>, I<data_reference> and I<active_options_referece> as the arguments; besides for regexing convenience the data is aliased in C<$_>.
 

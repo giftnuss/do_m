@@ -1,6 +1,10 @@
 IO-Util Latest Versions Changes
 
 
+Version 1.44
+- Fixed missing quotes in the slurp and _path_mtime function
+- Added the 'optional' option in the load_mml function
+
 Version 1.43
 - Added HASH reference check of parsed MML.
 - load_mml options are now passable as plain name=>value pairs
