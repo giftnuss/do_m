@@ -1,5 +1,10 @@
 IO-Util Latest Versions Changes
 
+Version 1.45
+- Full reimplemention of the capture() function, greatly improved
+- Removed the Tie::Handle dependency
+- Improvement of the slurp() function
+- Added the 'markers' option in the load_mml function and tests.
 
 Version 1.44
 - Fixed missing quotes in the slurp and _path_mtime function

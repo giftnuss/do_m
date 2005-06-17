@@ -1,5 +1,5 @@
 package IO::Util ;
-our $VERSION = 1.44 ;
+our $VERSION = 1.45 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -18,25 +18,27 @@ our $VERSION = 1.44 ;
 ; use File::Spec
 
 ############# slurping files #############
-           
+
 ; sub slurp
-   { local ($_) = @_ ? $_[0] : $_
-   ; my $content
+   { my %a = map {ref||'path', $_} @_
+   ; local ($_) = defined $a{path}    ? $a{path}
+                : defined $a{GLOB}    ? $a{GLOB}
+                : (defined && length) ? $_
+                : croak 'Wrong file argument, died'
+   ; $a{SCALAR} ||= \ my $content
    ; if (  ref     eq 'GLOB'
         || ref \$_ eq 'GLOB'
         )
-      { $content = do { local $/; <$_> }
-      }
-     elsif ( defined && length && not ref )
-      { open _ or croak "$^E, died"
-      ; $content = do { local $/; <_> }
-      ; close _
+      { ${$a{SCALAR}} = do { local $/; <$_> }
       }
      else
-      { croak sprintf 'Wrong argument type: "%s", died' , ref || 'UNDEF'
+      { open _ or croak "$^E, died"
+      ; ${$a{SCALAR}} = do { local $/; <_> }
+      ; close _
       }
-   ; \ $content
+   ; $a{SCALAR}
    }
+
 
 ############# unique ids #############
 
@@ -132,19 +134,46 @@ our $VERSION = 1.44 ;
 
 ############# loading MML #############
 
-; my $parser_re = qr/ \G(.*?)   # elements and text outside blocks are ignored
+
+; my %parser_re = ( '<>' =>
+                  qr/ \G(.*?)   # elements and text outside blocks
                       (?<!\\)<  # not excaped '<'
                         (\w+)([^>]*?)  # id + attributes
                       (?<!\\)>  # not escaped '>'
                       (.*?)     # content
                       <\/\2>    # end
                     /xs
-; my $not_escaped_re = qr/( (?<!\\) < | (?<!\\) > )/xs
+                  , '[]' =>
+                  qr/ \G(.*?)   # elements and text outside blocks
+                      (?<!\\)\[  # not excaped '['
+                        (\w+)([^\]]*?)  # id + attributes
+                      (?<!\\)\]  # not escaped ']'
+                      (.*?)     # content
+                      \[\/\2\]    # end
+                    /xs
+                  , '{}' =>
+                  qr/ \G(.*?)   # elements and text outside blocks
+                      (?<!\\)\{  # not excaped '<'
+                        (\w+)([^\}]*?)  # id + attributes
+                      (?<!\\)\}  # not escaped '>'
+                      (.*?)     # content
+                      \{\/\2\}    # end
+                    /xs
+                  )
+                  
+; my %not_escaped_re = ( '<>' => qr/( (?<!\\) < | (?<!\\) > )/xs
+                       , '[]' => qr/( (?<!\\) \[ | (?<!\\) \] )/xs
+                       , '{}' => qr/( (?<!\\) \{ | (?<!\\) \} )/xs
+                       )
+                       
+; my %comment_re = ( '<>' => qr/<!--.*?-->/xs
+                   , '[]' => qr/\[!--.*?--\]/xs
+                   , '{}' => qr/\{!--.*?--\}/xs
+                   )
    
 ; sub load_mml
    { my $mml = shift
-   ; my ($opt) = @_
-   ; $opt = { @_ } unless ref $opt eq 'HASH'
+   ; my $opt = ref $_[0] eq 'HASH' ? $_[0] : { @_ }
    ; if ( $$opt{optional} && not ref $mml )
       { return unless -f $mml
       }
@@ -156,8 +185,9 @@ our $VERSION = 1.44 ;
       }
    ; defined $$opt{strict} or $$opt{strict} = 1
    ; my $content = ref $mml eq 'SCALAR' ? $mml : slurp $mml
-   ; $$content =~ s/<!--.*?-->//sg
-   ; $struct = parse_mml( '', $content,  $opt )
+   ; $$opt{markers} ||= '<>'
+   ; $$content =~ s/$comment_re{$$opt{markers}}//g
+   ; $struct = parse_mml( '', $content, $opt )
    ; unless ( $$opt{keep_root} )
       { ref $struct eq 'HASH'
         or croak 'Parsed structure is not a HASH reference: '
@@ -168,11 +198,11 @@ our $VERSION = 1.44 ;
      && _set_parsing_cache 'mml_struct', $mml, $struct
    ; $struct
    }
-
+   
 ; sub parse_mml
    { my ($id, $mml, $opt) = @_
    ; my ($node, $control, $no_data)
-   ; while ( $$mml =~ /$parser_re/g )
+   ; while ( $$mml =~ /$parser_re{$$opt{markers}}/g )
       { $no_data = 1
       ; my ( $garb, $child_id, $attr, $child_mml ) = ($1, $2, $3, $4)
       ; if ( $$opt{strict} )
@@ -203,8 +233,8 @@ our $VERSION = 1.44 ;
          }
       }
    ; return $node if $no_data
-   ; $$opt{strict} && ( $$mml =~ $not_escaped_re )
-	  && croak "Not escaped '$1' found in '$id' data, died"
+   ; $$opt{strict} && ( $$mml =~ $not_escaped_re{$$opt{markers}} )
+	  and croak "Not escaped '$1' found in '$id' data, died"
 	; $$mml =~ s/\\(.)/$1/g   # unescape
 	; my ($k) = grep $id =~ /$_/
 	          , keys %{$$opt{filter}}
@@ -227,54 +257,82 @@ our $VERSION = 1.44 ;
    { s/\n+/ /g
    ; $_
    }
-   
-############# capturing output #############
 
-; our $output
    
-; sub capture (&;*)
-   { my $code = shift
-   ; local $output = ''
-   ; my $fh = shift || select
+   
+############## capturing output #############
+
+; our $TIE_HANDLE_CLASS = 'IO::Util::WriteHandle'
+
+; sub capture (&;@)
+   { my %a = map {ref, $_} @_
+   ; $a{GLOB}   ||= select
+   ; $a{SCALAR} ||= \ my $scalar
+   ; tie local *FH, $TIE_HANDLE_CLASS, $a{SCALAR}
    ; no strict 'refs'
-   ; if ( my $to = tied *$fh )
-      { my $tc = ref $to
-      ; bless $to, 'IO::Util::Handle'
-      ; $code->()
-      ; bless $to, $tc
-      }
-     else
-      { tie *$fh , 'IO::Util::Handle'
-      ; $code->()
-      ; untie *$fh
-      }
-   ; my $out = $output    # copy to lexical fixes -T bug
-   ; \ $out
+   ; my $saved   = *{$a{GLOB}}  # save
+   ; *{$a{GLOB}} = *FH          # apply
+   ; $a{CODE}->()               # execute
+   ; *{$a{GLOB}} = $saved       # restore
+   ; $a{SCALAR}
    }
 
-; package
-  IO::Util::Handle  # don't bother PAUSE
-  
+   
+###############################
+; package IO::Util::WriteHandle
 ; use strict
 
-; BEGIN
-   { require Tie::Handle
-   ; our @ISA = qw(Tie::StdHandle)
+
+; sub TIEHANDLE
+   { bless $_[1], $_[0]
    }
-                      
+   
 ; sub WRITE
-   { $output .= substr $_[1], 0, $_[2]
+   { my( $s, $scalar, $len, $offset ) = @_
+   ; my $data = substr $scalar
+                     , $offset || 0
+                     , $len    || length $scalar
+   ; $$s .= $data
+   ; length $data
+   }
+   
+; sub PRINT
+   { my $s = shift
+   ; $$s  .= join defined $, ? $, : '', @_
+	; $$s  .= $\ if defined $\
+   ; 1
    }
 
-; 1
+; sub PRINTF
+   { my $s = shift
+   ; $$s .= sprintf shift, @_
+   ; 1
+   }
 
+; sub OPEN    { 1 }
+; sub CLOSE   { 1 }
+; sub FILENO  { 1 }
+; sub BINMODE { 1 }
+; sub UNTIE   { 1 }
+
+###### not supported #######
+; sub READ     { 0 }
+; sub READLINE { undef }
+; sub GETC     { undef }
+; sub TELL     {-1 }
+; sub SEEK     { 0 }
+; sub EOF      { 1 }
+
+
+ 
+; 1
 __END__
 
 =head1 NAME
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.44
+=head1 VERSION 1.45
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -307,27 +365,30 @@ capture()
   $output_ref = capture { any_printing_code() } ;
   # now $$output_ref eq 'something'
   
-  sub any_printing_code {
-      print 'something'
-  }
-  
-  
   # captures FILEHANDLE
-  $output_ref = capture { any_special_printing_code() } FILEHEANDLER ;
-  # now $$output_ref eq 'something'
+  $output_ref = capture { any_special_printing_code() } \*FILEHEANDLER ;
   
-  sub any_special_printing_code {
-      print 'to STDOUT';
-      print FILEHANDLE 'something'
-  }
+  # append the output to $captured
+  capture { any_printing_code() } \*FILEHEANDLER , \$captured
+  # now $captured eq 'something'
+  
+  # use another class to tie the handler
+  use IO::Scalar ;
+  $IO::Util::TIE_HANDLE_CLASS = 'IO::Scalar'
 
 slurp()
 
   $_ = '/path/to/file' ;
   $content_ref = slurp ;
-  
   $content_ref = slurp '/path/to/file' ;
   $content_ref = slurp \*FILEHANDLE ;
+  
+  # append the file content to $content
+  $_ = '/path/to/file' ;
+  slurp \$content;
+  slurp '/path/to/file', \$content ;
+  slurp \*FILEHANDLE, \$content ;
+
 
 Tid(), Lid(), Uid()
 
@@ -388,19 +449,61 @@ This is a micro-weight module that exports a few functions of general utility in
 
 =head1 CAPTURING OUTPUT
 
-=head2 capture { code } [ FILEHANDLE ]
+=head2 capture { code } [ arguments ]
 
-The C<capture> function espects a I<code> block as the first argument and an optional I<FILEHANDLE> as the second argument. If I<FILEHANDLE> is omitted the selected filehandle will be used by default (usually C<STDOUT>). The function returns the reference to the captured output.
+Use this function in order to capture the output that a I<code> write to any I<FILEHANDLE> (usually STDOUT) by using C<print>, C<printf> and C<syswrite> statements.
 
-It executes the code inside the first argument block, and captures the output it sends to the selected filehandle (or to a specific filehandle). It "hijacks" all the C<print>, C<printf> and C<syswrite> statements addressed to the captured filehandle, returning the scalar reference to the output. Sort of "print to scalar" function.
+This function expects a mandatory code reference (usually a code block) passed as the first argument and two optional arguments: I<handle_ref> and I<scalar_ref>. The function executes the referenced code and returns a reference to the captured output.
 
-B<Note>: This function ties the I<FILEHANDLE> to IO::Util::Handle class (subclass of Tie::StdHandle) and unties it after the execution of the I<code>. If I<FILEHANDLE> is already tied to any other class, it just temporary re-bless the tied object to IO::Util::Handle class, re-blessing it again to its original class after the execution of the I<code>, thus preserving the original I<FILEHANDLE> configuration.
+If I<handle_ref> is omitted the selected filehandle will be used by default (usually C<STDOUT>). If you pass I<scalar_ref>, the output will be appended to the referenced scalar. In this case the result of the function will be the same SCALAR reference passed as the argument.
+
+B<Note>: You can pass the optional arguments in mixed order. All the following statement work:
+
+   $output_ref = capture {...}
+   $output_ref = capture {...} \*FH
+   capture {...} \*FH, \$output ; # capure FH and append to $output
+   capture {...} \$output, \*FH ; # capure FH and append to $output
+   capture {...} \$output ;       # append to $output
+   capture \&code, ...            # a classical code ref works too
+
+=head3 Advanced capture
+
+The C<capture> function does its job by setting the handle referred by I<handle_ref> to an internal local handle which is tied with C<IO::Util::WriteHandle>. The C<IO::Util::WriteHandle> supplies the minimal - but usually sufficient - implementation of a tie handle class, but does not support any C<read, readline, getc, eof, seek, tell> operation on the filehandle (that doesn't make much sense if you want just to capture an output).
+
+Anyway, if you need a more complete implementation of the tie handle class, at the cost of a little overhead (e.g. if your code uses any of the unsupported function on the captured handle), you need just to load the class, and set the $IO::Util::TIE_HANDLE_CLASS global to the name of the class, and the C<capture> function will use that class:
+
+  use IO::Scalar;
+  $IO::Util::TIE_HANDLE_CLASS = 'IO::Scalar';
+  # from now on the capture function will internally use IO::Scalar
+  $output_ref = capture { ... }
+
+The following modules are reported to work:
+
+=over
+
+=item * IO::Scalar
+
+=item * IO::String
+
+=item * Tie::Handle::ToMemory
+
+=back
 
 =head1 SLURPING FILES
 
-=head2 slurp [ file|FILEHANDLE ]
+=head2 slurp [ arguments ]
 
-The C<slurp> function expects a path to a I<file> or an open I<FILEHANDLE>, and  returns the reference to the whole I<file|FILEHANDLE> content. If no argument is passed it will use $_ as the argument.
+The C<slurp> function expects a path to a I<file> or an open I<handle_ref>, and returns the reference to the whole I<file|handle_ref> content. If no argument is passed it will use $_ as the argument.
+
+As an alternative you can pass also a SCALAR reference as an argument, so the content will be appended to the referenced scalar. In this case the result of the function will be the same SCALAR reference passed as the argument.
+
+B<Note>: You can pass the optional arguments in mixed order. All the following statement work:
+
+   $content_ref = slurp ;   # open file in $_
+   $content_ref = slurp '/path/to/file';
+   slurp '/path/to/file', \$content ;
+   slurp \$content, '/path/to/file' ;
+   slurp \$content ;
 
 =head1 GENERATING UNIQUE IDs
 
@@ -546,7 +649,20 @@ Boolean. A true value will croak when any unsupported syntax is found, while a f
 
 =item cache => 1|0
 
-Boolean. if I<MML> is a path, a true value will cache the mml structure in a global (persistent under mod_perl). C<load_mml> will open and parse the file only the first time or if the file has been modified. If for any reason you don't want to cache the structure set this option to a false value. Default true (cached).
+Boolean. if I<MML> is a path, a true value will cache the mml structure in a global (persistent under mod_perl). C<load_mml> will open and parse the file only the first time or if the file has been modified. If for any reason you don't want to cache the structure or  set this option to a false value. Default true (cached).
+
+B<Note>: If you need to parse the same file with different options, (thus producing different structures) you must disable the I<chache>. Also, when you have a lot of mml files with very simple structure the cache could slow down the parsing. Caching is convenient when you have complex or large structure and a few files.
+
+=item markers => '<>'|'[]'|'{}'
+
+Instead of using the canonical '<>' markers, you can use the C<[]> or the C<{}>non standard markers. Your file will not be XML compliant anymore, anyway it may be very useful when the file content is composed by XML or HTML chunks, since you can avoid the escaping of '<' and '>'. Default standard XML markers '<>'.
+
+   $mml = '[opt][a]<a href="something">something</a>[/a][/opt]';
+   $structA = load_mml \$mml, markers => '[]' ;
+   # $structA = {
+   #              'a' => '<a href="something">something</a>'
+   #            };
+
 
 =item keep_root => 0|1
 

@@ -5,9 +5,10 @@ MANIFEST			This list of files
 README
 t/0
 t/01_capture.t
-t/02_slurp.t
-t/03_uniqid.t
-t/04_uniqid_no_import.t
+t/02_capture_memory_leaking.t
+t/03_slurp.t
+t/04_uniqid.t
 t/05_load_mml.t
+t/06_load_mml.t
 t/test.txt
 META.yml                                 Module meta-data (added by MakeMaker)
