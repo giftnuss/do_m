@@ -1,9 +1,10 @@
 #!perl -w
 ; use strict
-; use Test::More tests => 8
+; use Test::More tests => 10
 
 
 ; use IO::Util qw(capture)
+
 
 ; sub print_something
    { print shift()
@@ -12,11 +13,12 @@
 ; can_ok 'main', 'capture'
 ; my $out = capture { print_something('a'); print_something('b')}
 ; is $$out, 'ab', 'Simple capture'
-     
+
 ; select STDERR
 
 ; $out = capture { print_something('c'); print_something('d')} \*STDERR
 ; is  $$out, 'cd', 'Explicit handle'
+
 
 ; capture { print_something('c'); print_something('d')} \*STDERR, \my $captured1
 ; is  $captured1, 'cd', 'Explicit handle with scalar_ref'
@@ -35,7 +37,7 @@
 ; is $captured2, 'ef', 'Tied handle content'
 ; isa_ok tied *STDOUT, 'test_tie', 'Restore tied handle'
 
-     
+
 ; untie *STDOUT
 
 ; $, = '*'
@@ -53,5 +55,19 @@
 
 ; is $$out, 'XY', 'syswrite()'
 
+; $, = undef
+; $\ = undef
 
-               
+   
+; my $cap  = capture { print 'b'
+                     ; return_captured()
+                     }
+; is $$cap, 'b', 'Outer capture'
+
+; sub return_captured
+   { my $captured = capture { print 'a' }
+   ; is $$captured, 'a', 'Inner capture'
+   ; $captured
+   }
+   
+

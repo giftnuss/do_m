@@ -1,5 +1,10 @@
 IO-Util Latest Versions Changes
 
+Version 1.46
+- Fixed bug in nested capture, introduced with v1.45
+- Simplified the capture implementation
+- Added a few tests
+
 Version 1.45
 - Full reimplemention of the capture() function, greatly improved
 - Removed the Tie::Handle dependency

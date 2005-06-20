@@ -1,5 +1,5 @@
 package IO::Util ;
-our $VERSION = 1.45 ;
+our $VERSION = 1.46 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -268,44 +268,40 @@ our $VERSION = 1.45 ;
    { my %a = map {ref, $_} @_
    ; $a{GLOB}   ||= select
    ; $a{SCALAR} ||= \ my $scalar
-   ; tie local *FH, $TIE_HANDLE_CLASS, $a{SCALAR}
    ; no strict 'refs'
-   ; my $saved   = *{$a{GLOB}}  # save
-   ; *{$a{GLOB}} = *FH          # apply
-   ; $a{CODE}->()               # execute
-   ; *{$a{GLOB}} = $saved       # restore
+   ; tie local *{$a{GLOB}}, $TIE_HANDLE_CLASS, $a{SCALAR}
+   ; $a{CODE}->()
    ; $a{SCALAR}
    }
 
-   
+
 ###############################
 ; package IO::Util::WriteHandle
 ; use strict
 
-
 ; sub TIEHANDLE
-   { bless $_[1], $_[0]
+   { bless \$_[1], $_[0]
    }
-   
+
 ; sub WRITE
    { my( $s, $scalar, $len, $offset ) = @_
    ; my $data = substr $scalar
                      , $offset || 0
                      , $len    || length $scalar
-   ; $$s .= $data
+   ; $$$s .= $data
    ; length $data
    }
-   
+
 ; sub PRINT
    { my $s = shift
-   ; $$s  .= join defined $, ? $, : '', @_
-	; $$s  .= $\ if defined $\
+   ; $$$s  .= join defined $, ? $, : '', @_
+   ; $$$s  .= $\ if defined $\
    ; 1
    }
 
 ; sub PRINTF
    { my $s = shift
-   ; $$s .= sprintf shift, @_
+   ; $$$s .= sprintf shift, @_
    ; 1
    }
 
@@ -324,7 +320,6 @@ our $VERSION = 1.45 ;
 ; sub EOF      { 1 }
 
 
- 
 ; 1
 __END__
 
@@ -332,7 +327,7 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.45
+=head1 VERSION 1.46
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -468,7 +463,7 @@ B<Note>: You can pass the optional arguments in mixed order. All the following s
 
 =head3 Advanced capture
 
-The C<capture> function does its job by setting the handle referred by I<handle_ref> to an internal local handle which is tied with C<IO::Util::WriteHandle>. The C<IO::Util::WriteHandle> supplies the minimal - but usually sufficient - implementation of a tie handle class, but does not support any C<read, readline, getc, eof, seek, tell> operation on the filehandle (that doesn't make much sense if you want just to capture an output).
+The C<capture> function does its job by localizing the handle referred by I<handle_ref> and tieing it with C<IO::Util::WriteHandle>. The C<IO::Util::WriteHandle> supplies the minimal - but usually sufficient - implementation of a tie handle class, but does not support any C<read, readline, getc, eof, seek, tell> operation on the filehandle (that doesn't make much sense if you want just to capture an output).
 
 Anyway, if you need a more complete implementation of the tie handle class, at the cost of a little overhead (e.g. if your code uses any of the unsupported function on the captured handle), you need just to load the class, and set the $IO::Util::TIE_HANDLE_CLASS global to the name of the class, and the C<capture> function will use that class:
 
