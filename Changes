@@ -1,5 +1,16 @@
 CGI-Builder Latest Versions Changes
 
+Version 1.3
+- Updated OOTools 2 as a prerequisite
+- Updated IO::Util 1.45 as a prerequisite
+- Added CGI::Builder::Conf in order to add user editable configuration files
+  to your WebApp
+- The import() sub internally uses the Class::Util::load() now
+- Added a few details about asking support
+- Updated the PROPERTY GROUP ACCESSORS > param() example with the new
+  OOTool behaviour (about retrieving the keys, retrieving a slice and
+  copying the whole hash)
+
 Version 1.26
 - Changed the private and protected 'my' suffix to the more useful and
   consistent 'my_'
@@ -67,7 +78,7 @@ Version 1.1
 - Eliminated content check in send_content method
 - Lot of code optimization (now the C::B source is just 200 lines)
 - Added the perl version check to the Makefile.PL
-- Updated OOTools 1.62 as prerequisite
+- Updated OOTools 1.62 as a prerequisite
 - Updated POD with the new feature/fixing
 - Added several tests
 

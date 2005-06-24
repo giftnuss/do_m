@@ -26,6 +26,7 @@ CBF_examples/05_TestCBF/var/www/cgi-bin/Test/tm/TmHello.html
 Changes
 lib/Bundle/CGI/Builder/Complete.pm
 lib/CGI/Builder.pm
+lib/CGI/Builder/Conf.pm
 lib/CGI/Builder/Const.pm
 lib/CGI/Builder/Test.pm
 Makefile.PL
@@ -33,5 +34,6 @@ MANIFEST			This list of files
 README
 t/01_class.t
 t/02_features.t
+t/conf.mml
 t/Test.pm
 META.yml                                 Module meta-data (added by MakeMaker)

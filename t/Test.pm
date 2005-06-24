@@ -138,4 +138,10 @@
    }
 
 
+; package Test12
+; use CGI::Builder
+  qw| CGI::Builder::Conf
+    |
+    
+
 ; 1

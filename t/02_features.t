@@ -1,13 +1,11 @@
 #!perl -w
 ; use strict
-; use Test::More tests => 12
-; use CGI
+; use Test::More tests => 14
 
 ; BEGIN
-  { eval { require './t/Test.pm' }
-        || require './Test.pm'
+  { chdir './t'
+  ; require './Test.pm'
   }
-
 ###### QUERY #######
 
 ; my $ap1 = Test1->new( cgi => CGI->new({ p => 'mm' }) )
@@ -68,3 +66,6 @@
 
 
 
+; my $ap13 = Test12->new( conf_file => './conf.mml' )
+; is $ap13->page_name, 'a_name'
+; is $ap13->my_param, 'a_param'

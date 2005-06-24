@@ -14,12 +14,13 @@
        , ABSTRACT_FROM => $pm
        )
      : ()
-   , PREREQ_PM      => { 'Class::constr'  => '1.62'
-                       , 'Class::props'   => '1.62'
-                       , 'Class::groups'  => '1.62'
-                       , 'Object::props'  => '1.62'
-                       , 'Object::groups' => '1.62'
-                       , 'IO::Util'       => '1.21'
+   , PREREQ_PM      => { 'Class::constr'  => 2
+                       , 'Class::props'   => 2
+                       , 'Class::groups'  => 2
+                       , 'Object::props'  => 2
+                       , 'Object::groups' => 2
+                       , 'Class::Util'    => 2
+                       , 'IO::Util'       => 1.45
                        }
    )
 

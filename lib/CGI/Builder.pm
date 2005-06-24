@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.26 ;
+$VERSION = 1.3 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -8,9 +8,10 @@ $VERSION = 1.26 ;
 ; use 5.006_001
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
-; $Carp::Internal{'CGI::Builder::_'}++
+; $Carp::Internal{__PACKAGE__.'::_'}++
 ; use CGI::Builder::Const qw| :all |
 ; use IO::Util
+; use Class::Util
 ; use warnings::register
 
 ; sub capture
@@ -20,30 +21,26 @@ $VERSION = 1.26 ;
 
 ; sub import
    { my ($cbb, $CB, @ext) = (scalar caller, @_)
+   ; Class::Util::load for @ext
    ; no strict 'refs'
-   ; foreach my $i (@ext)
-      { eval "require $i"
-      ; $@ && croak $@ if $@ !~ /^Can't locate $i\.pm in \@INC/
-                       || not defined %{"$i\::"}
-      }
    ; foreach my $c (reverse @_)
       { push @{"$cbb\::ISA"}, $c unless $cbb->isa($c)
       }
    ; $cbb->isa('Apache::CGI::Builder') && $Apache::CGI::Builder::usage
      && carp $Apache::CGI::Builder::usage
    ; my $sub = sub
-                { return { map
-                            { my $h = $_
-                            ; my @op = grep
-                                        { defined &{"$_\::OH_$h"}
-                                        }
-                                        $h =~ /up$/   # ;-)
-                                        ? reverse ($CB, @ext, $cbb)
-                                        :         ($CB, @ext, $cbb)
-                            ; @op ? ($h => \@op) : ()
-                            }
-                            qw| init pre_process pre_page fixup cleanup |
-                         }
+                { +{ map
+                      { my $h = $_
+                      ; my @op = grep
+                                  { defined &{"$_\::OH_$h"}
+                                  }
+                                  $h =~ /up$/   # ;-)
+                                  ? reverse ($CB, @ext, $cbb)
+                                  :         ($CB, @ext, $cbb)
+                      ; @op ? ($h => \@op) : ()
+                      }
+                      qw| init pre_process pre_page fixup cleanup |
+                   }
                 }
    ; eval qq
       ! package $cbb
@@ -66,12 +63,17 @@ $VERSION = 1.26 ;
    }
 
 ; use Class::constr
-        { init       => sub{ my $s = shift
-                           ; local $SIG{__DIE__} = sub{$s->die_handler(@_)}
-                           ; $s->$exec('init', @_)
-                           }
-        , no_strict  => 1
-        }
+  ( { init      => \&CGI::Builder::_::init
+    , no_strict => 1
+    }
+  )
+        
+; sub CGI::Builder::_::init
+   { my $s = shift
+   ; local $SIG{__DIE__} = sub{$s->die_handler(@_)}
+   ; $s->$exec('init', @_)
+   }
+   
 ; use Class::groups  qw | overrun_handler_map
                           switch_handler_map
                           page_handler_map
@@ -81,36 +83,38 @@ $VERSION = 1.26 ;
                           page_error
                         |
 ; use Class::props
-        { name       => 'no_page_content_status'
-        , default    => '204 No Content'
-        }
+  ( { name       => 'no_page_content_status'
+    , default    => '204 No Content'
+    }
+  )
+  
 ; use Object::props
-      ( { name       => 'PHASE'
-        , default    => CB_INIT
-        , allowed    => qr/^CGI::Builder/  # only settable from CBF
-        }
-      , { name       => 'cgi_page_param'
-        , default    => 'p'
-        }
-      , { name       => 'cgi'
-        , default    => sub{ shift()->cgi_new(@_) }
-        }
-      , { name       => 'page_name'
-        , default    => 'index'
-        }
-      , { name       => 'requested_page'
-        , allowed    => qw/^CGI::Builder::process$/
-        }
-      , { name       => 'page_path'
-        , default    => './tm'
-        , no_strict  => 1    # doesn't croak if ./tm is not a valid path
-        , validation => sub { -d or croak 'Not a valid path' }
-        }
-      , { name       => [ qw| page_content page_suffix | ]
-        , default    => ''
-        }
-      , 'dont_send_header'
-      )
+  ( { name       => 'PHASE'
+    , default    => CB_INIT
+    , allowed    => qr/^CGI::Builder/  # only settable from CBF
+    }
+  , { name       => 'cgi_page_param'
+    , default    => 'p'
+    }
+  , { name       => 'cgi'
+    , default    => sub{ shift()->cgi_new(@_) }
+    }
+  , { name       => 'page_name'
+    , default    => 'index'
+    }
+  , { name       => 'requested_page'
+    , allowed    => qw/^CGI::Builder::process$/
+    }
+  , { name       => 'page_path'
+    , default    => './tm'
+    , no_strict  => 1    # doesn't croak if ./tm is not a directory
+    , validation => sub { -d or croak "'$_' is not a directory, died" }
+    }
+  , { name       => [ qw| page_content page_suffix | ]
+    , default    => ''
+    }
+  , 'dont_send_header'
+  )
 
 ; our $AUTOLOAD
 ; sub AUTOLOAD : lvalue              # param AUTOLOADING
@@ -166,9 +170,9 @@ $VERSION = 1.26 ;
 
 ; sub switch_to
    { my ($s, $p, @args) = @_
-   ; $s->PHASE < PRE_PROCESS && croak 'Too early to call switch_to()'
-   ; $s->PHASE > FIXUP       && croak 'Too late to call switch_to()'
-   ; defined $p && length $p || croak 'No page_name name passed'
+   ; $s->PHASE < PRE_PROCESS && croak 'Too early to call switch_to(), died'
+   ; $s->PHASE > FIXUP       && croak 'Too late to call switch_to(), died'
+   ; defined $p && length $p || croak 'No page_name name passed, died'
    ; $s->page_name = $p
    ; $s->PHASE     = SWITCH_HANDLER
    ; my $shm       = $s->switch_handler_map
@@ -217,9 +221,9 @@ $VERSION = 1.26 ;
 
 ; sub redirect
    { my ($s, $url) = @_
-   ; $s->PHASE < GET_PAGE        && croak 'Too early to call redirect()'
-   ; $s->PHASE > RESPONSE        && croak 'Too late to call redirect()'
-   ; defined $url && length $url || croak 'No URL passed'
+   ; $s->PHASE < GET_PAGE        && croak 'Too early to call redirect(), died'
+   ; $s->PHASE > RESPONSE        && croak 'Too late to call redirect(), died'
+   ; defined $url && length $url || croak 'No URL passed, died'
    ; $s->PHASE = REDIR
    ; $s->header(-url => $url)
    ; print $s->cgi->redirect( %{$s->header} )
@@ -247,36 +251,11 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.26
+=head1 VERSION 1.3
 
-Included in CGI-Builder 1.26 distribution.
+Included in CGI-Builder 1.3 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
-
-The distribution includes:
-
-=over
-
-
-=item CGI::Builder
-
-Framework to build simple or complex web-apps
-
-=item CGI::Builder::Const
-
-Imports constants
-
-=item CGI::Builder::Test
-
-Adds some testing methods to your build
-
-=item Bundle::CGI::Builder::Complete
-
-A bundle to install the CBF and all its extensions and prerequisites
-
-=back
-
-To have the complete list of all the extensions of the CBF, see L<"Extensions List">
 
 =head1 INSTALLATION
 
@@ -285,8 +264,8 @@ To have the complete list of all the extensions of the CBF, see L<"Extensions Li
 =item Prerequisites
 
     Perl version >= 5.6.1
-    OOTools      >= 1.62
-    IO::Util     >= 1.21
+    OOTools      >= 2
+    IO::Util     >= 1.45
 
 =item CPAN
 
@@ -317,7 +296,7 @@ From the directory where this file is located, type:
 
 =head1 DESCRIPTION
 
-This is the starting point of the documentation of the CGI::Builder framework (CBF). You should read this documentation before any other documentation in any other module that extends the CBF.
+This is the starting point of the documentation of the CGI Builder Framework (CBF). You should read this documentation before any other documentation in any other module that extends the CBF.
 
 =head1 IMPORTANT INFO
 
@@ -753,6 +732,10 @@ Framework to build simple or complex web-apps
 
 =over
 
+=item * L<CGI::Builder::Conf|CGI::Builder::Conf>
+
+Add user editable configuration files to your WebApp
+
 =item * L<CGI::Builder::Test|CGI::Builder::Test>
 
 Adds some testing methods to your build
@@ -988,19 +971,25 @@ This accessor handles the parameters of your application
     
     # retrieve a value
     $myParam1 =  $s->param('myParam1')
+
+    # retrieve a slice of values (requires OOTools >= 1.77)
+    @slice =  $s->param(['myParam1', 'myParam3'])
     
     # retrieve the reference to the param hash
     $param_ref = $s->param ;
     while ( my ($p, $v) = each %$param_ref )
     { do_something_useful }
     
-    # retrieve the keys of the param hash
-    @param_keys = $s->param ;
+    # retrieve the keys of the param hash (new OOTools recommendation)
+    @param_keys = keys %{$s->param} ;
     
-    # check if exists some param
+    # copying he whole hash (requires OOTools >= 1.8)
+    %param = $s->param
+    
+    # check if exists any param
     exists $s->param->{myParam} ;
     
-    # delete some param
+    # delete any param
     delete $s->param->{myParam} ;
 
 A special feature only for the param() accessor, is the automatic loading and retrieving using the parameter key as it was a defined property or method. This feature uses the L<"AUTOLOAD"> method:
@@ -1087,20 +1076,17 @@ These are the handlers called on a per page basis, i.e. each per Page Handler is
 
 This handlers are prefixed by 'SH_' (i.e. Switch Handler). (e.g. If defined, the 'SH_foo' will be executed when the 'foo' page will be requested).
 
-You can use this handlers to check some condition just before the PAGE_PROCESS Phase so giving you the possibility to switch to another page before the execution of that phase.
+You can use this handlers to check some condition just before the PRE_PAGE Phase so giving you the possibility to switch to another page before the execution of that phase.
 
 =head3 PH_* (Page Handlers)
 
 This handlers are prefixed by 'PH_' (i.e. Page Handler). (e.g. If defined, the 'PH_foo' will be executed when the 'foo' page will be requested).
 
-You can use this handlers to do something specific for different pages, such as e.g. executing some specific code just for that specific request (or creating the specific page content when your handler don't use some automagic template integration)
+You can use this handlers to do something specific for different pages, such as e.g. executing some specific code just for that specific request (or creating the specific page content when your handler don't use any automagic template integration)
 
 =head3 PH_AUTOLOAD
 
 This is a special Page Handler which will be called IF defined and IF there are no other defined page handler for the specific requested page and UNLESS the page_content_check() return true (i.e. there is no page content so far).
-You can use it for different reasons e.g. as the last chance to redirect the client or switch_to your special 'Not found' page.
-
-=head3 PH_AUTOLOAD
 
 The main purpose of this handler is giving you one more option to generate the page_content if no other handler has generated it so far, so you can use it e.g. as the last chance to redirect the client or switch_to your special 'Not found' page during the PAGE_HANDLER phase.
 
@@ -1758,7 +1744,7 @@ Pick a meaningful prefix and use it for naming the methods and properties of you
 If you use internal created objects, always provide a C<foo> property, a C<foo_new_args()> property group accessor and eventually a C<foo_new()> method to allow overriding. With OOTools it is very simple:
 
     # this creates a property group accessor for foo_new_args
-    # already containing some default arguments which can be edited
+    # already containing some default arguments which can be overridden
     use Object::groups
         ( { name       => 'foo_new_args',
             # default can be an HASH ref
@@ -1782,7 +1768,7 @@ If you use internal created objects, always provide a C<foo> property, a C<foo_n
     # this creates the object and allows to override the method
     sub foo_new {
         my $s = shift;
-        return Foo->new( %{$s->foo_new_args} )
+        return Foo->new( $s->foo_new_args )
     }
 
 =item *
@@ -1825,7 +1811,7 @@ search the forum archive for any clue about your problem at: http://sourceforge.
 
 =item 4
 
-try to add to your post a brief working example that reproduces your problem
+try to explain your post with a minimum but working and self-contained example (i.e. it should ONLY reproduce the problem whithout any other superfluous code; it should WORK by doing a simple copy, paste and run; it should NOT NEED any other non postable external package, DB connection, ...)
 
 =back
 

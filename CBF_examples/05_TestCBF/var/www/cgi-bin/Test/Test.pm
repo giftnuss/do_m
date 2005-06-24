@@ -1,4 +1,6 @@
-package Test;
+package
+ Test;
+ 
 use CGI;
 use CGI::Builder
     qw(

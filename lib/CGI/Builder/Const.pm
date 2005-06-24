@@ -1,8 +1,7 @@
-package CGI::Builder::Const ;
-$VERSION = 1.26 ;
-
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
+
+; package CGI::Builder::Const
 
 ; use strict
 
@@ -42,36 +41,6 @@ __END__
 =head1 NAME
 
 CGI::Builder::Const - Imports constants
-
-=head1 VERSION 1.26
-
-Included in CGI-Builder 1.26 distribution.
-
-The latest versions changes are reported in the F<Changes> file in this distribution.
-
-The distribution includes:
-
-=over
-
-=item CGI::Builder
-
-Framework to build simple or complex web-apps
-
-=item CGI::Builder::Const
-
-Imports constants
-
-=item CGI::Builder::Test
-
-Adds some testing methods to your build
-
-=item Bundle::CGI::Builder::Complete
-
-A bundle to install the CBF and all its extensions and prerequisites
-
-=back
-
-To have the complete list of all the extensions of the CBF, see L<CGI::Builder/"Extensions List">
 
 =head1 SYNOPSIS
 

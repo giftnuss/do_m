@@ -21,4 +21,3 @@
 # $CBB->process()
 
 ; warn '########## END CGI SCRIPT ##########'
-
