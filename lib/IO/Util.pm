@@ -1,11 +1,11 @@
 package IO::Util ;
-our $VERSION = 1.46 ;
+$VERSION = 1.47 ;
+use 5.006_001 ;
+use strict ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
-; use 5.006_001
-; use strict
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
 ; require Exporter
@@ -73,7 +73,8 @@ our $VERSION = 1.46 ;
    }
 
 ; sub Tid
-   { my %args = @_
+   { require Time::HiRes
+   ; my %args = @_
    ; my $sep = defined $args{separator} ? $args{separator} : $separator
    ; my($sec, $usec) = Time::HiRes::gettimeofday()
    ; my($new_sec, $new_usec)
@@ -89,7 +90,8 @@ our $VERSION = 1.46 ;
    }
 
 ; sub Uid
-   { my %args = @_
+   { require Sys::Hostname
+   ; my %args = @_
    ; my $sep = defined $args{separator} ? $args{separator} : $separator
    ; my $ip = sprintf '1%03d%03d%03d%03d'
             , $args{IP}
@@ -323,11 +325,13 @@ our $VERSION = 1.46 ;
 ; 1
 __END__
 
+=pod
+
 =head1 NAME
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.46
+=head1 VERSION 1.47
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -562,14 +566,6 @@ Applies to C<Uid> only. This option allows to pass the IP number used generating
    $ui = Uid chars=>'base62'           # jQaB98R_rq_1czScD_2rqA
    $ui = Lid chars=>[ 0..9, 'A'..'F']  # 9F4_41AF2B34_62E76
 
-B<IMPORT NOTE>: If you really want to use any C<IO::Util::*id> from its package without importing any symbol (and only in that case), you must explicitly load C<Time::HiRes>. You must also load C<Sys::Hostname> if you use C<IO::Util::Uid>:
-
-   use IO::Util ()   ; # no symbol imported
-   use Time::HiRes   ; # used by any IO::Util::*id
-   use Sys::Hostname ; # used only by IO::Util::Uid
-   
-   $uniqid = IO::Util::Uid
-
 =head1 Minimal Markup Language (MML)
 
 A lot of programmers use (I<de facto>) a subset of canonical XML which is characterized by:
@@ -791,7 +787,7 @@ Folding an array:
 
 =back
 
-=head2 IO::Util::parse_mml (id, MML [, options])
+=head2 parse_mml (id, MML [, options])
 
 Used internally and eventually by any handler, in order to parse any I<MML> chunk and return its branch structure. It requires the element I<id>, the reference to the I<MML> chunk, eventually accepting the options hash reference to use for the branch.
 
@@ -807,3 +803,4 @@ If you need support or if you want just to send me some feedback or request, ple
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 
+=cut

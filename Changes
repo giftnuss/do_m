@@ -1,5 +1,8 @@
 IO-Util Latest Versions Changes
 
+Version 1.47
+- Maintainance release. A few minor changes
+
 Version 1.46
 - Fixed bug in nested capture, introduced with v1.45
 - Simplified the capture implementation
