@@ -1,8 +1,9 @@
+use strict ;
+
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
 ; package CGI::Builder::Conf
-; use strict
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
 ; $Carp::Internal{__PACKAGE__.'::_'}++  
@@ -32,6 +33,8 @@
 ; 1
 
 __END__
+
+=pod
 
 =head1 NAME
 
@@ -76,3 +79,5 @@ See L<CGI::Builder/"SUPPORT">.
 © 2004 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
+
+=cut

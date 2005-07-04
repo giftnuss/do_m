@@ -13,8 +13,8 @@ Installation
 
 0.  Prerequisites:
 - Perl version 5.6.1 or more recent
-- OOTools  >= 2.0
-- IO::Util >= 1.45
+- OOTools  >= 2.1
+- IO::Util >= 1.46
 
 1. CPAN installation
 
@@ -35,4 +35,4 @@ If you want to install all the extensions and prerequisites of the CBF, all in o
 
 --
 Domizio Demichelis perl.4pro.net
-2005-05-16
+2005-07-04

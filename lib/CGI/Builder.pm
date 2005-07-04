@@ -1,10 +1,10 @@
 package CGI::Builder ;
-$VERSION = 1.3 ;
+$VERSION = 1.31 ;
+use strict ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
-; use strict
 ; use 5.006_001
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
@@ -24,7 +24,7 @@ $VERSION = 1.3 ;
    ; Class::Util::load for @ext
    ; no strict 'refs'
    ; foreach my $c (reverse @_)
-      { push @{"$cbb\::ISA"}, $c unless $cbb->isa($c)
+      { push @{$cbb.'::ISA'}, $c unless $cbb->isa($c)
       }
    ; $cbb->isa('Apache::CGI::Builder') && $Apache::CGI::Builder::usage
      && carp $Apache::CGI::Builder::usage
@@ -32,7 +32,7 @@ $VERSION = 1.3 ;
                 { +{ map
                       { my $h = $_
                       ; my @op = grep
-                                  { defined &{"$_\::OH_$h"}
+                                  { defined &{$_.'::OH_'.$h}
                                   }
                                   $h =~ /up$/   # ;-)
                                   ? reverse ($CB, @ext, $cbb)
@@ -53,13 +53,12 @@ $VERSION = 1.3 ;
    }
 
 ; my $exec = \&CGI::Builder::_::exec
+   
 ; sub CGI::Builder::_::exec
-   { my ($s, $h, @args) = @_
-   ; return unless my $over = $s->overrun_handler_map($h)
-   ; foreach my $pkg ( @$over )
-      { no strict 'refs'
-      ; &{"$pkg\::OH_$h"}($s, @args)
-      }
+   { my $s = shift
+   ; my $h = shift
+   ; Class::Util::gather { $s->$_(@_) } '&OH_'.$h
+     , $s->overrun_handler_map($h)
    }
 
 ; use Class::constr
@@ -247,13 +246,15 @@ $VERSION = 1.3 ;
 
 __END__
 
+=pod
+
 =head1 NAME
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.3
+=head1 VERSION 1.31
 
-Included in CGI-Builder 1.3 distribution.
+Included in CGI-Builder 1.31 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -264,8 +265,8 @@ The latest versions changes are reported in the F<Changes> file in this distribu
 =item Prerequisites
 
     Perl version >= 5.6.1
-    OOTools      >= 2
-    IO::Util     >= 1.45
+    OOTools      >= 2.1
+    IO::Util     >= 1.46
 
 =item CPAN
 
@@ -863,6 +864,9 @@ This method will redirect the client to the I<url>, bypassing all the remaining 
 
 B<Note>: This method will add the url to the header, and will use the CGI::redirect() method to redirect the client, passing it also the whole header hash you set so far (see also L<header() method|header( [ header ] )>).
 
+=head2 cgi_new
+
+Override this method if you want to use your own CGI object. This method should return an object which implements at least: C<param>, C<header>, C<redirect> and C<cookie>, which are methods the CBF and its Extension use.
 
 =head1 PROPERTY ACCESSORS
 
@@ -1851,3 +1855,5 @@ Thanks to these people which - in very different ways - have been somehow helpfu
 =item * Vincent Veselosky
 
 =back
+
+=cut

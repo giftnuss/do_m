@@ -1,9 +1,10 @@
+use strict ;
+
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
 ; package CGI::Builder::Test
 
-; use strict
 ; $Carp::Internal{+__PACKAGE__}++
              
 ; sub dump
@@ -59,6 +60,8 @@
 
 __END__
 
+=pod
+
 =head1 NAME
 
 CGI::Builder::Test - Adds some testing methods to your build
@@ -90,6 +93,12 @@ Useful for outputting to STDERR.
 
 The dump_html() method returns a chunk of text which contains all the environment and CGI form data of the request, formatted for human readability via a web browser. Useful for outputting to a browser.
 
+=head1 OVERRIDDEN CGI::Builder Methods
+
+=head2 die_handler
+
+This method is overridden in order to add the dump of the object to the error message.
+
 =head1 SUPPORT
 
 See L<CGI::Builder/"SUPPORT">.
@@ -99,3 +108,5 @@ See L<CGI::Builder/"SUPPORT">.
 © 2004 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
+
+=cut
