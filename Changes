@@ -1,5 +1,9 @@
 IO-Util Latest Versions Changes
 
+Version 1.48
+- Fixed incompatibility with perl version < 5.8x of the capture function;
+  the fix excludes the usage of other tied class :-(
+
 Version 1.47
 - Maintainance release. A few minor changes
 

@@ -1,5 +1,5 @@
 package IO::Util ;
-$VERSION = 1.47 ;
+$VERSION = 1.48 ;
 use 5.006_001 ;
 use strict ;
 
@@ -20,11 +20,11 @@ use strict ;
 ############# slurping files #############
 
 ; sub slurp
-   { my %a = map {ref||'path', $_} @_
-   ; local ($_) = defined $a{path}    ? $a{path}
-                : defined $a{GLOB}    ? $a{GLOB}
-                : (defined && length) ? $_
-                : croak 'Wrong file argument, died'
+   { my %a = map {ref||path => $_} @_
+   ; local $_ = defined $a{path}    ? $a{path}
+              : defined $a{GLOB}    ? $a{GLOB}
+              : (defined && length) ? $_
+              : croak 'Wrong file argument, died'
    ; $a{SCALAR} ||= \ my $content
    ; if (  ref     eq 'GLOB'
         || ref \$_ eq 'GLOB'
@@ -264,46 +264,56 @@ use strict ;
    
 ############## capturing output #############
 
-; our $TIE_HANDLE_CLASS = 'IO::Util::WriteHandle'
-
 ; sub capture (&;@)
    { my %a = map {ref, $_} @_
-   ; $a{GLOB}   ||= select
-   ; $a{SCALAR} ||= \ my $scalar
+   ; $a{GLOB} ||= select
+   ; local $IO::Util::WriteHandle::out_ref
+     = $a{SCALAR} || \ my $scalar
    ; no strict 'refs'
-   ; tie local *{$a{GLOB}}, $TIE_HANDLE_CLASS, $a{SCALAR}
-   ; $a{CODE}->()
-   ; $a{SCALAR}
+   ; if ( my $tied = tied *{$a{GLOB}} )
+      { my $tied_class = ref $tied
+      ; bless $tied, 'IO::Util::WriteHandle'
+      ; $a{CODE}->()
+      ; bless $tied, $tied_class
+      }
+     else
+      { tie *{$a{GLOB}}, 'IO::Util::WriteHandle'
+      ; $a{CODE}->()
+      ; untie *{$a{GLOB}}
+      }
+   ; $IO::Util::WriteHandle::out_ref
    }
 
 
 ###############################
 ; package IO::Util::WriteHandle
 ; use strict
+; our $out_ref
 
 ; sub TIEHANDLE
-   { bless \$_[1], $_[0]
+   { bless \ my $dummy, $_[0]
    }
 
 ; sub WRITE
-   { my( $s, $scalar, $len, $offset ) = @_
+   { shift
+   ; my( $scalar, $len, $offset ) = @_
    ; my $data = substr $scalar
                      , $offset || 0
                      , $len    || length $scalar
-   ; $$$s .= $data
+   ; $$out_ref .= $data
    ; length $data
    }
 
 ; sub PRINT
-   { my $s = shift
-   ; $$$s  .= join defined $, ? $, : '', @_
-   ; $$$s  .= $\ if defined $\
+   { shift
+   ; $$out_ref .= join defined $, ? $, : '', @_
+   ; $$out_ref .= $\ if defined $\
    ; 1
    }
 
 ; sub PRINTF
-   { my $s = shift
-   ; $$$s .= sprintf shift, @_
+   { shift
+   ; $$out_ref .= sprintf shift, @_
    ; 1
    }
 
@@ -331,7 +341,7 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.47
+=head1 VERSION 1.48
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -450,13 +460,13 @@ This is a micro-weight module that exports a few functions of general utility in
 
 =head2 capture { code } [ arguments ]
 
-Use this function in order to capture the output that a I<code> write to any I<FILEHANDLE> (usually STDOUT) by using C<print>, C<printf> and C<syswrite> statements.
+Use this function in order to capture the output that a I<code> write to any I<FILEHANDLE> (usually STDOUT) by using C<print>, C<printf> and C<syswrite> statements. The function works also with already tied handles, and older perl versions.
 
 This function expects a mandatory code reference (usually a code block) passed as the first argument and two optional arguments: I<handle_ref> and I<scalar_ref>. The function executes the referenced code and returns a reference to the captured output.
 
 If I<handle_ref> is omitted the selected filehandle will be used by default (usually C<STDOUT>). If you pass I<scalar_ref>, the output will be appended to the referenced scalar. In this case the result of the function will be the same SCALAR reference passed as the argument.
 
-B<Note>: You can pass the optional arguments in mixed order. All the following statement work:
+You can pass the optional arguments in mixed order. All the following statement work:
 
    $output_ref = capture {...}
    $output_ref = capture {...} \*FH
@@ -465,28 +475,7 @@ B<Note>: You can pass the optional arguments in mixed order. All the following s
    capture {...} \$output ;       # append to $output
    capture \&code, ...            # a classical code ref works too
 
-=head3 Advanced capture
-
-The C<capture> function does its job by localizing the handle referred by I<handle_ref> and tieing it with C<IO::Util::WriteHandle>. The C<IO::Util::WriteHandle> supplies the minimal - but usually sufficient - implementation of a tie handle class, but does not support any C<read, readline, getc, eof, seek, tell> operation on the filehandle (that doesn't make much sense if you want just to capture an output).
-
-Anyway, if you need a more complete implementation of the tie handle class, at the cost of a little overhead (e.g. if your code uses any of the unsupported function on the captured handle), you need just to load the class, and set the $IO::Util::TIE_HANDLE_CLASS global to the name of the class, and the C<capture> function will use that class:
-
-  use IO::Scalar;
-  $IO::Util::TIE_HANDLE_CLASS = 'IO::Scalar';
-  # from now on the capture function will internally use IO::Scalar
-  $output_ref = capture { ... }
-
-The following modules are reported to work:
-
-=over
-
-=item * IO::Scalar
-
-=item * IO::String
-
-=item * Tie::Handle::ToMemory
-
-=back
+B<Note>: This function ties the I<FILEHANDLE> to IO::Util::WriteHandle class and unties it after the execution of the I<code>. If I<FILEHANDLE> is already tied to any other class, it just temporary re-bless the tied object to IO::Util::Handle class, re-blessing it again to its original class after the execution of the I<code>, thus preserving the original I<FILEHANDLE> configuration.
 
 =head1 SLURPING FILES
 
