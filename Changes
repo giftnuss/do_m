@@ -1,5 +1,14 @@
 CGI-Builder Latest Versions Changes
 
+
+Version 1.32
+- CGI::Builder::Conf now accepts a list of configuration files
+  that will be mixed in a final structure
+- Deprecated the CGI::Builder::Conf::conf_options now 'conf_mml_options'
+- Added the TRIM_BLANKS default option to the
+  CGI::Builder::Conf::conf_mml_options
+- Fixed a switch_to bug, which didn't pass any argument to the SH_* handlers
+
 Version 1.31
 - Updated OOTools 2.1 as a prerequisite
 - A few minor changes

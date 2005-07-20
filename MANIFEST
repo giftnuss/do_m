@@ -35,6 +35,7 @@ README
 t/01_class.t
 t/02_features.t
 t/conf.mml
+t/conf2.mml
 t/Test.pm
 t/test_pod.t
 t/test_pod_coverage.t

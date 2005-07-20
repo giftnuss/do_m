@@ -1,6 +1,6 @@
 #!perl -w
 ; use strict
-; use Test::More tests => 14
+; use Test::More tests => 17
 
 ; BEGIN
   { chdir './t'
@@ -65,7 +65,11 @@
 ; ok( $ap12->test =~ /initpre_processpre_pageAUTOLOADfixupcleanup/ )
 
 
-
 ; my $ap13 = Test12->new( conf_file => './conf.mml' )
 ; is $ap13->page_name, 'a_name'
 ; is $ap13->my_param, 'a_param'
+
+; my $ap14 = Test12->new( conf_file => ['./conf.mml', 'conf2.mml'] )
+; is $ap14->page_name, 'a_name2'
+; is $ap14->my_param, 'a_param'
+; is $ap14->my_param2, 'a_param2'

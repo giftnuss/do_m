@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.31 ;
+$VERSION = 1.32 ;
 use strict ;
 
 # This file uses the "Perlish" coding style
@@ -15,7 +15,7 @@ use strict ;
 ; use warnings::register
 
 ; sub capture
-   { my ($s, $h, @args) = @_
+   { my ($s, $h, @args) =  @_
    ; IO::Util::capture{ $s->$h(@args) }
    }
 
@@ -168,7 +168,7 @@ use strict ;
    }
 
 ; sub switch_to
-   { my ($s, $p, @args) = @_
+   { my ($s, $p) = splice @_, 0, 2
    ; $s->PHASE < PRE_PROCESS && croak 'Too early to call switch_to(), died'
    ; $s->PHASE > FIXUP       && croak 'Too late to call switch_to(), died'
    ; defined $p && length $p || croak 'No page_name name passed, died'
@@ -176,7 +176,7 @@ use strict ;
    ; $s->PHASE     = SWITCH_HANDLER
    ; my $shm       = $s->switch_handler_map
    ; my $SH        = $$shm{$p} || $s->can("SH_$p")
-   ; $s->$SH() if $SH
+   ; $s->$SH(@_) if $SH
    ; if ($s->PHASE < PRE_PAGE)
       { $s->PHASE = PRE_PAGE
       ; $s->$exec('pre_page')
@@ -187,7 +187,7 @@ use strict ;
       ; my $PH    =  $$phm{$p}       || $s->can("PH_$p")
                   || ! $s->page_content_check
                   && ($$phm{AUTOLOAD} || $s->can('PH_AUTOLOAD'))
-      ; $s->$PH(@args) if $PH
+      ; $s->$PH(@_) if $PH
       }
    }
 
@@ -252,9 +252,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.31
+=head1 VERSION 1.32
 
-Included in CGI-Builder 1.31 distribution.
+Included in CGI-Builder 1.32 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
