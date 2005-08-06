@@ -1,5 +1,11 @@
 CGI-Builder Latest Versions Changes
 
+Version 1.33
+- Removed the internal use of lvalue assigments incompatible with
+  the perl-bug #17663 (Perl 5 Debugger doesn't handle properly lvalue
+  sub assignment)
+- Deprecated the use of CGI::Builder::Const: constants are now defined
+  in the main package
 
 Version 1.32
 - CGI::Builder::Conf now accepts a list of configuration files

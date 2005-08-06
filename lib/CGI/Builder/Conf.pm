@@ -75,11 +75,11 @@ CGI::Builder::Conf - Add user editable configuration files to your WebApp
 
 =head1 DESCRIPTION
 
-This Extension adds another way to pass arguments to the new method: a user editable MML file (see L<IO::Util/"Minimal Markup Language (MML)">). This is useful when you want to give to other people (e.g. your client) the possibility to configure their own application instance, but you don't want to give them the possibility to edit and run a potentially usecure perl script.
+This Extension adds another way to pass arguments to the new method: a user editable MML file (see L<IO::Util/"Minimal Markup Language (MML)">). This is useful when you want to give to other people (e.g. your client) the possibility to configure their own application instance, but you don't want to give them the possibility to edit and run a potentially unsecure perl script.
 
 You can do so by passing to the new method the full path to a list of C<conf_file>; the mixed structure of their data will be loaded as the default arguments for that instance (see L<Class::constr/"OPTIONS">).
 
-B<Important Note>: Please notice that the data contained in the C<conf_file> are  tainted however, so treat that with care (e.g. as they were query parameters).
+B<Important Note>: Please notice that the data contained in the C<conf_file> is tainted however, so treat that with care (e.g. as they were query parameters).
 
 =head1 PROPERTY AND GROUP ACCESSORS
 

@@ -5,7 +5,6 @@ use strict ;
 
 ; package CGI::Builder::Const
 
-
 ; my $h
 ; our (@phase, $END)
 
@@ -43,32 +42,11 @@ __END__
 
 =head1 NAME
 
-CGI::Builder::Const - Imports constants
-
-=head1 SYNOPSIS
-
-  use CGI::Builder::Const qw| :all | ;
+CGI::Builder::Const - Deprecated
 
 =head1 DESCRIPTION
 
-This module is internally used by the CBF. You don't need to use it unless you are writing some very heavy extension :-).
-
-=head1 CONSTANTS
-
-=head2 :phases
-
-These constant are used to set and check the Process Phase. They return just a progressive integer:
-
-  CB_INIT         0
-  GET_PAGE        1
-  PRE_PROCESS     2
-  SWITCH_HANDLER  3
-  PRE_PAGE        4
-  PAGE_HANDLER    5
-  FIXUP           6
-  RESPONSE        7
-  REDIR           8
-  CLEANUP         9
+Deprecated module.
 
 =head1 SUPPORT
 

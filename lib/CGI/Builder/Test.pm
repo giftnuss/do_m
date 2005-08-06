@@ -9,41 +9,44 @@ use strict ;
              
 ; sub dump
    { my ($s, @args) = @_
-   ; $s->page_content    .= sprintf qq(\nPage name: '%s'\n)
-                                  , $s->page_name
-   ; $s->page_content    .= "\nQuery Parameters:\n"
+   ; my $page_content  = $s->page_content
+   ; $page_content .= sprintf qq(\nPage name: '%s'\n)
+                               , $s->page_name
+   ; $page_content .= "\nQuery Parameters:\n"
    ; foreach my $p ( sort $s->cgi->param() )
       { my $data_str      = "'"
                           . join "', '" , $s->cgi_>param($p)
                           . "'"
-      ; $s->page_content .= "\t$p => $data_str\n"
+      ; $page_content .= "\t$p => $data_str\n"
       }
-   ; $s->page_content    .= "\nQuery Environment:\n"
+   ; $page_content .= "\nQuery Environment:\n"
    ; foreach my $k ( sort keys %ENV )
-      { $s->page_content .= "\t$k => '".$ENV{$k}."'\n"
+      { $page_content .= "\t$k => '".$ENV{$k}."'\n"
       }
-   ;
+   ; $s->page_content($page_content)
    }
 
 ; sub dump_html
    { my $s = shift
    ; my $c = ref $s
-   ; $s->page_content     = "<HTML><HEAD><title>$c Dump</title></HEAD><BODY>"
-   ; $s->page_content    .= sprintf qq(<P><B>Page name:</B> %s</P>\n)
-                                  , $s->page_name
-   ; $s->page_content    .= "<P><B>\nQuery Parameters:</B><BR>\n<OL>\n"
+   ; my $page_content = $s->page_content
+   ; $page_content    = "<HTML><HEAD><title>$c Dump</title></HEAD><BODY>"
+   ; $page_content   .= sprintf qq(<P><B>Page name:</B> %s</P>\n)
+                               , $s->page_name
+   ; $page_content   .= "<P><B>\nQuery Parameters:</B><BR>\n<OL>\n"
    ; foreach my $p ( sort $s->cgi->param() )
       { my $data_str      = "'"
                           . join "', '" , $s->cgi->param($p)
                           . "'"
-      ; $s->page_content .= "<LI> $p => $data_str\n"
+      ; $page_content .= "<LI> $p => $data_str\n"
       }
-   ; $s->page_content    .= "</OL>\n</P>\n";
-   ; $s->page_content    .= "<P><B>\nQuery Environment:</B><BR>\n<OL>\n"
+   ; $page_content    .= "</OL>\n</P>\n";
+   ; $page_content    .= "<P><B>\nQuery Environment:</B><BR>\n<OL>\n"
    ; foreach my $ek ( sort keys %ENV )
-      { $s->page_content .= "<LI> <B>$ek</B> => ".$ENV{$ek}."\n"
+      { $page_content .= "<LI> <B>$ek</B> => ".$ENV{$ek}."\n"
       }
-   ; $s->page_content    .= "</OL>\n</P>\n</BODY></HTML>\n";
+   ; $page_content    .= "</OL>\n</P>\n</BODY></HTML>\n";
+   ; $s->page_content($page_content)  
    }
    
 ; sub die_handler

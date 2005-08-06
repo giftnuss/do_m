@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.32 ;
+$VERSION = 1.33 ;
 use strict ;
 
 # This file uses the "Perlish" coding style
@@ -9,10 +9,20 @@ use strict ;
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
 ; $Carp::Internal{__PACKAGE__.'::_'}++
-; use CGI::Builder::Const qw| :all |
 ; use IO::Util
 ; use Class::Util
 ; use warnings::register
+
+; sub CB_INIT        () { 0 }
+; sub GET_PAGE       () { 1 }
+; sub PRE_PROCESS    () { 2 }
+; sub SWITCH_HANDLER () { 3 }
+; sub PRE_PAGE       () { 4 }
+; sub PAGE_HANDLER   () { 5 }
+; sub FIXUP          () { 6 }
+; sub RESPONSE       () { 7 }
+; sub REDIR          () { 8 }
+; sub CLEANUP        () { 9 }
 
 ; sub capture
    { my ($s, $h, @args) =  @_
@@ -121,8 +131,8 @@ use strict ;
    ; return if $n eq 'DESTROY'
    ; if ( warnings::enabled )
       { carp qq(Use of unprefixed parameter "$n". )
-        . qq(Application parameters should start with 'my_' or '_')
-          unless $n =~ /^(?:my)?_/
+           . qq(Application parameters should start with 'my_' or '_')
+        unless $n =~ /^(?:my)?_/
       }
    ; @_ == 2
      ? ( $_[0]{param}{$n} = $_[1] )
@@ -137,33 +147,34 @@ use strict ;
 ; sub process
    { my ($s, $p) = @_
    ; local $SIG{__DIE__} = sub{$s->die_handler(@_)}
-   ; $s->PHASE = GET_PAGE
+   ; $s->PHASE(GET_PAGE)
    ; if ( defined $p && length $p )
-      { $s->requested_page = $s->page_name = $p
+      { $s->requested_page($p)
+      ; $s->page_name($p)
       }
      else
-      { $s->requested_page = $s->get_page_name()
+      { $s->requested_page( $s->get_page_name() )
       }
    ; if ($s->PHASE < PRE_PROCESS)
-      { $s->PHASE = PRE_PROCESS
+      { $s->PHASE(PRE_PROCESS)
       ; $s->$exec('pre_process')
       }
    ; if ($s->PHASE < SWITCH_HANDLER)
       { $s->switch_to( $s->page_name )
       }
    ; if ($s->PHASE < FIXUP)
-      { $s->PHASE = FIXUP
+      { $s->PHASE(FIXUP)
       ; $s->$exec('fixup')
       }
    ; if ($s->PHASE < RESPONSE)
-      { $s->PHASE = RESPONSE
+      { $s->PHASE(RESPONSE)
       ; my $has_content = $s->page_content_check
       ; $s->header( -status => $s->no_page_content_status )
             unless $has_content || defined $s->header->{-status}
       ; $s->send_header() unless $s->dont_send_header
       ; $s->send_content() if $has_content
       }
-   ; $s->PHASE = CLEANUP
+   ; $s->PHASE(CLEANUP)
    ; $s->$exec('cleanup') # done however
    }
 
@@ -172,21 +183,21 @@ use strict ;
    ; $s->PHASE < PRE_PROCESS && croak 'Too early to call switch_to(), died'
    ; $s->PHASE > FIXUP       && croak 'Too late to call switch_to(), died'
    ; defined $p && length $p || croak 'No page_name name passed, died'
-   ; $s->page_name = $p
-   ; $s->PHASE     = SWITCH_HANDLER
-   ; my $shm       = $s->switch_handler_map
-   ; my $SH        = $$shm{$p} || $s->can("SH_$p")
+   ; $s->page_name($p)
+   ; $s->PHASE(SWITCH_HANDLER)
+   ; my $shm = $s->switch_handler_map
+   ; my $SH  = $$shm{$p} || $s->can("SH_$p")
    ; $s->$SH(@_) if $SH
    ; if ($s->PHASE < PRE_PAGE)
-      { $s->PHASE = PRE_PAGE
+      { $s->PHASE(PRE_PAGE)
       ; $s->$exec('pre_page')
       }
    ; if ($s->PHASE < PAGE_HANDLER)
-      { $s->PHASE = PAGE_HANDLER
-      ; my $phm   = $s->page_handler_map
-      ; my $PH    =  $$phm{$p}       || $s->can("PH_$p")
-                  || ! $s->page_content_check
-                  && ($$phm{AUTOLOAD} || $s->can('PH_AUTOLOAD'))
+      { $s->PHASE(PAGE_HANDLER)
+      ; my $phm = $s->page_handler_map
+      ; my $PH  =  $$phm{$p}        || $s->can("PH_$p")
+                || ! $s->page_content_check
+                && ($$phm{AUTOLOAD} || $s->can('PH_AUTOLOAD'))
       ; $s->$PH(@_) if $PH
       }
    }
@@ -194,7 +205,7 @@ use strict ;
 ; sub get_page_name
    { my $s = shift
    ; my $p = $s->cgi->param($s->cgi_page_param)
-   ; $s->page_name = $p if defined($p) && length($p)
+   ; $s->page_name($p) if defined($p) && length($p)
    }
 
 ; sub page_content_check
@@ -206,15 +217,15 @@ use strict ;
    }
 
 ; sub send_content
-   { my $pc = \ $_[0]->page_content
-   ; if ( ref $$pc eq 'CODE' )
-      { $_[0]->$$pc
+   { my $pc = $_[0]->page_content
+   ; if ( ref $pc eq 'CODE' )
+      { $_[0]->$pc
       }
-     elsif ( ref $$pc eq 'SCALAR' )
-      { print $$$pc
-      }
-     elsif ( not ref $$pc )
+     elsif ( ref $pc eq 'SCALAR' )
       { print $$pc
+      }
+     elsif ( not ref $pc )
+      { print $pc
       }
    }
 
@@ -223,7 +234,7 @@ use strict ;
    ; $s->PHASE < GET_PAGE        && croak 'Too early to call redirect(), died'
    ; $s->PHASE > RESPONSE        && croak 'Too late to call redirect(), died'
    ; defined $url && length $url || croak 'No URL passed, died'
-   ; $s->PHASE = REDIR
+   ; $s->PHASE(REDIR)
    ; $s->header(-url => $url)
    ; print $s->cgi->redirect( %{$s->header} )
    }
@@ -252,9 +263,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.32
+=head1 VERSION 1.33
 
-Included in CGI-Builder 1.32 distribution.
+Included in CGI-Builder 1.33 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -747,13 +758,21 @@ Imports constants
 
 =back
 
-=item * L<CGI::Builder::Auth|CGI::Builder::Auth>
-
-Adds user authentication and authorization to the CBF
-
 =item * L<Apache::CGI::Builder|Apache::CGI::Builder>
 
-CGI::Builder and Apache/mod_perl integration
+CGI::Builder and Apache/mod_perl (1 and 2) integration
+
+=item * L<Apache2::CGI::Builder|Apache2::CGI::Builder>
+
+CGI::Builder and Apache/mod_perl2 (new namespace) integration
+
+=item * L<CGI::Builder::LogDispatch|CGI::Builder::LogDispatch>
+
+Integrated logging system for CGI::Builder (Vincent Veselosky)
+
+=item * L<CGI::Builder::Auth|CGI::Builder::Auth>
+
+Adds user authentication and authorization to the CBF (Vincent Veselosky)
 
 =item * L<CGI::Builder::Magic|CGI::Builder::Magic>
 
@@ -769,7 +788,7 @@ CGI::Builder and CGI::Session integration
 
 =item * L<CGI::Builder::SessionManager|CGI::Builder::SessionManager>
 
-CGI::Builder and Apache::SessionManager integration (about to be published by Enrico Sorcinelli)
+CGI::Builder and Apache::SessionManager integration (Enrico Sorcinelli)
 
 =item * L<CGI::Builder::CgiAppAPI|CGI::Builder::CgiAppAPI>
 
@@ -781,7 +800,7 @@ CGI::Builder and HTML::Template integration
 
 =item * L<CGI::Builder::TT2|CGI::Builder::TT2>
 
-CGI::Builder and Template::Toolkit integration
+CGI::Builder and Template::Toolkit integration (Stefano Rodighiero)
 
 =back
 
@@ -870,7 +889,7 @@ Override this method if you want to use your own CGI object. This method should 
 
 =head1 PROPERTY ACCESSORS
 
-A CBF B<property> is a lvalue accessor to an object value. 'lvalue' means that you can create a reference to it, assign to it and apply a regex to it; besides, a property can have a default value, some validation entry rules, etc. and you can use them as an argument to the new() method as well.
+A CBF B<property> is a lvalue accessor to an object value. 'lvalue' means that you can create a reference to it, assign to it and apply a regex to it (see also L<KNOWN ISSUE>). Besides, a property can have a default value, some validation entry rules, etc. and you can use them as an argument to the new() method as well.
 
     # 'page_content' is a property accessor
     $webapp = WebApp->new(page_content => 'dummy default') ;
@@ -880,7 +899,7 @@ A CBF B<property> is a lvalue accessor to an object value. 'lvalue' means that y
     $s->page_content .= 'some more content' ;
     $s->page_content =~ s/some/SOME/ ;
     
-    # old way still works
+    # old debugger-safe way still works
     $s->page_content('some content')
     
     $pageContent = $s->page_content
@@ -1119,6 +1138,21 @@ If you need a wider solution you should use an C<OH_pre_page> or an C<OH_fixup> 
 =head1 ADVANCED FEATURES
 
 In this section you can find all the most advanced or less used features that document all the details of the CBF. In most cases you don't need to use them, anyway, knowing them will not hurt.
+
+=head2 CONSTANTS
+
+These constant are used to set and check the Process Phase. They return just a progressive integer:
+
+  CB_INIT         0
+  GET_PAGE        1
+  PRE_PROCESS     2
+  SWITCH_HANDLER  3
+  PRE_PAGE        4
+  PAGE_HANDLER    5
+  FIXUP           6
+  RESPONSE        7
+  REDIR           8
+  CLEANUP         9
 
 =head2 Global Variables Persistence
 
@@ -1791,9 +1825,29 @@ No exception will blame your module and your user will have always a meaningful 
 
 =head1 KNOWN ISSUE
 
-Due to the perl bug #17663 I<(Perl 5 Debugger doesn't handle properly lvalue sub assignment)>, and since all the internals of the CBF use lvalue assignments, you cannot use the B<-d> switch.
+Due to the perl bug #17663 I<(Perl 5 Debugger doesn't handle properly lvalue sub assignment)>, you must know that under the B<-d> switch the lvalue sub assignment will not work, so your program will not run as you expect.
 
-Maybe a next version of perl will fix the bug, maybe I will rewrite the CBF in order to avoid the perl bug. Meanwhile you could apply a patch to perl itself, which should fix it. See http://www.talkaboutprogramming.com/group/comp.lang.perl.moderated/messages/13142.html.
+Since version 1.33 the CBF and its extensions B<don't internally use any lvalue sub assignment> although they are fully supported if you decide to use them in your code.
+
+In order to avoid the perl-bug you have 3 alternatives:
+
+=over
+
+=item 1
+
+patch perl itself as suggested in this post: http://www.talkaboutprogramming.com/group/comp.lang.perl.moderated/messages/13142.html (See also the cgi-builder-users mailinglist about that topic)
+
+=item 2
+
+use the lvalue sub assignment (e.g. C<< $s->any_property = 'something' >>) only if you will never need B<-d>
+
+=item 3
+
+if you plan to use B<-d>, use only standard assignments (e.g. C<< $s->any_property('something') >>)
+
+=back
+
+Maybe a next version of perl will fix the bug, or maybe lvalue subs will be banned forever, meanwhile be careful with lvalue sub assignment.
 
 =head1 SUPPORT
 
