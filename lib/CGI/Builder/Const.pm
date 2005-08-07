@@ -5,8 +5,7 @@ use strict ;
 
 ; package CGI::Builder::Const
 
-; my $h
-; our (@phase, $END)
+; our @phase
 
 ; BEGIN
    { @phase  = qw | CB_INIT
@@ -20,8 +19,9 @@ use strict ;
                     REDIR
                     CLEANUP
                   |
-   ; @$h{@phase} = (0 .. $#phase)
-   ; while ( my ($k, $v) = each %$h )
+   ; my %h
+   ; @h{@phase} = (0 .. $#phase)
+   ; while ( my ($k, $v) = each %h )
       { no strict 'refs'
       ; *$k = sub () { $v }
       }

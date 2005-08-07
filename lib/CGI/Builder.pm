@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.33 ;
+$VERSION = 1.34 ;
 use strict ;
 
 # This file uses the "Perlish" coding style
@@ -13,16 +13,28 @@ use strict ;
 ; use Class::Util
 ; use warnings::register
 
-; sub CB_INIT        () { 0 }
-; sub GET_PAGE       () { 1 }
-; sub PRE_PROCESS    () { 2 }
-; sub SWITCH_HANDLER () { 3 }
-; sub PRE_PAGE       () { 4 }
-; sub PAGE_HANDLER   () { 5 }
-; sub FIXUP          () { 6 }
-; sub RESPONSE       () { 7 }
-; sub REDIR          () { 8 }
-; sub CLEANUP        () { 9 }
+; my @phase
+; BEGIN
+   { @phase  = qw | CB_INIT
+                    GET_PAGE
+                    PRE_PROCESS
+                    SWITCH_HANDLER
+                    PRE_PAGE
+                    PAGE_HANDLER
+                    FIXUP
+                    RESPONSE
+                    REDIR
+                    CLEANUP
+                  |
+   ; no strict 'refs'
+   ; foreach my $i (0..$#phase)
+      { *{$phase[$i]} = sub(){$i}
+      }
+   }
+ 
+; sub phase
+   { $phase[$_[1]||$_[0]->PHASE]
+   }
 
 ; sub capture
    { my ($s, $h, @args) =  @_
@@ -128,17 +140,16 @@ use strict ;
 ; our $AUTOLOAD
 ; sub AUTOLOAD : lvalue              # param AUTOLOADING
    { (my $n = $AUTOLOAD) =~ s/.*://
-   ; return if $n eq 'DESTROY'
-   ; if ( warnings::enabled )
-      { carp qq(Use of unprefixed parameter "$n". )
-           . qq(Application parameters should start with 'my_' or '_')
-        unless $n =~ /^(?:my)?_/
-      }
+   ; carp qq(Use of unprefixed autoloaded parameter "$n". )
+        . qq(Autoloaded parameters should start with 'my_' or '_')
+     if warnings::enabled && $n !~ /^(?:my)?_/
    ; @_ == 2
      ? ( $_[0]{param}{$n} = $_[1] )
      :   $_[0]{param}{$n}
    }
-   
+ 
+; sub DESTROY {}
+
 ; sub cgi_new
    { require CGI
    ; CGI->new()
@@ -248,7 +259,7 @@ use strict ;
       { die $msg if $sub eq '(eval)' && (caller($i+1))[3]
       }
    ; die sprintf 'Fatal error in phase %s for page "%s": %s'
-               , $CGI::Builder::Const::phase[$s->PHASE]
+               , $s->phase
                , $s->page_name
                , $msg
    }
@@ -263,9 +274,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.33
+=head1 VERSION 1.34
 
-Included in CGI-Builder 1.33 distribution.
+Included in CGI-Builder 1.34 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -754,7 +765,7 @@ Adds some testing methods to your build
 
 =item * L<CGI::Builder::Const|CGI::Builder::Const>
 
-Imports constants
+Deprecated
 
 =back
 
@@ -1185,6 +1196,10 @@ This method executes the I<CODE> (which can be a method name or a CODE ref) and 
       }
       # do something with $s->page_content as usual
   }
+
+=head3 phase( [phase_number] )
+
+This method returs the current phase name or the name of the passed I<phase_number> argument.
 
 =head2 Internal Methods
 

@@ -1,5 +1,9 @@
 CGI-Builder Latest Versions Changes
 
+Version 1.34
+- Fixed the string returned by the die_handler (bug introduced in 1.33)
+- Added the 'phase' method
+
 Version 1.33
 - Removed the internal use of lvalue assigments incompatible with
   the perl-bug #17663 (Perl 5 Debugger doesn't handle properly lvalue
