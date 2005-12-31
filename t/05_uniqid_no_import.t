@@ -1,11 +1,7 @@
 #!perl -w
 ; use strict
-; use Test::More
-
-; eval "use Time::HiRes"
-; plan skip_all => "Time::HiRes is not installed" if $@
-
-; plan tests => 15
+; use Test::More tests => 15
+  
 ; use IO::Util ()
 
 

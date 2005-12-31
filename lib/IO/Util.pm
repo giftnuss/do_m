@@ -1,5 +1,5 @@
 package IO::Util ;
-$VERSION = 1.48 ;
+$VERSION = 1.5 ;
 use 5.006_001 ;
 use strict ;
 
@@ -7,14 +7,7 @@ use strict ;
 # please read http://perl.4pro.net/perlish_coding_style.html
 
 ; use Carp
-; $Carp::Internal{+__PACKAGE__}++
-; require Exporter
-; our @ISA = 'Exporter'
-; our @EXPORT_OK = qw| capture
-                       slurp
-                       Tid Lid Uid
-                       load_mml
-                     |
+; $Carp::Internal{+__PACKAGE__}++ 
 ; use File::Spec
 
 ############# slurping files #############
@@ -48,7 +41,15 @@ use strict ;
 ; my $separator = '_'
 
 ; sub import
-   { my ($pkg, @subs) = @_
+   { return unless @_
+   ; require Exporter
+   ; our @ISA = 'Exporter'
+   ; our @EXPORT_OK = qw| capture
+                          slurp
+                          Tid Lid Uid
+                          load_mml
+                        |
+   ; my ($pkg, @subs) = @_
    ; require Time::HiRes   if grep /id$/  , @subs
    ; require Sys::Hostname if grep /^Uid$/, @subs
    ; $pkg->export_to_level(1, @_)
@@ -218,7 +219,9 @@ use strict ;
       ; my $parser_sub = defined $k
                          ? $$opt{handler}{$k}
                          : \&parse_mml
-      ; my $child = &{$parser_sub}($child_id, \$child_mml, $opt)
+      ; my $child = do{ no strict 'refs'
+                      ; &$parser_sub($child_id, \$child_mml, $opt)
+                      }
       ; if ( defined $child )
          { if ( defined $$control{$child_id} )
             { if ( $$control{$child_id} > 1 )
@@ -249,19 +252,21 @@ use strict ;
      : $$mml
    }
 
-; sub TRIM_BLANKS
+; sub TRIM_BLANKS  # filter
    { s/^\s+//gm
    ; s/\s+$//gm
    ; $_
    }
 
-; sub ONE_LINE
+; sub ONE_LINE    # filter
    { s/\n+/ /g
    ; $_
    }
 
-   
-   
+; sub SPLIT_LINES  # handler
+   { [ split /\n+/, parse_mml @_ ]
+   }
+
 ############## capturing output #############
 
 ; sub capture (&;@)
@@ -341,13 +346,18 @@ __END__
 
 IO::Util - A selection of general-utility IO function
 
-=head1 VERSION 1.48
+=head1 VERSION 1.5
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
 =head1 INSTALLATION
 
 =over
+
+=item Prerequisites
+
+    Time::HiRes   = 0
+    Sys::Hostname = 0
 
 =item CPAN
 
@@ -712,11 +722,11 @@ The referenced code will receive I<id>, I<data_reference> and I<active_options_r
    #             'anything_else' => 'not filtered'  # the same
    #           }
 
-=item handler => { id|re => CODE }
+=item handler => { id|re => CODE|'SPLIT_LINES' }
 
 This option allows you to execute any code during the parsing of the MML in order to change the returned structure or do any other task. It allows you to implement your own syntax, checks and executions, skip any branch, change the options of any child node, generate nodes or even objects to add to the returned structure.
 
-You must set it to an hash of id/handler. The key id can be the literal element id which content you want to handler, or any compiled RE you want to match against the id elements; the filter must be a CODE reference.
+You must set it to an hash of id/handler. The key id can be the literal element id which content you want to handler, or any compiled RE you want to match against the id elements; the filter may be a CODE reference or the name of a literal built-in handler C<'SPLIT_LINES'> (an handler that splits the lines of the node into an array of elements: see the example below).
 
 The referenced CODE will be called instead the standard C<IO::Util::parse_mml> handler, and will receive I<id>, I<data_reference> and I<active_options_referece> as the arguments.
 
@@ -773,6 +783,34 @@ Folding an array:
    #                     ],
    #              'c' => 'something'
    #            } ;
+
+You can also use the built-in handler 'SPLIT_LINES' and write a MML like this:
+
+   $mml = << 'EOS';
+   <opt>
+     <a>
+        <b>
+        Foo
+        Bar
+        </b>
+     </a>
+     <c>something</c>
+   </opt>
+   EOS
+   
+   $struct = load_mml \$mml,
+              handler=>{ b => 'SPLIT_LINES },
+              filter =>{ b => 'TRIM_BLANKS' }
+   
+   # $struct = {
+   #             'a' => {
+   #                      'b' => [
+   #                               'Foo',
+   #                               'Bar'
+   #                             ]
+   #                    },
+   #             'c' => 'something'
+   #           } ;
 
 =back
 

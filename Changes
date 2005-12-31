@@ -1,5 +1,12 @@
 IO-Util Latest Versions Changes
 
+Version 1.5
+- Added Time::HiRes and Sys::Hostname as prerequisites
+- Changed tests '04_uniqid.t' '04_uniqid_no_import.t'
+
+Version 1.49
+- Added the 'SPLIT_LINES' mml handler and tests 
+
 Version 1.48
 - Fixed incompatibility with perl version < 5.8x of the capture function;
   the fix excludes the usage of other tied class :-(

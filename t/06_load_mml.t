@@ -2,7 +2,7 @@
 ; use strict
 ; use warnings
 #; use Data::Dumper
-; use Test::More tests => 22
+; use Test::More tests => 23
 
 ; use IO::Util qw(load_mml)
 
@@ -279,3 +279,22 @@ EOS
           , { a_b => '01'
             , a => '02'
             }
+            
+            
+; my $str8 = << 'EOS'
+[opt]
+[a]
+01
+02
+03
+[/a]
+[/opt]
+EOS
+
+; my $r17 = load_mml \$str8, markers =>'[]'
+            , handler => { a => 'SPLIT_LINES' }
+            , filter  => { a => 'TRIM_BLANKS' }
+
+
+; is_deeply $r17
+          , { a => ['01', '02', '03' ] }

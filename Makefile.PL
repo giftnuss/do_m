@@ -14,6 +14,9 @@
        , ABSTRACT_FROM   => $pm
        )
      : ()
+   , PREREQ_PM      => { 'Time::HiRes'   => 0
+                       , 'Sys::Hostname' => 0
+                       }
    )
 
 
