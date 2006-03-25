@@ -61,7 +61,7 @@
 # after setting a page_error string (used in the pass_page)
 ; sub SH_env_page
    { my $s = shift
-   ; unless ( $s->cgi->param('password')||'' eq 'CBF' )
+   ; unless ( ($s->cgi->param('password')||'') eq 'CBF' )
       { $s->page_error(err_password=>'Wrong password! Please, retry...')
       ; $s->switch_to('pass_page')
       }

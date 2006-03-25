@@ -1,4 +1,6 @@
+use strict ;
 ; package Bundle::CGI::Builder::Complete
+
 
 
 __END__

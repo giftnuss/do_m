@@ -1,6 +1,6 @@
 package CGI::Builder ;
-$VERSION = 1.34 ;
-use strict ;
+$VERSION = 1.35 ;
+use strict ;         
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -152,7 +152,7 @@ use strict ;
 
 ; sub cgi_new
    { require CGI
-   ; CGI->new()
+   ; CGI->new(@_)
    }
 
 ; sub process
@@ -274,9 +274,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.34
+=head1 VERSION 1.35
 
-Included in CGI-Builder 1.34 distribution.
+Included in CGI-Builder 1.35 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -894,9 +894,13 @@ This method will redirect the client to the I<url>, bypassing all the remaining 
 
 B<Note>: This method will add the url to the header, and will use the CGI::redirect() method to redirect the client, passing it also the whole header hash you set so far (see also L<header() method|header( [ header ] )>).
 
-=head2 cgi_new
+=head2 cgi_new ( [arguments] )
 
-Override this method if you want to use your own CGI object. This method should return an object which implements at least: C<param>, C<header>, C<redirect> and C<cookie>, which are methods the CBF and its Extension use.
+This method is internally used bu the C<cgi> property in order to create a new CGI object. You can also use this method if you need to create a CGI object with your own param (e.g. useful to fill a form with HTML::FillInForm).
+
+Override it if you want to use any CGI object different than the canonical CGI.pm (e.g. CGI::Simple).
+
+This method should return an object which implements at least: C<param>, C<header>, C<redirect> and C<cookie>, which are methods the CBF and its Extension use.
 
 =head1 PROPERTY ACCESSORS
 
