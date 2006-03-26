@@ -1,5 +1,8 @@
 CGI-Builder Latest Versions Changes
 
+Version 1.36
+- Restored the canonical cgi_new method :-)
+
 Version 1.35
 - "use strict" fix for CPANTS
 - Little improvement of the cgi-new method

@@ -1,5 +1,5 @@
 package CGI::Builder ;
-$VERSION = 1.35 ;
+$VERSION = 1.36 ;
 use strict ;         
 
 # This file uses the "Perlish" coding style
@@ -118,7 +118,7 @@ use strict ;
     , default    => 'p'
     }
   , { name       => 'cgi'
-    , default    => sub{ shift()->cgi_new(@_) }
+    , default    => sub{ shift()->cgi_new }
     }
   , { name       => 'page_name'
     , default    => 'index'
@@ -152,7 +152,7 @@ use strict ;
 
 ; sub cgi_new
    { require CGI
-   ; CGI->new(@_)
+   ; CGI->new
    }
 
 ; sub process
@@ -274,9 +274,9 @@ __END__
 
 CGI::Builder - Framework to build simple or complex web-apps
 
-=head1 VERSION 1.35
+=head1 VERSION 1.36
 
-Included in CGI-Builder 1.35 distribution.
+Included in CGI-Builder 1.36 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -896,7 +896,7 @@ B<Note>: This method will add the url to the header, and will use the CGI::redir
 
 =head2 cgi_new ( [arguments] )
 
-This method is internally used bu the C<cgi> property in order to create a new CGI object. You can also use this method if you need to create a CGI object with your own param (e.g. useful to fill a form with HTML::FillInForm).
+This method is internally used by the C<cgi> property in order to create a new CGI object. You can also use this method if you need to create a CGI object with your own param (e.g. useful to fill a form with HTML::FillInForm).
 
 Override it if you want to use any CGI object different than the canonical CGI.pm (e.g. CGI::Simple).
 
