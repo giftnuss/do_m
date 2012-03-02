@@ -1,5 +1,5 @@
 package Class::constr ;
-$VERSION = 1.61 ;
+$VERSION = 1.62 ;
 
 ; use 5.006_001
 ; use strict
@@ -28,7 +28,6 @@ $VERSION = 1.61 ;
                  { $s->can($p)                       # and no method
                    || croak qq(No such property "$p")
                  }
-              ; local $Carp::Internal{+__PACKAGE__} = 1
               ; eval { $s->$p( $v ) }                # if method or AUTOLOAD
               ; $@ && ( $$s{$p} = $v )               # anyway
               }
@@ -51,9 +50,9 @@ __END__
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 1.61
+=head1 VERSION 1.62
 
-Included in OOTools 1.61 distribution.
+Included in OOTools 1.62 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

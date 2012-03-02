@@ -1,5 +1,5 @@
 package Object::groups ;
-$VERSION = 1.61 ;
+$VERSION = 1.62 ;
 
 use base 'Class::groups' ;
    
@@ -11,9 +11,9 @@ __END__
 
 Object::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.61
+=head1 VERSION 1.62
 
-Included in OOTools 1.61 distribution.
+Included in OOTools 1.62 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -76,6 +76,9 @@ From the directory where this file is located, type:
     use Class::costr ;
     
     # implement group method without options
+    use Object::groups qw(this that) ;
+
+    # implement group method with properties
     use Object::groups { name  => 'myGroup' ,
                          props => [qw(prop1 prop2)]
                        } ;
@@ -202,7 +205,7 @@ The original <@_> is passed to the referenced pre_process CODE. Modify C<@_> in 
 
 =head2 default
 
-Use this option to set a I<default value>. The I<default value> must be a HASH reference or a CODE reference. If it is a Code reference it will be evaluated at runtime and the property will be set to the HASH reference that the referenced CODE must return.
+Use this option to set a I<default value>. The I<default value> must be a HASH reference or a CODE reference. If it is a CODE reference it will be evaluated at runtime and the property will be set to the HASH reference that the referenced CODE must return.
 
 You can reset a property to its default value by assigning an empty HASH reference ({}) to it.
 

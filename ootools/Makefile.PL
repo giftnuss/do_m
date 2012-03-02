@@ -1,7 +1,8 @@
+; use 5.006_001
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'OOTools'
-; my $vers = '1.61'
+; my $vers = '1.62'
 
 ; WriteMakefile
    ( NAME           => $dist

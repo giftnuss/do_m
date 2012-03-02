@@ -1,6 +1,11 @@
 OOTools Latest Versions Changes
 
 
+Version 1.62
+- Added the perl version check to the Makefile.PL
+- Added the possibility to create groups by passing just the name
+  as plain string instead the usual hash reference
+
 Version 1.61
 - Some POD fixes and restyling
 - Fixed bug: groups default option now is working under all circumstances
