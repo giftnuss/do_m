@@ -1,5 +1,5 @@
 package Class::groups ;
-$VERSION = 2.12 ;
+$VERSION = 2.2 ;
 use 5.006_001 ;
 use strict ;
 
@@ -58,9 +58,10 @@ use strict ;
            = sub
               { &{$$group{pre_process}} if defined $$group{pre_process}
               ; my $s = shift
-              ; my $hash = $tool =~ /^Class/
-                           ? \%{(ref $s||$s).'::'.$n}      # class
-                           : ( $$s{$n} ||= {} )           # object
+              ; my $hash
+                = $tool =~ /^Class/   ? \%{(ref $s||$s).'::'.$n}  # class
+                : $tool =~ /^Package/ ? \%{$pkg.'::'.$n}          # package
+                : ( $$s{$n} ||= {} )                              # object
               ; if (  ( my $def = $$group{default} )
                    && not keys %$hash
                    )
@@ -140,15 +141,23 @@ __END__
 
 Class::groups - Pragma to implement group of properties
 
-=head1 VERSION 2.12
+=head1 VERSION 2.2
 
-Included in OOTools 2.12 distribution.
+Included in OOTools 2.2 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
 The distribution includes:
 
 =over
+
+=item Package::props
+
+Pragma to implement lvalue accessors with options
+
+=item * Package::groups
+
+Pragma to implement groups of properties accessors with options
 
 =item * Class::constr
 
@@ -166,6 +175,10 @@ Pragma to implement groups of properties accessors with options
 
 Delayed checking of object failure
 
+=item * Class::Util
+
+Class utility functions
+
 =item * Object::props
 
 Pragma to implement lvalue accessors with options
@@ -173,10 +186,6 @@ Pragma to implement lvalue accessors with options
 =item * Object::groups
 
 Pragma to implement groups of properties accessors with options
-
-=item * Class::Util
-
-Class utility functions
 
 =back
 

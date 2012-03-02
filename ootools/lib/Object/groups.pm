@@ -1,5 +1,5 @@
 package Object::groups ;
-$VERSION = 2.12 ;
+$VERSION = 2.2 ;
 use 5.006_001 ;
 use strict ;
 
@@ -16,15 +16,23 @@ __END__
 
 Object::groups - Pragma to implement group of properties
 
-=head1 VERSION 2.12
+=head1 VERSION 2.2
 
-Included in OOTools 2.12 distribution.
+Included in OOTools 2.2 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
 The distribution includes:
 
 =over
+
+=item Package::props
+
+Pragma to implement lvalue accessors with options
+
+=item * Package::groups
+
+Pragma to implement groups of properties accessors with options
 
 =item * Class::constr
 
@@ -42,6 +50,10 @@ Pragma to implement groups of properties accessors with options
 
 Delayed checking of object failure
 
+=item * Class::Util
+
+Class utility functions
+
 =item * Object::props
 
 Pragma to implement lvalue accessors with options
@@ -49,10 +61,6 @@ Pragma to implement lvalue accessors with options
 =item * Object::groups
 
 Pragma to implement groups of properties accessors with options
-
-=item * Class::Util
-
-Class utility functions
 
 =back
 

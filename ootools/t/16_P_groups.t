@@ -1,7 +1,7 @@
 #!perl -w
 
 ; use strict
-; use Test::More tests => 20
+; use Test::More tests => 18
 ; use strict
 #; use Data::Dumper
 
@@ -29,22 +29,25 @@
 
 ; is_deeply( scalar $sub->group1
            , { one   => 4
-             , two   => 2
              , three => 4,
              }
            )
 
 ; is_deeply( scalar SubClass->group1
            , { one   => 4
-             , two   => 2
              , three => 4,
              }
            )
 
 ; is_deeply( \%SubClass::group1
            , { one   => 4
-             , two   => 2
              , three => 4,
+             }
+           )
+
+; is_deeply( \%BaseClass::group1
+           , { one   => 2
+             , two   => 2
              }
            )
 
@@ -71,99 +74,53 @@
            )
 
 ; $sub->one   = 1
-; $sub->two   = 2
+
 ; SubClass->three = 3
 ; is_deeply( scalar $sub->group1
            , { one   => 1
-             , two   => 2
              , three => 3,
              }
            )
 
 ; is_deeply( scalar SubClass->group1
            , { one   => 1
-             , two   => 2
              , three => 3,
              }
            )
 
 ; is_deeply( \%SubClass::group1
            , { one   => 1
-             , two   => 2
              , three => 3,
              }
            )
 
 
 ; is_deeply( scalar $other->group1
-           , { one   => 4
-             , two   => 2
-             , three => 4
-             , four  => undef
+           , { four  => undef
              }
            )
 
 ; is_deeply( scalar Other->group1
-           , { one   => 4
-             , two   => 2
-             , three => 4
-             , four  => undef
+           , { four  => undef
              }
            )
 
 ; is_deeply( \%Other::group1
-           , { one   => 4
-             , two   => 2
-             , three => 4
-             , four  => undef
+           , { four  => undef
              }
            )
 
 # double check init and defaults
 ; is_deeply( scalar $other->group1
-           , { one   => 4
-             , two   => 2
-             , three => 4
-             , four  => undef
+           , { four  => undef
              }
            )
 
 ; is_deeply( \%Other::group1
-           , { one   => 4
-             , two   => 2
-             , three => 4
-             , four  => undef
+           , { four  => undef
              }
            )
 
-; $other->one = 1
-; Other->three = 3
-
-; is_deeply( scalar $other->group1
-           , { one   => 1
-             , two   => 2
-             , three => 3
-             , four  => undef
-             }
-           )
-
-
-; is_deeply( scalar Other->group1
-           , { one   => 1
-             , two   => 2
-             , three => 3
-             , four  => undef
-             }
-           )
-
-
-; is_deeply( \%Other::group1
-           , { one   => 1
-             , two   => 2
-             , three => 3
-             , four  => undef
-             }
-           )
 
 
    
@@ -181,31 +138,31 @@
               
    }
                
-; use Class::groups{ name => 'group1'
-                   , props => \@props
-                   }
+; use Package::groups{ name => 'group1'
+                     , props => \@props
+                     }
                    
 
-                                 
 ; package SubClass
 ; use base 'BaseClass'
 
-; use Class::groups {  name => 'group1'
-                    ,  props => [ { name    => [ "one"
-                                               , "three"
-                                               ]
-                                  , default => 4
-                                  }
-                                ]
-                    }
+; use Package::groups {  name => 'group1'
+                      ,  props => [ { name    => [ "one"
+                                                 , "three"
+                                                 ]
+                                    , default => 4
+                                    }
+                                  ]
+                      }
+                                 
 
 
 ; package Other
 ; use base 'SubClass'
 
-; use Class::groups { name => 'group1'
-                    , props => [ 'four' ]
-                    }
+; use Package::groups { name => 'group1'
+                      , props => [ 'four' ]
+                      }
 
 
 

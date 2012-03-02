@@ -1,5 +1,9 @@
 OOTools Latest Versions Changes
 
+Version 2.2
+- Added Package::props and Package::groups pragmas
+- Added improved tests
+
 Version 2.12
 - Fixed the Class::Util::import function
 

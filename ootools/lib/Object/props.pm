@@ -1,5 +1,5 @@
 package Object::props ;
-$VERSION = 2.12 ;
+$VERSION = 2.2 ;
 use 5.006_001 ;
 use strict ;
 
@@ -16,15 +16,23 @@ __END__
 
 Object::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 2.12
+=head1 VERSION 2.2
 
-Included in OOTools 2.12 distribution.
+Included in OOTools 2.2 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
 The distribution includes:
 
 =over
+
+=item Package::props
+
+Pragma to implement lvalue accessors with options
+
+=item * Package::groups
+
+Pragma to implement groups of properties accessors with options
 
 =item * Class::constr
 
@@ -42,6 +50,10 @@ Pragma to implement groups of properties accessors with options
 
 Delayed checking of object failure
 
+=item * Class::Util
+
+Class utility functions
+
 =item * Object::props
 
 Pragma to implement lvalue accessors with options
@@ -49,10 +61,6 @@ Pragma to implement lvalue accessors with options
 =item * Object::groups
 
 Pragma to implement groups of properties accessors with options
-
-=item * Class::Util
-
-Class utility functions
 
 =back
 
@@ -151,11 +159,46 @@ The accessor method creates a scalar in the class that implements it (e.g. $obje
 
 B<IMPORTANT NOTE>: Since the version 1.7 the options don't work if you access the scalar without using the accessor, so you can direct access to bypass the options.
 
-=head2 Class properties vs Object properties
+=head2 Package, Class or Object properties?
 
-The main difference between C<Object::props> and C<Class::props> is that the first pragma creates instance properties related with the object and stored in $object->{property}, while the second pragma creates class properties related with the class and stored in $Class::property.
+The main difference between  C<Packages::props>, C<Object::props> and C<Class::props> is the underlaying scalar that holds the value of the property.
 
-A Class property is accessible either through the class or through all the objects of that class, while an object property is accessible only through the object that set it.
+Look at this example:
+
+   package BaseClass;
+   use Object::props  'an_object_prop';
+   use Class::props   'a_class_prop';
+   use Package::props 'a_package_prop';
+   
+   use Class::constr;
+   
+   package SubClass;
+   our @ISA = 'BaseClass';
+   
+   package main;
+   $obj = SubClass->new;
+   
+   # object
+   $obj->an_object_prop;        # accessor callable through the object
+   $obj->{an_object_prop};      # underlaying scalar in object $obj
+   
+   # class
+   $obj->a_class_prop;          # accessor callable through the object
+   ref($obj)->a_class_prop;     # accessor callable through the object class
+   $SubClass::a_class_prop;     # underlaying scalar in class 'SubClass'
+   
+   # package
+   $obj->a_package_prop;        # accessor callable through the object
+   ref($obj)->a_package_prop;   # accessor callable through the object class
+                                # accessible through @ISA
+   BaseClass->a_package_prop;   # accessor callable through the package
+   $BaseClass::a_package_prop;  # underlaying scalar in package 'BaseClass'
+
+The object property is stored into the object itself, a class property is stored in a global scalar in the object class itself, while a package property is sotored in the package that implements it.
+
+Different underlaying scalars are suitable for different usages depending on the need to access them and to inherit the defaults.
+
+=head2 Example
 
    package MyClass;
    use Class::constr ;
@@ -191,9 +234,7 @@ A Class property is accessible either through the class or through all the objec
    print $object1->class_prop2 ; # would print 200
    print $object2->class_prop2 ; # would print 200
 
-=head2 Examples
-
-If you want to see some working example of this module, take a look at the source of my other distributions.
+B<Note>: If you want to see some working example of this module, take a look at the source of my other distributions.
 
 =head1 OPTIONS
 

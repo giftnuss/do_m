@@ -1,25 +1,33 @@
 #!perl -w
 ; use strict
-; use Test::More tests => 68
+; use Test::More tests => 74
 
-; common_test('BaseClass');
-; common_test('SubClass');
+; common_test('BaseClass', 'BaseClass');
+; common_test('BaseClass', 'SubClass');
 
 ; sub common_test
-   { my ($class) = @_
+   { my ($class, $subclass) = @_
    ; no strict 'refs'
-   ; my $o1 = $class->new
+   ; my $o1 = $subclass->new
    ; isa_ok( $o1
            , $class
            , 'Object creation'
            )
 
-   ; my $o2 = $class->new( BpropA => 25
-                         , BpropB => 3
-                         )
+   ; my $o2 = $subclass->new( BpropA => 25
+                            , BpropB => 3
+                            )
    ; is( $o2->BpropA * $o2->BpropB
        , 75
        , 'Passing new properties with new' )
+
+   ; is( $subclass->BpropA * $subclass->BpropB
+       , 75
+       , 'Accessing properties with subclass' )
+
+   ; is( $class->BpropA * $class->BpropB
+       , 75
+       , 'Accessing properties with class' )
 
        
    ; is( ${$class.'::BpropA'} * ${$class.'::BpropB'}
@@ -36,19 +44,24 @@
        , 'Other object same test (underlaying scalar check)' )
         
    ; eval
-      { my $o3 = $class->new( unknown => 10 )
+      { my $o3 = $subclass->new( unknown => 10 )
       }
    ; ok( $@
        , 'Passing an unknow property'
        )
     
    ; eval
-      { my $o3 = $class->new( Bprot => 10 )
+      { my $o3 = $subclass->new( Bprot => 10 )
       }
    ; ok( $@
        , 'Passing a value to a protected property'
        )
     
+   ; is( $subclass->Bdefault
+       , 25
+       , "Reading default"
+       )
+
    ; is( $class->Bdefault
        , 25
        , "Reading default"
@@ -59,8 +72,8 @@
        , "Reading default (underlaying scalar check)"
        )
 
-   ; $class->Bvalid = 5
-   ; is( $class->Bvalid
+   ; $subclass->Bvalid = 5
+   ; is( $subclass->Bvalid
        , 5
        , 'Writing an always valid property'
        )
@@ -70,8 +83,8 @@
        , 'Writing an always valid property (underlaying scalar check)'
        )
 
-   ; $class->writeBprotA(5)
-   ; is( $class->BprotA
+   ; $subclass->writeBprotA(5)
+   ; is( $subclass->BprotA
        , 5
        , "Writing protected property from class"    #####
        )
@@ -82,14 +95,14 @@
        )
        
    ; eval
-      { $class->BprotA = 10
+      { $subclass->BprotA = 10
       }
    ; ok( $@
        , 'Trying to write a protected property from outside'
        )
 
-   ; $class->writeBprotA(8)
-   ; is( $class->BprotA
+   ; $subclass->writeBprotA(8)
+   ; is( $subclass->BprotA
        , 8
        , "Writing again protected property from class"
        )
@@ -98,7 +111,7 @@
        , "Writing again protected property from class (underlaying scalar check)"
        )
 
-   ; is( $class->Bvalidat('aawwwbb')
+   ; is( $subclass->Bvalidat('aawwwbb')
        , 'aawwwbb'
        , 'Writing a valid value'
        )
@@ -108,13 +121,13 @@
        )
 
    ; eval
-      { $class->Bvalidat = 10
+      { $subclass->Bvalidat = 10
       }
    ; ok( $@
        , 'Writing an invalid value'
        )
        
-   ; is( $class->Bvalidat('aawwwbb')
+   ; is( $subclass->Bvalidat('aawwwbb')
        , 'aawwwbb'
        , 'Writing again a valid value'
        )
@@ -124,7 +137,7 @@
        , 'Writing again a valid value (underlaying scalar check)'
        )
 
-   ; is( $class->Bvalidat_default('aawwwbb')
+   ; is( $subclass->Bvalidat_default('aawwwbb')
        , 'aawwwbb'
        , 'Writing a valid value in a property with default'
        )
@@ -134,7 +147,7 @@
        , 'Writing a valid value in a property with default (underlaying scalar check)'
        )
 
-   ; ok( (not $class->Barr_namedA)
+   ; ok( (not $subclass->Barr_namedA)
        , 'Default undef value'
        )
 
@@ -142,9 +155,9 @@
        , 'Default undef value (underlaying scalar check)'
        )
 
-   ; $class->Bdefault = 56
-   ; undef $class->Bdefault
-   ; is( $class->Bdefault
+   ; $subclass->Bdefault = 56
+   ; undef $subclass->Bdefault
+   ; is( $subclass->Bdefault
        , 25
        , 'Reset to default'
        )
@@ -154,8 +167,8 @@
        , 'Reset to default (underlaying scalar check)'
        )
 
-   ; $class->Bmod_input = 'abc'
-   ; is( $class->Bmod_input
+   ; $subclass->Bmod_input = 'abc'
+   ; is( $subclass->Bmod_input
        , 'ABC'
        , 'Modifying input'
        )
@@ -164,7 +177,7 @@
        , 'Modifying input (underlaying scalar check)'
        )
        
-   ; is( $class->Brt_default
+   ; is( $subclass->Brt_default
        , 25
        , 'Passing a sub ref as the rt_default'
        )
@@ -175,13 +188,13 @@
        )
 
    ; eval
-      { $class->Brt_default_val
+      { $subclass->Brt_default_val
       }
    ; ok( $@
        , 'Passing an invalid sub ref as the rt_default'
        )
 
-   ; is( $class->Brt_default_val_prot
+   ; is( $subclass->Brt_default_val_prot
        , 5
        , "Bypass protection for rt_default"
        )
@@ -194,10 +207,10 @@
 
 ; package BaseClass
 
-; use Class::constr 
+; use Class::constr
 
 
-; use Class::props ( qw | BpropA
+; use Package::props ( qw | BpropA
                           BpropB
                         |
                    , { name      => 'BnamedA'
