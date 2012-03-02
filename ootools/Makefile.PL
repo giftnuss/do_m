@@ -5,7 +5,7 @@
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'OOTools'
-; my $vers = '1.74'
+; my $vers = '1.75'
 
 ; WriteMakefile
    ( NAME           => $dist
@@ -18,3 +18,10 @@
    )
 
 ; 1
+
+
+__END__
+
+Note: While I did removed the "phone home opt-out only logic" from all my distributions since 2004-24-06, the related ratings have not been removed so far. Sorry for the inconvenience.
+
+Domizio Demichelis

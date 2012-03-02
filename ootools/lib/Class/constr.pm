@@ -1,5 +1,5 @@
 package Class::constr ;
-$VERSION = 1.74 ;
+$VERSION = 1.75 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -23,30 +23,45 @@ $VERSION = 1.74 ;
         = sub
            { &{$$constr{pre_process}} if defined $$constr{pre_process}
            ; my $c = shift
-           ; ref($c)  && croak qq(Can't call method "$n" on a reference)
-           ; (@_ % 2) && croak qq(Odd number of arguments for "$c->$n")
-           ; my $s = bless {}, $c
+           ; my $class = ref($c) || $c 
+           ; (@_ % 2) && croak qq(Odd number of arguments for "$class->$n")
+         
+           ; my $s = bless {}, $class
+         
+           # For copy constructors, get initial values from the object
+           # on which the constructor was called. Values passed to the
+           # constructor will override copied values.
+           ; if ($$constr{copy} and ref $c) 
+              { for my $key (keys %{$c})
+                 { unshift(@_, $key => $c->{$key}) if defined($c->{$key})
+                 }
+              }
+
+           # Set the initial values for the new object
            ; while ( my ($p, $v) = splice @_, 0, 2 )
-              { if ($s->can($p))                     # if method
+              { if ($s->can($p))                # if accessor available, use it
                  { $s->$p( $v )
                  }
                 else
                  { croak qq(No such property "$p")
                          unless $$constr{no_strict}
                  ; eval { $s->$p( $v ) }             # try AUTOLOAD
-                 ; $@ && ( $$s{$p} = $v )            # anyway
+                 ; $@ && ( $$s{$p} = $v )            # no strict so just set it
                  }
               }
+           # Execute any initializer methods
            ; if ( $$constr{init} )
               { foreach my $m ( @{$$constr{init}} )
-                 { last unless $s                    # thanks to Vince
+                 # any initializer can cancel construction by undefining the 
+                 # object. If this happens, no need to continue
+                 { last unless defined($s) 
                  ; $s->$m(@_)
                  }
               }
            ; $s
-           }
-      }
-   }
+           }#END sub
+      }#END for $constr
+   }#END import
 
 
 ; 1
@@ -57,9 +72,9 @@ __END__
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 1.74
+=head1 VERSION 1.75
 
-Included in OOTools 1.74 distribution.
+Included in OOTools 1.75 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -138,7 +153,7 @@ From the directory where this file is located, type:
 
 =head1 DESCRIPTION
 
-This pragma easily implements constructor methods for your class. Use it with C<Class::props> and C<Object::props> to automatically validate the input passed with C<new()>, or use the C<no_strict> option to accept unknow properties as well.
+This pragma easily implements constructor methods for your class. Use it with C<Class::props> and C<Object::props> to automatically validate the input passed with C<new()>, or use the C<no_strict> option to accept unknown properties as well.
 
 You can completely avoid to write the constructor by just using it and eventually declaring the name and the init methods to call.
 
@@ -184,6 +199,49 @@ Use this option if you want to call other methods in your class to further initi
 
 After the assignation and validation of the properties, the initialization methods in the C<init> option will be called. Each init method will receive the blessed object passed in C<$_[0]> and the other parameters in the remaining C<@_>.
 
+Any C<init> method can cancel construction of the object by undefining C<$_[0]>. This will cause the constructor to return undef. If you prefer, you can explicitly C<croak> from your init method.
+
+   
+   use Class::constr
+      { name       => 'new'
+      , init       => 'too_many'
+      }
+   ;
+   sub too_many
+      { if ( $MyClass::num_instances > $MyClass::max_instances)
+         { $_[0] = undef # Do not allow new object to be returned
+         }
+        else
+         { $MyClass::num_instances++
+         }
+      }
+   
+
+=head2 copy
+
+If this option is set to a true value, the constructor will be a "copy constructor". Copy constructors allow you to create a new object that inherits data from an existing object. Values passed to the constructor will overwrite copied values, and C<init> methods will also have a chance to manipulate the values. 
+
+B<Warning:> The copy constructor will only perform a I<shallow> copy, which means that after a copy any references stored in properties will point to the I<same> variable in I<both> objects (the objects will share a single variable instead of each having its own private copy). If you don't want this behavior, you should reset these properties in your C<init> method. Properties created by the Object::groups pragma are effected by this. Such properties should be explicitly set to C<undef> in your C<init> method for sane behavior.
+
+Copy constructors may also be called as traditional class method constructors, but of course there will be no values to be copied into the new object. Generally, you will want to have a normal constructor to use when you don't need the copy functionality.
+
+   package My::Class;
+   use Class::constr
+      ( { name       => 'new'
+        , init       => '_init'
+        }
+      , { name       => 'copy_me'
+        , copy       => 1
+        , init       => '_init_copy' # Special init undefs properties
+                                     # containing shared references
+        }
+      )
+   
+   # Then in your program somewhere
+   my $obj = My::Class->new( property => 1); 
+   my $copy = $obj->copy_me(); # $copy->property == 1
+   
+
 =head1 SUPPORT and FEEDBACK
 
 If you need support or if you want just to send me some feedback or request, please use this link: http://perl.4pro.net/?Class::constr.
@@ -196,4 +254,10 @@ All Rights Reserved. This module is free software. It may be used, redistributed
 
 =head1 CREDITS
 
-Thanks to Juerd Waalboer (http://search.cpan.org/author/JUERD) that with its I<Attribute::Property> inspired the creation of this distribution.
+Thanks to Juerd Waalboer (L<http://search.cpan.org/author/JUERD>) that with its I<Attribute::Property> inspired the creation of this distribution.
+
+Thanks to Vince Veselosky (L<(http://search.cpan.org/author/VESELOSKY)>) for his patches and improvement.
+
+=cut
+
+# vim:ft=perl:expandtab:sw=3:ts=3:

@@ -1,5 +1,9 @@
 OOTools Latest Versions Changes
 
+Version 1.75
+- Constructors can now be called as instance methods
+- Added the 'copy' option to create copy constructors
+- Fixed a bug in the Class::constr (introduced with a patch in version 1.74)
 
 Version 1.74
 - Eliminated version check and installation feedback system

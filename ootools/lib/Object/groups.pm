@@ -1,5 +1,5 @@
 package Object::groups ;
-$VERSION = 1.74 ;
+$VERSION = 1.75 ;
 
 use base 'Class::groups' ;
    
@@ -11,9 +11,9 @@ __END__
 
 Object::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.74
+=head1 VERSION 1.75
 
-Included in OOTools 1.74 distribution.
+Included in OOTools 1.75 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -130,7 +130,7 @@ This pragma easily implements accessor methods for group of properties.
 
 It creates an accessor method for each property in the C<props> option as you where using the L<Object::props|Object::props> pragma, and creates an accessor method for the group.
 
-B<Note>: The grouped properties will be stored in e.g. C<$Object->{group}{property}> instead of the usual C<$Object->{property}>
+B<Note>: The grouped properties will be stored in e.g. C<< $Object->{group}{property} >> instead of the usual C<< $Object->{property} >>
 
 Whit the accessor method for the group you can:
 
