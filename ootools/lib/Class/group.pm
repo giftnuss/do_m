@@ -1,90 +1,74 @@
 package Class::group ;
-$VERSION = 1.31 ;
+$VERSION = 1.4 ;
 
+; use 5.006_001
 ; use base 'Class::props'
 ; use strict
 ; use Carp
 
-
-; use constant START_SUB => q!
-  sub
-   { my $s = shift
-!
-; use constant AUTO_INIT => q!
-   ; $init->($s, ref $s||$s)
-!
-; use constant CLASS => q!
-   ; my $hash = \%{(ref $s||$s)."::$gr"}
-!
-; use constant OBJECT => q!
-   ; my $hash = $$s{$gr}
-!
-; use constant END_SUB => q!
-   ; return $$hash{$_[0]} if @_ == 1
-   ; croak qq(Odd number of arguments for "$gr")
-           if @_ % 2
-   ; while ( my ($p, $v) = splice @_, 0, 2 )
-      { if ( $$group{no_strict} )
-         { $$hash{$p} = $v
-         }
-        else
-         { $s->can($p)
-           or croak qq(No such property "$p")
-         ; $s->$p( $v )
-         }
-      }
-   ; wantarray
-     ? keys %$hash
-     : $hash || $$s{$gr}  # rare perl bug?
-   }
-!
-
 ; sub import
    { my ( $pkg, @args ) = @_
    ; my $callpkg = caller
-   ; my $group = { @args }
-   ; my $gr   = $$group{name}
-   ; croak qq(Group "$gr" already defined in package "$callpkg")
-           if defined &{"$callpkg\::$gr"}
-   ; my @default_prop
-   ; foreach my $prop ( @{$$group{props}} )
-      { $prop = $pkg->_init_prop_param( $prop )
-      ; if (  defined $$prop{default}
-           || defined $$prop{rt_default}
-           )
-         { push @default_prop, @{$$prop{name}}
-         }
-      ; $$prop{group} = $gr
-      ; $pkg->_create_prop( $prop, $callpkg )
-      }
-   ; no strict 'refs'
-   ; my $init
-   ; if ( @default_prop )
-      { ${"$pkg\::DEFAULT_PROP"}{$callpkg}{$gr} = \@default_prop
-      ; $init = sub
-                 { foreach my $p ( @{ ${"$pkg\::DEFAULT_PROP"}{$_[1]}{$gr} } )
-                    { $_[0]->$p
+   ; foreach my $group ( @args )
+      { $$group{name} = [ $$group{name} ]
+                        unless ref $$group{name} eq 'ARRAY'
+      ; foreach my $n ( @{$$group{name}} )
+         { croak qq(Group "$n" already defined in package "$callpkg")
+                 if defined &{"$callpkg\::$n"}
+         ; my @default_prop
+         ; foreach my $prop ( @{$$group{props}} )
+            { $prop = $pkg->_init_prop_param( $prop )
+            ; if (  defined $$prop{default}
+                 || defined $$prop{rt_default}
+                 )
+               { push @default_prop, @{$$prop{name}}
+               }
+            ; $$prop{group} = $n
+            ; $pkg->_create_prop( $prop, $callpkg )
+            }
+         ; no strict 'refs'
+         ; my $init
+         ; if ( @default_prop )
+            { ${"$pkg\::D_PROPS"}{$callpkg}{$n} = \@default_prop
+            ; $init = sub
+                       { foreach my $p ( @{ ${"$pkg\::D_PROPS"}
+                                             {$_[1]}
+                                             {$n}
+                                          }
+                                       )
+                          { $_[0]->$p
+                          }
+                       ; foreach my $c ( @{"$_[1]\::ISA"} )
+                          { $init->($_[0], $c)
+                          }
+                       }
+            }
+         ; *{"$callpkg\::$n"}
+           = sub
+              { my $s = shift
+              ; my $hash = $pkg =~ /^Class/
+                           ? \%{(ref $s||$s)."::$n"}
+                           : $$s{$n}
+              ; return $$hash{$_[0]} if @_ == 1
+              ; croak qq(Odd number of arguments for "$n")
+                      if @_ % 2
+              ; while ( my ($p, $v) = splice @_, 0, 2 )
+                 { if ( $$group{no_strict} )
+                    { $$hash{$p} = $v
                     }
-                 ; foreach my $c ( @{"$_[1]\::ISA"} )
-                    { $init->($_[0], $c)
+                   else
+                    { $s->can($p)
+                      or croak qq(No such property "$p")
+                    ; $s->$p( $v )
                     }
                  }
+              ; $init->($s, ref $s||$s) if @default_prop
+              ; wantarray
+                ? keys %$hash
+                : $hash || $$s{$n}  # rare perl bug?
+              }
+         }
       }
-                                               
-   ; my $sub  = START_SUB
-   ;    $sub .= $pkg =~ /^Class/
-                ? CLASS
-                : OBJECT
-   ;    $sub .= @default_prop
-                ? AUTO_INIT
-                : ''
-   ;    $sub .= END_SUB
-#   ; print qq(### $callpkg\::$gr ###$sub\n)
-   ; eval '*{"$callpkg\::$gr"} = '. $sub
-#   ; if ( $@ )
-#      { croak qq(Error in group sub: $@\n)
-#            . qq(### $callpkg\::$gr ###$sub\n)
-#      }
    }
 1 ;
 
@@ -94,9 +78,9 @@ __END__
 
 Class::group - Pragma to implement group of properties
 
-=head1 VERSION 1.31
+=head1 VERSION 1.4
 
-Included in OOTools 1.31 distribution. The distribution includes:
+Included in OOTools 1.4 distribution. The distribution includes:
 
 =over
 
@@ -129,16 +113,18 @@ Pragma to implement group of properties accessors with options
     package MyClass ;
     
     # implement group method without options
-    use Class::group name  => 'myGroup' ,
-                     props => [qw(prop1 prop2)] ;
+    use Class::group { name  => 'myGroup' ,
+                       props => [qw(prop1 prop2)]
+                     } ;
     
     # with options
-    use Class::group name      => 'myOtherGroup' ,
-                     no_strict => 1 ,
-                     props     => [ { name    => [qw(prop3 prop4)] ,
-                                      default => 'something'
-                                    }
-                                  ] ;
+    use Class::group { name      => 'myOtherGroup' ,
+                       no_strict => 1 ,
+                       props     => [ { name    => [qw(prop3 prop4)] ,
+                                        default => 'something'
+                                      }
+                                    ]
+                     } ;
 
 =head2 Usage
 
@@ -257,4 +243,3 @@ All Rights Reserved. This module is free software. It may be used, redistributed
 =head1 CREDITS
 
 Thanks to Juerd Waalboer (http://search.cpan.org/author/JUERD) that with its I<Attribute::Property> inspired the creation of this distribution.
-

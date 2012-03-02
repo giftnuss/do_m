@@ -1,5 +1,5 @@
 package Object::group ;
-$VERSION = 1.31 ;
+$VERSION = 1.4 ;
 
 use base 'Class::group' ;
    
@@ -11,9 +11,9 @@ __END__
 
 Object::group - Pragma to implement group of properties
 
-=head1 VERSION 1.31
+=head1 VERSION 1.4
 
-Included in OOTools 1.31 distribution. The distribution includes:
+Included in OOTools 1.4 distribution. The distribution includes:
 
 =over
 
@@ -49,16 +49,18 @@ Pragma to implement group of properties accessors with options
     use Class::costr ;
     
     # implement group method without options
-    use Object::group name  => 'myGroup' ,
-                      props => [qw(prop1 prop2)] ;
+    use Object::group { name  => 'myGroup' ,
+                        props => [qw(prop1 prop2)]
+                      } ;
     
     # with options
-    use Object::group name      => 'myOtherGroup' ,
-                      no_strict => 1  ;
-                      props => [ { name    => [qw(prop3 prop4)] ,
-                                   default => 'something'
-                                 }
-                               ] ;
+    use Object::group { name      => 'myOtherGroup' ,
+                        no_strict => 1  ;
+                        props => [ { name    => [qw(prop3 prop4)] ,
+                                     default => 'something'
+                                   }
+                                 ]
+                      } ;
 
 =head2 Usage
 

@@ -1,56 +1,50 @@
 package Class::constr ;
-$VERSION = 1.31 ;
+$VERSION = 1.4 ;
 
 ; use 5.006_001
 ; use strict
 ; use Carp
 
-; use constant START_SUB => q!
-  sub
-   { my $c = shift
-   ; croak qq(Can't call method "$n" on a reference)
-           if ref $c
-   ; croak qq(Odd number of arguments for "$c->$n")
-           if @_ % 2
-   ; my $s = bless {}, $c
-   ; while ( my ($p, $v) = splice @_, 0, 2 )
-      { if ( $constr{no_strict} )
-         { $$s{$p} = $v
-         }
-        else
-         { $s->can($p)
-           or croak qq(No such property "$p")
-         ; { local $Carp::Internal{+__PACKAGE__} = 1
-           ; $s->$p( $v )
-           }
-         }
-      }
-!
-; use constant INIT_LOOP => q!
-   ; foreach my $m ( @{$constr{init}} )
-      { $s->$m(@_)
-      }
-!
-; use constant END_SUB => q!
-   ; $s
-   }
-!
-
 ; sub import
-   { my ($pkg, %constr) = @_
+   { my ($pkg, @args) = @_
    ; my $callpkg = caller
-   ; my $n = $constr{name} || 'new'
+   ; $args[0] ||= {}
+   ; foreach my $constr ( @args )
+      { my $n = $$constr{name} || 'new'
  
-   ; $constr{init} &&= [ $constr{init} ]
-                     unless ref $constr{init} eq 'ARRAY'
-   ; my $sub = START_SUB
-   ;    $sub .= INIT_LOOP if $constr{init}
-   ;    $sub .= END_SUB
-
-   ; no strict 'refs'
-   ; eval '*{"$callpkg\::$n"} ='. $sub
-   ; croak $@ if $@
-   ; print "### $callpkg\::$n ###$sub\n" if our $print_codes
+      ; $$constr{init} &&= [ $$constr{init} ]
+                           unless ref $$constr{init} eq 'ARRAY'
+      ; no strict 'refs'
+      ; *{"$callpkg\::$n"}
+        = sub
+           { my $c = shift
+           ; croak qq(Can't call method "$n" on a reference)
+                   if ref $c
+           ; croak qq(Odd number of arguments for "$c->$n")
+                   if @_ % 2
+           ; my $s = bless {}, $c
+           ; while ( my ($p, $v) = splice @_, 0, 2 )
+              { if ( $$constr{no_strict} )
+                 { { local $Carp::Internal{+__PACKAGE__} = 1
+                   ; $$s{$p} = $v
+                   }
+                 }
+                else
+                 { $s->can($p)
+                   or croak qq(No such property "$p")
+                 ; { local $Carp::Internal{+__PACKAGE__} = 1
+                   ; $s->$p( $v )
+                   }
+                 }
+              }
+           ; if ( $$constr{init} )
+              { foreach my $m ( @{$$constr{init}} )
+                 { $s->$m(@_)
+                 }
+              }
+           ; $s
+           }
+      }
    }
 
 
@@ -62,9 +56,9 @@ __END__
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 1.31
+=head1 VERSION 1.4
 
-Included in OOTools 1.31 distribution. The distribution includes:
+Included in OOTools 1.4 distribution. The distribution includes:
 
 =over
 
@@ -100,9 +94,10 @@ Pragma to implement group of properties accessors with options
     use Class::constr ;
     
     # with options
-    use Class::constr  name      => 'new_object' ,
-                       init      => [ qw( init1 init2 ) ] ,
-                       no_strict => 1  ;
+    use Class::constr { name      => 'new_object' ,
+                        init      => [ qw( init1 init2 ) ] ,
+                        no_strict => 1
+                      } ;
                     
     # init1 and init2 will be called at run-time
     

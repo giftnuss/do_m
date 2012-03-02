@@ -1,53 +1,11 @@
 package Class::props ;
-$VERSION = 1.31 ;
+$VERSION = 1.4 ;
 
 
 ; use 5.006_001
 ; use strict
 ; use Carp
 
-; use constant START_SUB => q!
-  sub : lvalue
-   { croak qq(Too many arguments for "$n" property)
-           if @_ > 2
-!
-; use constant P_CLASS => q!
-   ; my $scalar = \${(ref $_[0]||$_[0])."::$n"}
-!
-; use constant G_CLASS => q!
-   ; my $scalar = \${(ref $_[0]||$_[0])."::$gr"}{$n}
-!
-; use constant P_OBJECT => q!
-   ; croak qq(Wrong value type passed to "$n" object property)
-           unless ref $_[0]
-   ; my $scalar = \$_[0]{$n}
-!
-; use constant G_OBJECT => q!
-   ; croak qq(Wrong value type passed to "$n" object property)
-           unless ref $_[0]
-   ; my $scalar = \$_[0]{$gr}{$n}
-!
-; use constant TIE => q!
-   ; unless ( tied $$scalar )
-      { tie $$scalar
-          , $pkg
-          , $_[0]
-          , $n
-          , $scalar
-          , $$prop{default}
-          , $$prop{rt_default}
-          , $$prop{protected}
-          , $$prop{validation}
-      }
-!
-; use constant END_SUB => q!
-   ; @_ == 2
-     ? ( $$scalar = $_[1] )
-     :   $$scalar
-   }
-!
-
-  
 ; sub import
    { my ($pkg, @args) = @_
    ; my $callpkg = caller
@@ -78,38 +36,41 @@ $VERSION = 1.31 ;
    ; foreach my $n ( @{$$prop{name}} )       # foreach property
       { croak qq(Property "$n" already defined in package "$callpkg")
               if defined &{"$callpkg\::$n"}
-      ; my $sub  = START_SUB
-      ;    $sub .= $pkg =~ /^Class/
-                   ? $gr
-                     ? G_CLASS
-                     : P_CLASS
-                   : $gr
-                     ? G_OBJECT
-                     : P_OBJECT
-      ;    $sub .= TIE if defined $$prop{validation}
-                       or defined $$prop{default}
-                       or defined $$prop{rt_default}
-                       or defined $$prop{protected}
-      ;    $sub .= END_SUB
       ; no strict 'refs'
-#      ; print qq(### $callpkg\::$n ###$sub\n)
-      ; eval '*{"$callpkg\::$n"} = '. $sub
-#      ; if ( $@ )
-#         { croak qq(Error in props sub: $@\n)
-#               . qq(### $callpkg\::$n ###$sub\n)
-#         }
+      ; *{"$callpkg\::$n"}
+        = sub : lvalue
+           { croak qq(Too many arguments for "$n" property)
+                   if @_ > 2
+           ;  my $scalar = $pkg =~ /^Class/
+                           ? $gr
+                             ? \${(ref $_[0]||$_[0])."::$gr"}{$n}
+                             : \${(ref $_[0]||$_[0])."::$n"}
+                           : $gr
+                             ? \$_[0]{$gr}{$n}
+                             : \$_[0]{$n}
+           ; if (  defined $$prop{default}
+                || defined $$prop{rt_default}
+                || defined $$prop{protected}
+                || defined $$prop{validation}
+                )
+              { unless ( tied $$scalar )
+                 { tie $$scalar
+                     , $pkg
+                     , $_[0]                   # [0] object/class
+                     , $n                      # [1] prop name
+                     , $scalar                 # [2] lvalue ref
+                     , $$prop{default}         # [3] default
+                     , $$prop{rt_default}      # [4] rt_default
+                     , $$prop{protected}       # [5] protected
+                     , $$prop{validation}      # [6] validation subref
+                 }
+              }
+           ; @_ == 2
+             ? ( $$scalar = $_[1] )
+             :   $$scalar
+           }
       }
    }
- 
-
-      
-# [0] object/class
-# [1] prop name
-# [2] lvalue ref
-# [3] default
-# [4] rt_default
-# [5] protected
-# [6] validation subref
 
 ; sub TIESCALAR
    { bless \@_, shift
@@ -162,9 +123,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.31
+=head1 VERSION 1.4
 
-Included in OOTools 1.31 distribution. The distribution includes:
+Included in OOTools 1.4 distribution. The distribution includes:
 
 =over
 

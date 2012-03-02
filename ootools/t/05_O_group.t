@@ -86,31 +86,31 @@
               
    }
                
-; use Object::group  name => 'group1'
-                   , props => \@props
-                   
+; use Object::group { name => 'group1'
+                    , props => \@props
+                    }
                    
 
                                  
 ; package SubClass
 ; use base 'BaseClass'
 
-; use Object::group (  name => 'group1'
+; use Object::group {  name => 'group1'
                     ,  props => [ { name    => [ "one"
                                                , "three"
                                                ]
                                   , default => 4
                                   }
                                 ]
-                    )
+                    }
 
 
 ; package Other
 ; use base 'SubClass'
 
-; use Object::group ( name => 'group1'
+; use Object::group { name => 'group1'
                     , props => [ 'four' ]
-                    )
+                    }
 
 
 

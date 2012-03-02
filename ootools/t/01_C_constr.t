@@ -24,9 +24,10 @@
 ; use Class::constr
 
 
-; use Class::constr ( name => 'N_init_constr'
+; use Class::constr { name => 'N_init_constr'
                     , init => 'N_init'
-                    )
+                    }
+                    
 ; sub N_init { $BaseClass::N_init = 1 }
 
                                  
