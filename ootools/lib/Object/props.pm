@@ -1,5 +1,5 @@
 package Object::props ;
-$VERSION = 1.5 ;
+$VERSION = 1.51 ;
 
 use base 'Class::props' ;
 
@@ -11,9 +11,9 @@ __END__
 
 Object::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.5
+=head1 VERSION 1.51
 
-Included in OOTools 1.5 distribution. The distribution includes:
+Included in OOTools 1.51 distribution. The distribution includes:
 
 =over
 
@@ -59,7 +59,7 @@ Pragma to implement groups of properties accessors with options
     
     # a group of properties with common full options
     use Object::props { name       => \@prop_names2,     # @prop_names2 (1)
-                        rt_default => sub{$_[0]->other_default} ,
+                        default    => sub{$_[0]->other_default} ,
                         validation => sub{ /\w+/ } ,
                         protected  => 1 ,
                         no_strict  => 1 ,
@@ -73,7 +73,7 @@ Pragma to implement groups of properties accessors with options
                         default    => 10
                       } ,
                       { name       => \@prop_names2,     # @prop_names2 (1)
-                        rt_default => sub{$_[0]->other_default} ,
+                        default    => sub{$_[0]->other_default} ,
                         validation => sub{ /\w+/ } ,
                         protected  => 1 ,
                         no_strict  => 1 ,
@@ -194,20 +194,15 @@ You can group properties that have the same set of option by passing a reference
 
 =item default
 
-Use this option to set a I<default value>. If any C<validation> option is set, then the I<default value> is validated as well.
+Use this option to set a I<default value>. If any C<validation> option is set, then the I<default value> is validated as well (the C<no_strict> option override this).
+
+If you pass a CODE reference as default it will be evaluated at runtime and the property will be set to the result of the referenced CODE.
+
 You can reset a property to its default value by assigning it the undef value.
-
-B<Note>:  C<default> and  C<rt_default> are incompatible options: the module will croak if you try to use both for the same property.
-
-=item rt_default
-
-Almost the same as the C<default> option, but it accepts a code references that will be executed at run-time and should return the default value ('rt' stands for 'run time'). The referenced code will receive the same C<@_> parameters that the property accessor method recieves.
-
-B<Note>:  C<default> and  C<rt_default> are incompatible options: the module will croak if you try to use both for the same property.
 
 =item no_strict
 
-With C<no_strict> option set to a true value, the C<default> or C<rt_default> value will not be validate even if a validation option is set. Without this option the method will croak if the C<default> or C<rt_default> are not valid.
+With C<no_strict> option set to a true value, the C<default> value will not be validate even if a C<validation> option is set. Without this option the method will croak if the C<default> are not valid.
 
 =item validation
 

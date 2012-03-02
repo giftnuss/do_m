@@ -150,10 +150,10 @@
                       , default    => 25
                       }
                     , { name       => 'Brt_default'
-                      , rt_default => sub{ 25 }
+                      , default => sub{ 25 }
                       }
                     , { name       => 'Brt_default_val_prot'
-                      , rt_default => sub{ 5 }
+                      , default => sub{ 5 }
                       , validation => sub { $_ < 25 }
                       , protected => 1
                       }

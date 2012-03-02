@@ -1,5 +1,5 @@
 package Class::groups ;
-$VERSION = 1.5 ;
+$VERSION = 1.51 ;
 
 ; use 5.006_001
 ; use base 'Class::props'
@@ -18,9 +18,7 @@ $VERSION = 1.5 ;
          ; my @default_prop
          ; foreach my $prop ( @{$$group{props}} )
             { $prop = $pkg->_init_prop_param( $prop )
-            ; if (  defined $$prop{default}
-                 || defined $$prop{rt_default}
-                 )
+            ; if (  defined $$prop{default} )
                { push @default_prop, @{$$prop{name}}
                }
             ; $$prop{group} = $n
@@ -49,7 +47,7 @@ $VERSION = 1.5 ;
               ; my $s = shift
               ; my $hash = $pkg =~ /^Class/
                            ? \%{(ref $s||$s)."::$n"}      # class
-                           : ( $$s{$n} ||= {} )                 # object
+                           : ( $$s{$n} ||= {} )           # object
               ; my $data
               ; if ( @_ )
                  { if ( ref $_[0] eq 'HASH' )
@@ -93,9 +91,9 @@ __END__
 
 Class::group - Pragma to implement group of properties
 
-=head1 VERSION 1.5
+=head1 VERSION 1.51
 
-Included in OOTools 1.5 distribution. The distribution includes:
+Included in OOTools 1.51 distribution. The distribution includes:
 
 =over
 
@@ -206,7 +204,7 @@ all the already set properties of the class and base classes
 
 =item *
 
-all the properties with a C<default> or C<rt_default> option (of the class and base classes, even if they have not been set yet)
+all the properties with a C<default> option (of the class and base classes, even if they have not been set yet)
 
 =back
 

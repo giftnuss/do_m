@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 1.5 ;
+$VERSION = 1.51 ;
 
 
 ; use 5.006_001
@@ -23,9 +23,6 @@ $VERSION = 1.5 ;
                     unless ref $$prop{name} eq 'ARRAY'
    ; $$prop{allowed} &&= [ $$prop{allowed} ]
                          unless ref $$prop{allowed} eq 'ARRAY'
-   ;  defined $$prop{default}
-   && defined $$prop{rt_default}
-   && croak qq("default" and "rt_default" options are incompatible)
    ; $prop
    }
                       
@@ -34,7 +31,6 @@ $VERSION = 1.5 ;
    ; my ( $pkg, $prop ) = @_
    ; my $gr = delete $$prop{group}
    ; my $to_tie = (  defined $$prop{default}
-                  || defined $$prop{rt_default}
                   || defined $$prop{protected}
                   || defined $$prop{allowed}
                   || defined $$prop{validation}
@@ -83,14 +79,12 @@ $VERSION = 1.5 ;
       { ${$_[0][2]}
       }
      elsif ( defined $_[0][3]{default} )                      # default
-      { $_[0][3]{no_strict}
-        ? ${$_[0][2]} = $_[0][3]{default}
-        : $_[0]->STORE( $_[0][3]{default} )
-      }
-     elsif ( defined $_[0][3]{rt_default} )                # rt_default
-      { $_[0][3]{no_strict}
-        ? ${$_[0][2]} = $_[0][3]{rt_default}( $_[0][0] )
-        : $_[0]->STORE( $_[0][3]{rt_default}( $_[0][0] ) )
+      { my $def = ref $_[0][3]{default} eq 'CODE'
+                        ? $_[0][3]{default}( $_[0][0] )
+                        : $_[0][3]{default}
+      ; $_[0][3]{no_strict}
+        ? ${$_[0][2]} = $def
+        : $_[0]->STORE( $def )
       }
      else
       { undef
@@ -144,9 +138,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.5
+=head1 VERSION 1.51
 
-Included in OOTools 1.5 distribution. The distribution includes:
+Included in OOTools 1.51 distribution. The distribution includes:
 
 =over
 
@@ -192,7 +186,7 @@ Pragma to implement groups of properties accessors with options
     
     # a group of properties with common full options
     use Class::props { name       => \@prop_names2,      # @prop_names2 (1)
-                       rt_default => sub{$_[0]->other_default} ,
+                       default    => sub{$_[0]->other_default} ,
                        validation => sub{ /\w+/ } ,
                        protected  => 1 ,
                        no_strict  => 1 ,
@@ -206,7 +200,7 @@ Pragma to implement groups of properties accessors with options
                        default    => 10
                      } ,
                      { name       => \@prop_names2,      # @prop_names2 (1)
-                       rt_default => sub{$_[0]->other_default} ,
+                       default    => sub{$_[0]->other_default} ,
                        validation => sub{ /\w+/ } ,
                        protected  => 1 ,
                        no_strict  => 1 ,
@@ -333,20 +327,15 @@ You can group properties that have the same set of option by passing a reference
 
 =item default
 
-Use this option to set a I<default value>. If any C<validation> option is set, then the I<default value> is validated as well.
+Use this option to set a I<default value>. If any C<validation> option is set, then the I<default value> is validated as well (the C<no_strict> option override this).
+
+If you pass a CODE reference as default it will be evaluated at runtime and the property will be set to the result of the referenced CODE.
+
 You can reset a property to its default value by assigning it the undef value.
-
-B<Note>:  C<default> and  C<rt_default> are incompatible options: the module will croak if you try to use both for the same property.
-
-=item rt_default
-
-Almost the same as the C<default> option, but it accepts a code references that will be executed at run-time and should return the default value ('rt' stands for 'run time'). The referenced code will receive the same C<@_> parameters that the property accessor method recieves.
-
-B<Note>:  C<default> and  C<rt_default> are incompatible options: the module will croak if you try to use both for the same property.
 
 =item no_strict
 
-With C<no_strict> option set to a true value, the C<default> or C<rt_default> value will not be validate even if a validation option is set. Without this option the method will croak if the C<default> or C<rt_default> are not valid.
+With C<no_strict> option set to a true value, the C<default> value will not be validate even if a validation option is set. Without this option the method will croak if the C<default> are not valid.
 
 =item validation
 
