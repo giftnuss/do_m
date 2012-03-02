@@ -1,5 +1,5 @@
 package Object::groups ;
-$VERSION = 1.62 ;
+$VERSION = 1.7 ;
 
 use base 'Class::groups' ;
    
@@ -11,9 +11,9 @@ __END__
 
 Object::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.62
+=head1 VERSION 1.7
 
-Included in OOTools 1.62 distribution.
+Included in OOTools 1.7 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -82,7 +82,7 @@ From the directory where this file is located, type:
     use Object::groups { name  => 'myGroup' ,
                          props => [qw(prop1 prop2)]
                        } ;
-    
+                                                                 
     # with options
     use Object::groups
         { name      => 'myOtherGroup' ,

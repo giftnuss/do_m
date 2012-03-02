@@ -2,7 +2,7 @@
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'OOTools'
-; my $vers = '1.62'
+; my $vers = '1.7'
 
 ; WriteMakefile
    ( NAME           => $dist

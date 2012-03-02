@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 1.62 ;
+$VERSION = 1.7 ;
 
 
 ; use 5.006_001
@@ -48,19 +48,22 @@ $VERSION = 1.62 ;
                            : $gr
                              ? \$_[0]{$gr}{$n}
                              : \$_[0]{$n}
+           ; my $Tscalar
            ; if (   $to_tie
-                &&! tied $$scalar
                 )
-              { tie $$scalar
+              { tie $$Tscalar
                   , 'Class::props::Tie'
                   , $_[0]                   # [0] object/class
                   , $n                      # [1] prop name
                   , $scalar                 # [2] lvalue ref
                   , $prop                   # [3] options ref
               }
+             else
+              { $Tscalar = $scalar
+              }
            ; @_ == 2
-             ? ( $$scalar = $_[1] )
-             :   $$scalar
+             ? ( $$Tscalar = $_[1] )
+             :   $$Tscalar
            }
       }
    }
@@ -78,10 +81,10 @@ $VERSION = 1.62 ;
    { if ( defined ${$_[0][2]} )
       { ${$_[0][2]}
       }
-     elsif ( defined $_[0][3]{default} )                      # default
+     elsif ( defined $_[0][3]{default} )          
       { my $def = ref $_[0][3]{default} eq 'CODE'
-                        ? $_[0][3]{default}( $_[0][0] )
-                        : $_[0][3]{default}
+                  ? $_[0][3]{default}( $_[0][0] )
+                  : $_[0][3]{default}
       ; $_[0][3]{no_strict}
         ? ${$_[0][2]} = $def
         : $_[0]->STORE( $def )
@@ -129,7 +132,6 @@ $VERSION = 1.62 ;
    ; ${$_[0][2]} = $_
    }
 
-
 1 ;
 
 __END__
@@ -138,9 +140,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.62
+=head1 VERSION 1.7
 
-Included in OOTools 1.62 distribution.
+Included in OOTools 1.7 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -261,9 +263,9 @@ This pragma easily implements lvalue accessor methods for the properties of your
 
 You can completely avoid to write the accessor by just declaring the names and eventually the default value, validation code and other option of your properties.
 
-The accessor method creates a scalar in the class that implements it (e.g. $Class::property) and ties it to the options you set, so even if you access the scalar without using the accessor, the options will have effect.
+The accessor method creates a scalar in the class that implements it (e.g. $Class::property) and access it using the options you set.
 
-B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work.
+B<IMPORTANT NOTE>: Since the version 1.7 the options don't work if you access the scalar without using the accessor, so you can direct access to bypass the options.
 
 =head2 Class properties vs Object properties
 

@@ -22,15 +22,16 @@
 ; is( keys %$h
     , 3
     )
+    
 
-; is( $h->{one}
+; is( $$h{one}
     , 4
     )
 
 ; $BCo->group1( one => 1
               , two => 2
               )
-                   
+
 ; my @p =  $BCo->group1
 ; is( scalar @p
     , 2
@@ -66,8 +67,8 @@
 ; $Oo->two = 2
 
 ; my $o = $Oo->group1
-       
-; is( $o->{two}
+
+; is( $$o{two}
     , 2
     )
 

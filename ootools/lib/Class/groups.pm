@@ -1,5 +1,5 @@
 package Class::groups ;
-$VERSION = 1.62 ;
+$VERSION = 1.7 ;
 
 ; use 5.006_001
 ; use base 'Class::props'
@@ -40,7 +40,7 @@ $VERSION = 1.62 ;
                                              {$n}
                                           }
                                        )
-                          { $_[0]->$p
+                          { my $dummy = $_[0]->$p
                           }
                        ; foreach my $c ( @{"$_[1]\::ISA"} )
                           { $init->($_[0], $c)
@@ -64,6 +64,7 @@ $VERSION = 1.62 ;
                        || croak qq(Invalid "default" option)
                  ; %$hash = %$h
                  }
+              ; $init->($s, ref $s||$s) if @default_prop   # init defaults
               ; my $data
               ; if ( @_ )
                  { if ( ref $_[0] eq 'HASH' )
@@ -89,7 +90,6 @@ $VERSION = 1.62 ;
                        }
                     }
                  }
-              ; $init->($s, ref $s||$s) if @default_prop   # init defaults
               ; wantarray
                 ? keys %$hash
                 : $hash
@@ -107,9 +107,9 @@ __END__
 
 Class::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.62
+=head1 VERSION 1.7
 
-Included in OOTools 1.62 distribution.
+Included in OOTools 1.7 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

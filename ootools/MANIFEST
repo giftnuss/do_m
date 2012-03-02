@@ -1,10 +1,7 @@
 Changes
 lib/Class/constr.pm
-lib/Class/group.pm
 lib/Class/groups.pm
-lib/Class/new.pm
 lib/Class/props.pm
-lib/Object/group.pm
 lib/Object/groups.pm
 lib/Object/props.pm
 Makefile.PL

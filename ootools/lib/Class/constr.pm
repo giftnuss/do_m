@@ -1,5 +1,5 @@
 package Class::constr ;
-$VERSION = 1.62 ;
+$VERSION = 1.7 ;
 
 ; use 5.006_001
 ; use strict
@@ -50,9 +50,9 @@ __END__
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 1.62
+=head1 VERSION 1.7
 
-Included in OOTools 1.62 distribution.
+Included in OOTools 1.7 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
