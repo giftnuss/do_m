@@ -1,5 +1,5 @@
 package Class::constr ;
-$VERSION = 1.77 ;
+$VERSION = 1.78 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -77,9 +77,9 @@ __END__
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 1.77
+=head1 VERSION 1.78
 
-Included in OOTools 1.77 distribution.
+Included in OOTools 1.78 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -204,7 +204,7 @@ The original C<@_> is passed to the referenced pre_process CODE. Modify C<@_> in
 
 =head2 default => \%props | \&$method
 
-Use this option to supply any default properties to the constructor. Setting a default is very similar to pass the properties/values pairs to the constructor,but properties passed as arguments will override defaults.
+Use this option to supply any default properties to the constructor. Setting a default is very similar to pass the properties/values pairs to the constructor, but properties passed as arguments will override defaults.
 
 You can set the default to a HASH reference or to a method name or method reference. In case you use a method, it will be called at runtime with the blessed object passed in C<$_[0]> and the other properties in the remaining C<@_>; it must return a HASH reference.
 

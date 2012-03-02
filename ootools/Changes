@@ -1,5 +1,10 @@
 OOTools Latest Versions Changes
 
+Version 1.78
+- Fixed a bug related to naming props and group props with the same name
+- The properties defined with a group get initialized just once
+- Some testing addition and rewrite
+
 Version 1.77
 - WARNING: Deprecated the use of the group accessor in list context
   when used to retrieve keys: see 'WARNING' POD section

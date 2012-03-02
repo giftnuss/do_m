@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 1.77 ;
+$VERSION = 1.78 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -169,9 +169,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.77
+=head1 VERSION 1.78
 
-Included in OOTools 1.77 distribution.
+Included in OOTools 1.78 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

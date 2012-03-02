@@ -1,68 +1,119 @@
 #!perl -w
 
 ; use strict
-; use Test::More tests => 10
+; use Test::More tests => 13
 ; use strict
+#; use Data::Dumper
 
-; my $h = BaseClass->group1
+; my $base  = BaseClass->new
+; my $sub   = SubClass->new
+; my $other = Other->new
 
-; is( keys %$h
-    , 2
-    )
+; is_deeply( scalar $base->group1
+           , { one => 2
+             , two => 2
+             }
+           )
 
-; $h = SubClass->group1
+; is_deeply( scalar BaseClass->group1
+           , { one => 2
+             , two => 2
+             }
+           )
 
-; is( keys %$h
-    , 3
-    )
+; is_deeply( scalar $sub->group1
+           , { one   => 4
+             , two   => 2
+             , three => 4,
+             }
+           )
 
-; is( $h->{one}
-    , 4
-    )
+; is_deeply( scalar SubClass->group1
+           , { one   => 4
+             , two   => 2
+             , three => 4,
+             }
+           )
 
-; BaseClass->group1( one => 1
-                   , two => 2
-                   )
-                   
-; my @p =  BaseClass->group1
-; is( scalar @p
-    , 2
-    )
-; is( BaseClass->group1->{one}
-      + $BaseClass::group1{one}
-    , 2
-    )
-; is( BaseClass->one * BaseClass->two
-    , 2
-    )
+; $base->group1( one => 1
+               , two => 2
+               )
 
-; SubClass->one = 1
+; is_deeply( scalar $base->group1
+           , { one   => 1
+             , two   => 2
+             }
+           )
+
+; is_deeply( scalar BaseClass->group1
+           , { one   => 1
+             , two   => 2
+             }
+           )
+
+; $sub->one   = 1
+; $sub->two   = 2
 ; SubClass->three = 3
-; SubClass->two = 2
-; @p =  SubClass->group1
+; is_deeply( scalar $sub->group1
+           , { one   => 1
+             , two   => 2
+             , three => 3,
+             }
+           )
 
-; is( scalar @p
-    , 3
-    )
+; is_deeply( scalar SubClass->group1
+           , { one   => 1
+             , two   => 2
+             , three => 3,
+             }
+           )
 
-; my $str = join '', @p
-; ok(    $str =~ /one/
-      && $str =~ /two/
-      && $str =~ /three/
-    )
 
-; @p =  Other->group1
-; is( scalar @p
-    , 4
-    )
+; is_deeply( scalar $other->group1
+           , { one   => 4
+             , two   => 2
+             , three => 4
+             , four  => undef
+             }
+           )
 
-; Other->two = 2
+; is_deeply( scalar Other->group1
+           , { one   => 4
+             , two   => 2
+             , three => 4
+             , four  => undef
+             }
+           )
 
-; my $o = Other->group1
-       
-; is( $o->{two}
-    , 2
-    )
+# double check init and defaults
+; is_deeply( scalar $other->group1
+           , { one   => 4
+             , two   => 2
+             , three => 4
+             , four  => undef
+             }
+           )
+
+; $other->one = 1
+; Other->three = 3
+
+; is_deeply( scalar $other->group1
+           , { one   => 1
+             , two   => 2
+             , three => 3
+             , four  => undef
+             }
+           )
+
+
+; is_deeply( scalar Other->group1
+           , { one   => 1
+             , two   => 2
+             , three => 3
+             , four  => undef
+             }
+           )
+
 
    
 ; package BaseClass

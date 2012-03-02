@@ -1,7 +1,8 @@
 #!perl -w
 ; use strict
 ; use warnings
-; use Test::More tests => 13
+; use Test::More tests => 6
+#; use Data::Dumper
 
 ; package My::Test1
 
@@ -14,9 +15,11 @@
 
 
 ; package main
-; my $o1 = My::Test1->new()
-; is ( $$o1{a}, 2 )
-; is ( $$o1{b}, 3 )
+; is_deeply ( scalar My::Test1->new()
+            , { a => 2
+              , b => 3
+              }
+            )
 
 
 ; package My::Test2
@@ -31,9 +34,11 @@
 
 
 ; package main
-; my $o2 = My::Test2->new()
-; is ( $$o2{a}, 2 )
-; is ( $$o2{b}, 3 )
+; is_deeply ( scalar My::Test2->new()
+            , { a => 2
+              , b => 3
+              }
+            )
 
 ; package My::Test3
 
@@ -49,10 +54,12 @@
    }
    
 ; package main
-; my $o3 = My::Test3->new()
-; is ( $$o3{a}, 2 )
-; is ( $$o3{b}, 3 )
-
+; is_deeply ( scalar My::Test3->new()
+            , { a => 2
+              , b => 3
+              }
+            )
+            
 ; package My::Test4
 
 ; use Class::constr
@@ -65,9 +72,11 @@
 
 
 ; package main
-; my $o4 = My::Test2->new(a=>5)
-; is ( $$o4{a}, 5 )
-; is ( $$o4{b}, 3 )
+; is_deeply ( scalar My::Test2->new(a=>5)
+            , { a => 5
+              , b => 3
+              }
+            )
 
 # overwriting
 
@@ -91,14 +100,21 @@
    }
    
 ; package main
-; my $o5 = My::Test5->new()
-; is ( $$o5{a}, 2 )
-; is ( $$o5{b}, 3 )
+; my $o = My::Test5->new()
+; is_deeply ( $o
+            , { a => 2
+              , b => 3
+              }
+            )
+            
+; is_deeply ( scalar $o->copy_me(a=>8)
+            , { a => 8
+              , b => 3
+              , c => 5
+              }
+            )
 
-; my $o6 = $o5->copy_me(a=>8)
-; is ( $$o6{a}, 8 )
-; is ( $$o6{b}, 3 )
-; is ( $$o6{c}, 5 )
+
 
 
 

@@ -2,6 +2,7 @@
 ; use strict
 ; use warnings
 ; use Test::More tests => 6
+#; use Data::Dumper
 
 ; use Class::groups
    { name => 'agroup'
@@ -21,6 +22,7 @@
    { name => 'e'
    }
    
+
 ; my ($b, $c, $d, $e) = main->agroup(['b', 'c', 'd', 'e'])
 
 ; is( $b, 12)
@@ -29,4 +31,5 @@
 ; ok( exists $main::agroup{d})
 ; is( $e, undef)
 ; ok( ! exists $main::agroup{e})
+
 

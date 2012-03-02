@@ -7,8 +7,7 @@
 ; common_test('SubClass');
 
 ; sub common_test
-   {
-   ; my ($class) = @_
+   { my ($class) = @_
    ; $class->N_init_constr
    ; is( $BaseClass::N_init
        , 1

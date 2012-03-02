@@ -14,5 +14,6 @@ t/04_C_groups.t
 t/05_O_groups.t
 t/06_C_constr-instance.t
 t/07_C_constr-default.t
-t/08_C_group_slice.t
+t/08_group_slice.t
+t/09_group_name.t
 META.yml                                 Module meta-data (added by MakeMaker)

@@ -1,5 +1,5 @@
 package Class::groups ;
-$VERSION = 1.77 ;
+$VERSION = 1.78 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -38,9 +38,9 @@ $VERSION = 1.77 ;
          ; no strict 'refs'
          ; my $init
          ; if ( @group_props )
-            { ${"$tool\::D_PROPS"}{$pkg}{$n} = \@group_props
+            { ${"$tool\::PROPS"}{$pkg}{$n} = \@group_props
             ; $init = sub
-                       { foreach my $p ( @{ ${"$tool\::D_PROPS"}
+                       { foreach my $p ( @{ ${"$tool\::PROPS"}
                                              {$_[1]}
                                              {$n}
                                           }
@@ -65,11 +65,14 @@ $VERSION = 1.77 ;
                  { my $dprops
                    =  ref $def eq 'HASH' && $def
                    || (ref $def eq 'CODE' || not ref $def) && $s->$def()
-                 ; ref $dprops eq 'HASH'
-                   || croak qq(Invalid "default" option for "$$group{name}[0]", died)
+                 ; ref $dprops eq 'HASH' or croak
+                   qq(Invalid "default" option for "$$group{name}[0]", died)
                  ; %$hash = %$dprops
                  }
-              ; $init->($s, ref $s||$s) if @group_props   # init defaults
+              ; if ($init)
+                 { $init->($s, ref($s)||$s)    # init defaults
+                 ; undef $init
+                 }
               ; my $data
               ; if ( @_ )
                  { if ( ref $_[0] eq 'HASH' ) # set
@@ -80,7 +83,7 @@ $VERSION = 1.77 ;
                     ; my @pro = ref $_[0] eq 'ARRAY' ? @{$_[0]} : $_[0]
                     ; foreach my $p ( @pro )
                        { if ( my $m = $s->can($p)
-                            and exists $$hash{$p}  # no unrelated props
+                              and grep /^$p$/, @group_props
                             )
                           { push @val, $s->$m
                           }
@@ -122,6 +125,8 @@ $VERSION = 1.77 ;
          }
       }
    }
+
+
    
 1 ;
 
@@ -131,9 +136,9 @@ __END__
 
 Class::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.77
+=head1 VERSION 1.78
 
-Included in OOTools 1.77 distribution.
+Included in OOTools 1.78 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

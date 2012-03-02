@@ -6,13 +6,13 @@
 ; common_test('SubClass');
 
 ; sub common_test
-   {
-   ; my ($class) = @_
+   { my ($class) = @_
 
    ; my $o1 = $class->new
-   ; ok( ref $o1 eq "$class"
-       , 'Object creation'
-       )
+   ; isa_ok( $o1
+           , $class
+           , 'Object creation'
+           )
 
    ; my $o2 = $class->new( BpropA => 25
                          , BpropB => 3

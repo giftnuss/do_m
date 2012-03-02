@@ -1,76 +1,75 @@
 #!perl -w
 
 ; use strict
-; use Test::More tests => 10
+; use Test::More tests => 7
 ; use strict
-; use Data::Dumper
+#; use Data::Dumper
 
-; my $BCo = BaseClass->new
+; my $base  = BaseClass->new
+; my $sub   = SubClass->new
+; my $other = Other->new
 
-; my $SCo = SubClass->new
+; is_deeply( scalar $base->group1
+           , { one => 2
+             , two => 2
+             }
+           )
 
-; my $Oo = Other->new
+; is_deeply( scalar $sub->group1
+           , { one   => 4
+             , two   => 2
+             , three => 4,
+             }
+           )
 
-; my $h = $BCo->group1
+; $base->group1( one => 1
+               , two => 2
+               )
 
-; is( keys %$h
-    , 2
-    )
+; is_deeply( scalar $base->group1
+           , { one   => 1
+             , two   => 2
+             }
+           )
 
-; $h = $SCo->group1
+; $sub->one   = 1
+; $sub->two   = 2
+; $sub->three = 3
+; is_deeply( scalar $sub->group1
+           , { one   => 1
+             , two   => 2
+             , three => 3,
+             }
+           )
 
-; is( keys %$h
-    , 3
-    )
-    
 
-; is( $$h{one}
-    , 4
-    )
+; is_deeply( scalar $other->group1
+           , { one   => 4
+             , two   => 2
+             , three => 4
+             , four  => undef
+             }
+           )
 
-; $BCo->group1( one => 1
-              , two => 2
-              )
+# double check init and defaults
+; is_deeply( scalar $other->group1
+           , { one   => 4
+             , two   => 2
+             , three => 4
+             , four  => undef
+             }
+           )
 
-; my @p =  $BCo->group1
-; is( scalar @p
-    , 2
-    )
-; is( $BCo->group1->{one}
-      + $BCo->{group1}{one}
-    , 2
-    )
-; is( $BCo->one * $BCo->two
-    , 2
-    )
+; $other->one = 1
+; $other->three = 3
 
-; $SCo->one = 1
-; $SCo->three = 3
-; $SCo->two = 2
-; @p =  $SCo->group1
-
-; is( scalar @p
-    , 3
-    )
-
-; my $str = join '', @p
-; ok(    $str =~ /one/
-      && $str =~ /two/
-      && $str =~ /three/
-    )
-
-; @p =  $Oo->group1
-; is( scalar @p
-    , 4
-    )
-
-; $Oo->two = 2
-
-; my $o = $Oo->group1
-
-; is( $$o{two}
-    , 2
-    )
+; is_deeply( scalar $other->group1
+           , { one   => 1
+             , two   => 2
+             , three => 3
+             , four  => undef
+             }
+           )
 
    
 ; package BaseClass
