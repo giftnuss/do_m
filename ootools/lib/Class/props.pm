@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 1.51 ;
+$VERSION = 1.52 ;
 
 
 ; use 5.006_001
@@ -97,9 +97,9 @@ $VERSION = 1.51 ;
    ; my $default = $from_FETCH
                    ? 'default '
                    : ''
-   ; if (   $_[0][3]{protected} # if protected
-        &&! $from_FETCH         # bypass for default
-        &&! our $force          # bypass deliberately
+   ; if (   $_[0][3]{protected}   # if protected
+        &&! $from_FETCH           # bypass for default
+        &&! $Class::props::force  # bypass deliberately
         )
       { my ($OK, $f)
       ; until ( $OK )
@@ -138,9 +138,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.51
+=head1 VERSION 1.52
 
-Included in OOTools 1.51 distribution. The distribution includes:
+Included in OOTools 1.52 distribution. The distribution includes:
 
 =over
 
