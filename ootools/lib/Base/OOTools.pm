@@ -1,9 +1,62 @@
 package Base::OOTools ;
-$VERSION = 1.11 ;
+$VERSION = 1.12 ;
 
 ; use 5.006_001
 ; use strict
 ; use Carp
+
+; use constant
+
+{ START_SUB => q!
+  sub : lvalue
+   { croak qq(Too many arguments for "$n" property)
+           if @_ > 2
+!
+, DECLARE_WRITE_PROTECTED => q!
+   ; my $write_protected
+!
+, SET_CLASS => q!
+   ; my $class = ref $_[0] || $_[0]
+!
+, CLASS => q!
+   ; my $scalar = \${"$class\::$n"}
+!
+, OBJECT => q!
+   ; croak qq(Wrong value type passed to "$n")
+           unless ref $_[0]
+   ; my $scalar = \$_[0]{$n}
+!
+, DEFAULT => q!
+   ; $$scalar = $default
+                unless defined $$scalar
+!
+, PROTECTED => q!
+   ; unless ( ${"$class\::force"} )
+      { my $caller = (caller)[0] eq 'Class::new'
+                     ? (caller(1))[0]
+                     : (caller)[0]
+      ; $write_protected = $caller->can($n)
+                           ? 0
+                           : 1
+      }
+!
+, TIE => q!
+   ; tie $$scalar                     # scalar
+       , $pkg                         # class
+       , $_[0]                        # [0] object/class
+       , $n                           # [1] prop name
+       , $$item{validation}           # [2] validation subref
+       , $write_protected             # [3] bool
+       , $$scalar                     # [4] lvalue
+!
+                
+, END_SUB => q!
+   ; @_ == 2
+     ? ( $$scalar = $_[1] )           # old fashioned ()
+     :   $$scalar                     # lvalue assignment
+   }
+!
+}
 
 ; sub import
    { my ($pkg, @args) = @_
@@ -28,51 +81,43 @@ $VERSION = 1.11 ;
                ; $default = $_                   # set default
                }
             }
-         ; my $class = $pkg =~ /^Class::/
+         ; my $is_class = $pkg =~ /^Class::props$/
+         ; my $sub = START_SUB
+         ; if (  $is_class
+              || $$item{protected}
+              )
+            { $sub .= SET_CLASS
+            }
+         ; if ( $is_class )
+            { $sub .= CLASS
+            }
+           else
+            { $sub .= OBJECT
+            }
+         ; if ( defined $default )
+            { $sub .= DEFAULT
+            }
+         ; if (  defined $$item{validation}
+              || $$item{protected}
+              )
+            { $sub .= DECLARE_WRITE_PROTECTED
+            }
+         ; if ( $$item{protected} )
+            { $sub .= PROTECTED
+            }
+         ; if (  defined $$item{validation}
+              || $$item{protected}
+              )
+            { $sub .= TIE
+            }
+         ;    $sub .= END_SUB
+        # ; warn "### $n ###\n$sub\n"
          ; no strict 'refs'
-         ; *{"$callpkg\::$n"}
-           = sub : lvalue
-              { croak qq(Too many arguments for "$n" property)
-                      if @_ > 2
-              ; my $scalar = $class
-                             ? \${"$callpkg\::$n"}
-                             : \$_[0]{$n}
-              ; $$scalar = $default              # run time assignation
-                           unless defined $$scalar
-
-              ###### PROTECTION ######           # only included if protected
-              ; my $write_protected = 0
-              ; if (   $$item{protected}
-                   &&! ${"$callpkg\::force"}     # force from ouside class
-                   )
-                 { my $caller = (caller)[0] eq 'Class::new'
-                                ? (caller(1))[0]
-                                : (caller)[0]
-                 
-                 ; $write_protected = $caller->can($n)
-                                      ? 0
-                                      : 1
-                 }
-
-              ###### TIE ######
-              ; tie my $sc                       # scalar
-                  , $pkg                         # class
-                  , $_[0]                        # [0] object ref
-                  , $n                           # [1] prop name
-                  , $$item{validation}           # [2] validation subref
-                  , $write_protected             # [3] bool
-                  , $$scalar                     # [4] lvalue
-                 
-              ###### END ######                  # lvalue always included
-              ; @_ == 2
-                ? ( $sc = $_[1] )                # old fashioned ()
-                :   $sc                          # lvalue assignment
-
-              } # end property sub
+         ; eval '*{"$callpkg\::$n"} ='. $sub
          }
       }
    }
-
+                
 ; sub TIESCALAR
    { bless \@_, shift
    }
@@ -96,6 +141,7 @@ $VERSION = 1.11 ;
    ; $_[0][4] = $_
    }
 
+
 ; 1
 
 __END__
@@ -104,9 +150,9 @@ __END__
 
 Base::OOTools - Base class for OOTools pragmas
 
-=head1 VERSION 1.11
+=head1 VERSION 1.12
 
-Included in OOTools 1.11 distribution. The distribution includes:
+Included in OOTools 1.12 distribution. The distribution includes:
 
 =over
 

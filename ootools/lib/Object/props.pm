@@ -1,5 +1,5 @@
 package Object::props ;
-$VERSION = 1.11 ;
+$VERSION = 1.12 ;
 
 use base 'Base::OOTools' ;
 
@@ -11,9 +11,9 @@ __END__
 
 Object::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.11
+=head1 VERSION 1.12
 
-Included in OOTools 1.11 distribution. The distribution includes:
+Included in OOTools 1.12 distribution. The distribution includes:
 
 =over
 

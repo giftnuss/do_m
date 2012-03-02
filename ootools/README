@@ -5,7 +5,7 @@ OOTools README File
 Description
 -----------
 
-OOTools are two pragmas to easily create constructors methods and
+OOTools are a collection of pragmas to easily create constructors methods and
 lvalue accessor methods at compile time.
 
 Class::new
@@ -34,7 +34,8 @@ Installation
 ------------
 
 0.  Prerequisites:
-- Perl version 5.6.1 or more recent.
+
+    Perl version 5.6.1 or more recent.
 
 
 1. CPAN installation

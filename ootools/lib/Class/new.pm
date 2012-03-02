@@ -1,5 +1,5 @@
 package Class::new ;
-$VERSION = 1.11 ;
+$VERSION = 1.12 ;
 
 ; use 5.006_001
 ; use strict
@@ -51,9 +51,9 @@ __END__
 
 Class::new - Pragma to implement constructor methods
 
-=head1 VERSION 1.11
+=head1 VERSION 1.12
 
-Included in OOTools 1.11 distribution. The distribution includes:
+Included in OOTools 1.12 distribution. The distribution includes:
 
 =over
 

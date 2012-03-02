@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 1.11 ;
+$VERSION = 1.12 ;
 
 use base 'Base::OOTools' ;
 
@@ -11,9 +11,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.11
+=head1 VERSION 1.12
 
-Included in OOTools 1.11 distribution. The distribution includes:
+Included in OOTools 1.12 distribution. The distribution includes:
 
 =over
 
@@ -195,8 +195,7 @@ If any C<validation> option is set, then the I<default value> is validated at co
 
 You can set a code reference to validate a new value. If you don't set any C<validation> option, no validation will be done on the assignment.
 
-In the validation code, the object is passed in C<$_[0]> and the value to be
-validated is passed in C<$_[1]> and for regexing convenience it is aliased in C<$_>. Assign to C<$_> in the validation code to change the actual imput value.
+In the validation code, the object or class is passed in C<$_[0]> and the value to be validated is passed in C<$_[1]> and for regexing convenience it is aliased in C<$_>. Assign to C<$_> in the validation code to change the actual imput value.
 
     # web color validation
     use Class::props { name       => 'web_color'
