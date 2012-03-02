@@ -1,5 +1,13 @@
 OOTools Latest Versions Changes
 
+Version 2.1
+- Added the Class::Util::gather function plus tests
+- Added the Class::Util::classes function plus tests
+- Added the Class::Util::blessed function plus tests
+- Minor fix in the Class::Util::load function
+- Removed the 'use base ...' from Object::props and Object::groups packages
+- A few minor POD fixes and changes
+
 Version 2.0
 - Added the Class::Error module and tests
 - Added the Class::Util module and tests

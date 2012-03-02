@@ -1,12 +1,14 @@
 package Class::groups ;
-$VERSION = 2.0 ;
+$VERSION = 2.1 ;
+use 5.006_001 ;
+use strict ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
-; use 5.006_001
-; use base 'Class::props'
-; use strict
+; use Class::props
+; our @ISA = qw| Class::props |
+
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
 
@@ -132,13 +134,15 @@ $VERSION = 2.0 ;
 
 __END__
 
+=pod
+
 =head1 NAME
 
 Class::groups - Pragma to implement group of properties
 
-=head1 VERSION 2.0
+=head1 VERSION 2.1
 
-Included in OOTools 2.0 distribution.
+Included in OOTools 2.1 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -170,7 +174,7 @@ Pragma to implement lvalue accessors with options
 
 Pragma to implement groups of properties accessors with options
 
-=item Class::Util
+=item * Class::Util
 
 Class utility functions
 
@@ -317,8 +321,6 @@ If you want to see some working example of this module, take a look at the sourc
 
 =head1 OPTIONS
 
-=over
-
 =head2 name => $name
 
 The name of the group accessor.
@@ -386,4 +388,5 @@ All Rights Reserved. This module is free software. It may be used, redistributed
 
 Thanks to Juerd Waalboer (http://search.cpan.org/author/JUERD) that with its I<Attribute::Property> inspired the creation of this distribution.
 
+=cut
 

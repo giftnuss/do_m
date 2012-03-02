@@ -1,11 +1,11 @@
 package Class::props ;
-$VERSION = 2.0 ;
-
+$VERSION = 2.1 ;
+use 5.006_001 ;
+use strict ;
+  
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
-; use 5.006_001
-; use strict
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
 
@@ -147,13 +147,15 @@ $VERSION = 2.0 ;
 
 __END__
 
+=pod
+
 =head1 NAME
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 2.0
+=head1 VERSION 2.1
 
-Included in OOTools 2.0 distribution.
+Included in OOTools 2.1 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -185,7 +187,7 @@ Pragma to implement lvalue accessors with options
 
 Pragma to implement groups of properties accessors with options
 
-=item Class::Util
+=item * Class::Util
 
 Class utility functions
 
@@ -450,3 +452,5 @@ All Rights Reserved. This module is free software. It may be used, redistributed
 =head1 CREDITS
 
 Thanks to Juerd Waalboer (http://search.cpan.org/author/JUERD) that with its I<Attribute::Property> inspired the creation of this distribution.
+
+=cut

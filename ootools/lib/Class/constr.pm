@@ -1,11 +1,11 @@
 package Class::constr ;
-$VERSION = 2.0 ;
+$VERSION = 2.1 ;
+use 5.006_001 ;
+use strict ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
-; use 5.006_001
-; use strict
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
 
@@ -78,13 +78,15 @@ $VERSION = 2.0 ;
 
 __END__
 
+=pod
+
 =head1 NAME
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 2.0
+=head1 VERSION 2.1
 
-Included in OOTools 2.0 distribution.
+Included in OOTools 2.1 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -116,7 +118,7 @@ Pragma to implement lvalue accessors with options
 
 Pragma to implement groups of properties accessors with options
 
-=item Class::Util
+=item * Class::Util
 
 Class utility functions
 
@@ -289,5 +291,3 @@ Thanks to Juerd Waalboer (L<http://search.cpan.org/author/JUERD>) that with its 
 Thanks to Vince Veselosky (L<(http://search.cpan.org/author/VESELOSKY)>) for his patches and improvement.
 
 =cut
-
-# vim:ft=perl:expandtab:sw=3:ts=3:

@@ -1,19 +1,24 @@
 package Object::groups ;
-$VERSION = 2.0 ;
+$VERSION = 2.1 ;
+use 5.006_001 ;
+use strict ;
 
-use base 'Class::groups' ;
+; use Class::groups
+; our @ISA = qw| Class::groups |
    
-1 ;
+; 1
 
 __END__
+
+=pod
 
 =head1 NAME
 
 Object::groups - Pragma to implement group of properties
 
-=head1 VERSION 2.0
+=head1 VERSION 2.1
 
-Included in OOTools 2.0 distribution.
+Included in OOTools 2.1 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -45,7 +50,7 @@ Pragma to implement lvalue accessors with options
 
 Pragma to implement groups of properties accessors with options
 
-=item Class::Util
+=item * Class::Util
 
 Class utility functions
 
@@ -264,3 +269,5 @@ All Rights Reserved. This module is free software. It may be used, redistributed
 =head1 CREDITS
 
 Thanks to Juerd Waalboer (http://search.cpan.org/author/JUERD) that with its I<Attribute::Property> inspired the creation of this distribution.
+
+=cut

@@ -1,10 +1,10 @@
 package Class::Error ;
-$VERSION = 2.0 ;
+$VERSION = 2.1 ;
+use strict ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
-; use strict
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
 
@@ -27,13 +27,15 @@ $VERSION = 2.0 ;
 
 __END__
 
+=pod
+
 =head1 NAME
 
 Class::Error - Delayed checking of object failure
 
-=head1 VERSION 2.0
+=head1 VERSION 2.1
 
-Included in OOTools 2.0 distribution.
+Included in OOTools 2.1 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -65,7 +67,7 @@ Pragma to implement lvalue accessors with options
 
 Pragma to implement groups of properties accessors with options
 
-=item Class::Util
+=item * Class::Util
 
 Class utility functions
 
@@ -165,7 +167,7 @@ All the methods called on the Class::Error object (regardless the arguments) ret
 
 The constructor accepts 3 optional arguments and returns a Class::Error object.
 
-I<error> sets the error, which could be a simple string or any other value (also stored in C<$Class::error::error>), I<errnum> sets the error number (also stored in C<$Class::error::errnum>) which you can retrieve with the C<error> and C<errnum> static or dynamic methods.
+I<error> sets the error, which could be a simple string or any other value (also stored in C<$Class::Error::error>), I<errnum> sets the error number (also stored in C<$Class::Error::errnum>) which you can retrieve with the C<error> and C<errnum> static or dynamic methods.
 
 You can also pass a third argument (which must be false) to the new method or leave it undef: the scalar reference to the I<false> argument will be used as the object value in any contexts (internally using C<overload>).
 
@@ -197,3 +199,5 @@ If you need support or if you want just to send me some feedback or request, ple
 © 2004-2005 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
+
+=cut
