@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 1.79 ;
+$VERSION = 2.0 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -45,7 +45,7 @@ $VERSION = 1.79 ;
    ; foreach my $n ( @{$$prop{name}} )     # foreach property
       { no strict 'refs'
       ; *{"$pkg\::$n"}
-        = sub ($;$) : lvalue
+        = sub : lvalue
            { (@_ > 2) && croak qq(Too many arguments for "$n" property, died)
            ;  my $scalar = $tool =~ /^Class/
                            ? $gr
@@ -55,8 +55,7 @@ $VERSION = 1.79 ;
                              ? \$_[0]{$gr}{$n}
                              : \$_[0]{$n}
            ; my $Tscalar
-           ; if (   $to_tie
-                )
+           ; if ( $to_tie )
               { tie $$Tscalar
                   , 'Class::props::Tie'
                   , $_[0]                   # [0] object/class
@@ -81,23 +80,6 @@ $VERSION = 1.79 ;
 
 ; sub TIESCALAR
    { bless \@_, shift
-   }
-   
-; sub FETCH__
-   { if ( defined ${$_[0][2]} )
-      { ${$_[0][2]}
-      }
-     elsif ( defined $_[0][3]{default} )
-      { my $def = ref $_[0][3]{default} eq 'CODE'
-                  ? $_[0][3]{default}( $_[0][0] )
-                  : $_[0][3]{default}
-      ; $_[0][3]{no_strict}
-        ? ${$_[0][2]} = $def
-        : $_[0]->STORE( $def )
-      }
-     else
-      { undef
-      }
    }
    
 ; sub FETCH
@@ -169,9 +151,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.79
+=head1 VERSION 2.0
 
-Included in OOTools 1.79 distribution.
+Included in OOTools 2.0 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -191,6 +173,10 @@ Pragma to implement lvalue accessors with options
 
 Pragma to implement groups of properties accessors with options
 
+=item * Class::Error
+
+Delayed checking of object failure
+
 =item * Object::props
 
 Pragma to implement lvalue accessors with options
@@ -198,6 +184,10 @@ Pragma to implement lvalue accessors with options
 =item * Object::groups
 
 Pragma to implement groups of properties accessors with options
+
+=item Class::Util
+
+Class utility functions
 
 =back
 

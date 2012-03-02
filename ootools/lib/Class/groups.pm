@@ -1,5 +1,5 @@
 package Class::groups ;
-$VERSION = 1.79 ;
+$VERSION = 2.0 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -120,9 +120,7 @@ $VERSION = 1.79 ;
                        }
                     }
                  }
-              ; wantarray
-                ? keys %$hash
-                : $hash
+              ; wantarray ? %$hash : $hash  # no argument
               }
          }
       }
@@ -138,9 +136,9 @@ __END__
 
 Class::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.79
+=head1 VERSION 2.0
 
-Included in OOTools 1.79 distribution.
+Included in OOTools 2.0 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -160,6 +158,10 @@ Pragma to implement lvalue accessors with options
 
 Pragma to implement groups of properties accessors with options
 
+=item * Class::Error
+
+Delayed checking of object failure
+
 =item * Object::props
 
 Pragma to implement lvalue accessors with options
@@ -167,6 +169,10 @@ Pragma to implement lvalue accessors with options
 =item * Object::groups
 
 Pragma to implement groups of properties accessors with options
+
+=item Class::Util
+
+Class utility functions
 
 =back
 
@@ -246,18 +252,21 @@ From the directory where this file is located, type:
     
     # adding an unknow property (see no_strict)
     MyClass->myOtherGroup(prop5 => 5) ;
+    
+    # copying the whole hash
+    %myGroupHash = MyClass->myGroup
 
 =head1 WARNING
 
-Don't use the group accessor in list context in order to retrieve the hash keys. It is deprecated and it will return the whole hash in a future version.
+Don't use the group accessor in list context in order to retrieve the hash keys: that way was deprecated and it doesn't work any more with this version.
 
-    # deprecated
+    # WRONG
     @keys     = MyClass->myGroup ;
     
     # change it with
     @keys     = keys %{MyClass->myGroup} ;
     
-    # future behaviour in list context
+    # new behaviour in list context
     %hash = MyClass->myGroup ;
 
 =head1 DESCRIPTION

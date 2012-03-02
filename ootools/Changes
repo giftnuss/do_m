@@ -1,5 +1,16 @@
 OOTools Latest Versions Changes
 
+Version 2.0
+- Added the Class::Error module and tests
+- Added the Class::Util module and tests
+- Minor change in the Class::constr closure to allow to stop the init subs
+  by returning undef OR a Class::Error object
+- Added the 'skip_autoload' option to Class::constr pragma
+- You can also pass an HASH reference to the constr method
+- Changed the result returned by the group accessor in list context:
+  old version returned the keys of the hash (deprecated since the 1.77)
+  this version returns the whole hash
+
 Version 1.79
 - Fixed a bug related to set *::groups
 - A test addition

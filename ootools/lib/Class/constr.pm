@@ -1,5 +1,5 @@
 package Class::constr ;
-$VERSION = 1.79 ;
+$VERSION = 2.0 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -9,57 +9,62 @@ $VERSION = 1.79 ;
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
 
+
 ; sub import
    { my ($pkg, @args) = @_
    ; my $callpkg = caller
    ; $args[0] ||= {}
    ; foreach my $constr ( @args )
       { my $n = $$constr{name} || 'new'
- 
       ; $$constr{init} &&= [ $$constr{init} ]
                            unless ref $$constr{init} eq 'ARRAY'
       ; no strict 'refs'
       ; *{"$callpkg\::$n"}
         = sub
            { &{$$constr{pre_process}} if defined $$constr{pre_process}
-           ; my ($c, %props) = @_
+           ; my $c = shift
+           ; my %props = ref $_[0] eq 'HASH' ? %{$_[0]} : @_
            ; my $class = ref($c) || $c
-         
            ; my $s = bless {}, $class
-           ; my $dprops = {}
-           ; if ( my $def = $$constr{default} )
-              { $dprops
-                =  ref $def eq 'HASH' && $def
-                || (ref $def eq 'CODE' || not ref $def) && $s->$def(%props)
+           ; my $default_props = {}
+           ; if (my $cdef = $$constr{default})
+              { $default_props =  ref $cdef eq 'HASH' && $cdef
+                               || ref $cdef eq 'CODE' && $s->$cdef(%props)
+                               || not (ref $cdef)     && $s->$cdef(%props)
+              ; ref $default_props eq 'HASH' or croak
+                "Invalid default option for '$n' ($default_props), died"
               }
-           ; ref $dprops eq 'HASH'
-             or croak qq(Invalid "default" option for "$n", died)
-            
            # Values passed to the constructor   (%props)
            # will override copied values,       (%$c)
-           # which will override default values (%$dprops)
-           ; %props = ( %$dprops
-                      , $$constr{copy} && ref $c ? %$c : ()
-                      , %props
-                      )
+           # which will override default values (%$default_props)
+           ; %props = ( %$default_props
+                       , $$constr{copy} && ref $c ? %$c : ()
+                       , %props
+                       )
            # Set the initial values for the new object
            ; while ( my ($p, $v) = each %props )
               { if (my $a = $s->can($p))      # if accessor available, use it
                  { $s->$a( $v )
                  }
                 else
-                 { croak qq(No such property "$p", died)
+                 { croak "No such property '$p', died"
                          unless $$constr{no_strict}
-                 ; eval { $s->$p( $v ) }             # try AUTOLOAD
-                 ; $@ && do{ $$s{$p} = $v }          # no strict so just set it
+                 ; if ( $$constr{skip_autoload} )
+                    { $$s{$p} = $v
+                    }
+                   else
+                    { eval { $s->$p( $v ) }       # try AUTOLOAD
+                    ; $@ && do{ $$s{$p} = $v }    # no strict so just set it
+                    }
                  }
               }
            # Execute any initializer methods
            ; if ( $$constr{init} )
               { foreach my $m ( @{$$constr{init}} )
                  # any initializer can cancel construction by undefining the
-                 # object. If this happens, no need to continue
-                 { last unless defined($s)
+                 # object or returning a Class::Error object (false)
+                 # If this happens, no need to continue
+                 { last unless $s
                  ; $s->$m(%props)
                  }
               }
@@ -77,9 +82,9 @@ __END__
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 1.79
+=head1 VERSION 2.0
 
-Included in OOTools 1.79 distribution.
+Included in OOTools 2.0 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -99,6 +104,10 @@ Pragma to implement lvalue accessors with options
 
 Pragma to implement groups of properties accessors with options
 
+=item * Class::Error
+
+Delayed checking of object failure
+
 =item * Object::props
 
 Pragma to implement lvalue accessors with options
@@ -106,6 +115,10 @@ Pragma to implement lvalue accessors with options
 =item * Object::groups
 
 Pragma to implement groups of properties accessors with options
+
+=item Class::Util
+
+Class utility functions
 
 =back
 
@@ -166,8 +179,6 @@ Use it with C<Class::props> and C<Object::props> to automatically validate the i
 
 You can completely avoid to write the constructor mehtod by just using this pragma and eventually declaring the name and the init methods to call.
 
-
-
 =head2 Examples
 
 If you want to see some working example of this module, take a look at the source of my other distributions.
@@ -181,6 +192,10 @@ The name of the constructor method. If you omit this option the 'new' name will 
 =head2 no_strict => 0 | 1
 
 With C<no_strict> option set to a true value, the constructor method accepts and sets also unknown properties (i.e. not predeclared). You have to access the unknown properties without any accessor method. All the other options will work as expected. Without this option the constructor will croak if any property does not have an accessor method.
+
+=head2 skip_autoload => 0 | 1
+
+This option might be useful only if C<no_strict> is true, and your package defines an C<AUTOLOAD> sub. A true value will not try to set any unknown property by using the C<AUTOLOAD> sub: it will just set the value (C<$$s{your_property} = $v>) directly.
 
 =head2 pre_process => \&$code
 
