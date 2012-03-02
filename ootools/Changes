@@ -1,6 +1,9 @@
 OOTools Latest Versions Changes
 
 
+Version 1.73
+- Minor POD changes
+
 Version 1.72
 - Changed Makefile.PL version check
 
