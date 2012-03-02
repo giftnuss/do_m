@@ -1,5 +1,5 @@
 package Object::props ;
-$VERSION = 1.76 ;
+$VERSION = 1.77 ;
 
 use base 'Class::props' ;
 
@@ -11,9 +11,9 @@ __END__
 
 Object::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.76
+=head1 VERSION 1.77
 
-Included in OOTools 1.76 distribution.
+Included in OOTools 1.77 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -111,24 +111,26 @@ From the directory where this file is located, type:
 
 =head2 Usage
 
-    my $object = MyClass->new(digits => '123');
+    $object = MyClass->new(digits => '123');
     
     $object->digits    = '123';
     
     $object->digits('123');      # old way supported
     
-    my $d = $object->digits;     # $d == 123
-    $d = $object->{digits}       # $d == 123
+    $d = $object->digits;        # $d == 123
+    $d = $$object{digits}        # $d == 123
     
     undef $object->digits        # $object->digits == 10 (default)
     
-    # These would croak
+    # these would croak
     $object->digits    = "xyz";
-    $object->{digits}  = "xyz";
+    
+    # this will bypass the accessor whithout croaking
+    $$object{digits}  = "xyz";
 
 =head1 DESCRIPTION
 
-This pragma easily implements lvalue accessor methods for the properties of your object (I<lvalue> means that you can create a reference to it, assign to it and apply a regex to it).
+This pragma easily implements lvalue accessor methods for the properties of your object (I<lvalue> means that you can create a reference to it, assign to it and apply a regex to it), which are very efficient function templates that your modules may import at compile time. "This technique saves on both compile time and memory use, and is less error-prone as well, since syntax checks happen at compile time." (quoted from "Function Templates" in the F<perlref> manpage).  
 
 You can completely avoid to write the accessor by just declaring the names and eventually the default value, validation code and other option of your properties.
 
@@ -155,10 +157,10 @@ A Class property is accessible either through the class or through all the objec
                                class_prop2 => 22 ) ;
    
    print $object1->obj_prop    ; # would print 1
-   print $object1->{obj_prop}  ; # would print 1
+   print $$object1{obj_prop}   ; # would print 1
    
    print $object2->obj_prop    ; # would print 2
-   print $object2->{obj_prop}  ; # would print 2
+   print $$object2{obj_prop}   ; # would print 2
    
    print $object1->class_prop1 ; # would print 11
    print $object2->class_prop1 ; # would print 11
@@ -178,7 +180,7 @@ A Class property is accessible either through the class or through all the objec
 
 =head2 Examples
 
-If you want to see some working example of this module, take a look at the source of my other distributions. 
+If you want to see some working example of this module, take a look at the source of my other distributions.
 
 =head1 OPTIONS
 
@@ -288,7 +290,7 @@ If you need support or if you want just to send me some feedback or request, ple
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis.
+© 2004-2005 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 

@@ -53,7 +53,7 @@
 
 ; @p =  Other->group1
 ; is( scalar @p
-    , 0
+    , 4
     )
 
 ; Other->two = 2

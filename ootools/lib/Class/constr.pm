@@ -1,5 +1,5 @@
 package Class::constr ;
-$VERSION = 1.76 ;
+$VERSION = 1.77 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -22,40 +22,45 @@ $VERSION = 1.76 ;
       ; *{"$callpkg\::$n"}
         = sub
            { &{$$constr{pre_process}} if defined $$constr{pre_process}
-           ; my $c = shift
+           ; my ($c, %props) = @_
            ; my $class = ref($c) || $c
-           ; (@_ % 2) && croak qq(Odd number of arguments for "$class->$n")
          
            ; my $s = bless {}, $class
-         
-           # For copy constructors, get initial values from the object
-           # on which the constructor was called. Values passed to the
-           # constructor will override copied values.
-           ; if ($$constr{copy} and ref $c) 
-              { for my $key (keys %{$c})
-                 { unshift(@_, $key => $c->{$key}) if defined($c->{$key})
-                 }
+           ; my $dprops = {}
+           ; if ( my $def = $$constr{default} )
+              { $dprops
+                =  ref $def eq 'HASH' && $def
+                || (ref $def eq 'CODE' || not ref $def) && $s->$def(%props)
               }
-
+           ; ref $dprops eq 'HASH'
+             or croak qq(Invalid "default" option for "$n", died)
+            
+           # Values passed to the constructor   (%props)
+           # will override copied values,       (%$c)
+           # which will override default values (%$dprops)
+           ; %props = ( %$dprops
+                      , $$constr{copy} && ref $c ? %$c : ()
+                      , %props
+                      )
            # Set the initial values for the new object
-           ; while ( my ($p, $v) = splice @_, 0, 2 )
-              { if ($s->can($p))                # if accessor available, use it
-                 { $s->$p( $v )
+           ; while ( my ($p, $v) = each %props )
+              { if (my $a = $s->can($p))      # if accessor available, use it
+                 { $s->$a( $v )
                  }
                 else
-                 { croak qq(No such property "$p")
+                 { croak qq(No such property "$p", died)
                          unless $$constr{no_strict}
                  ; eval { $s->$p( $v ) }             # try AUTOLOAD
-                 ; $@ && ( $$s{$p} = $v )            # no strict so just set it
+                 ; $@ && do{ $$s{$p} = $v }          # no strict so just set it
                  }
               }
            # Execute any initializer methods
            ; if ( $$constr{init} )
               { foreach my $m ( @{$$constr{init}} )
-                 # any initializer can cancel construction by undefining the 
+                 # any initializer can cancel construction by undefining the
                  # object. If this happens, no need to continue
-                 { last unless defined($s) 
-                 ; $s->$m(@_)
+                 { last unless defined($s)
+                 ; $s->$m(%props)
                  }
               }
            ; $s
@@ -72,9 +77,9 @@ __END__
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 1.76
+=head1 VERSION 1.77
 
-Included in OOTools 1.76 distribution.
+Included in OOTools 1.77 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -136,10 +141,12 @@ From the directory where this file is located, type:
     # implement constructor without options
     use Class::constr ;
     
-    # with options
+    # with all the possible options
     use Class::constr { name        => 'new_object' ,
-                        pre_process => \&change_input
+                        pre_process => \&change_input,
+                        default     => { propA => 'something' },
                         init        => [ qw( init1 init2 ) ] ,
+                        copy        => 1
                         no_strict   => 1
                       } ;
                     
@@ -153,27 +160,29 @@ From the directory where this file is located, type:
 
 =head1 DESCRIPTION
 
-This pragma easily implements constructor methods for your class. Use it with C<Class::props> and C<Object::props> to automatically validate the input passed with C<new()>, or use the C<no_strict> option to accept unknown properties as well.
+This pragma easily implements constructor methods for your class, which are very efficient function templates that your modules may imports at compile time. "This technique saves on both compile time and memory use, and is less error-prone as well, since syntax checks happen at compile time." (quoted from "Function Templates" in the F<perlref> manpage).
 
-You can completely avoid to write the constructor by just using it and eventually declaring the name and the init methods to call.
+Use it with C<Class::props> and C<Object::props> to automatically validate the input passed with C<new()>, or use the C<no_strict> option to accept unknown properties as well.
 
-B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work.
+You can completely avoid to write the constructor mehtod by just using this pragma and eventually declaring the name and the init methods to call.
+
+
 
 =head2 Examples
 
-If you want to see some working example of this module, take a look at the source of my other distributions. 
+If you want to see some working example of this module, take a look at the source of my other distributions.
 
 =head1 OPTIONS
 
-=head2 name
+=head2 name => $name
 
 The name of the constructor method. If you omit this option the 'new' name will be used by default.
 
-=head2 no_strict
+=head2 no_strict => 0 | 1
 
 With C<no_strict> option set to a true value, the constructor method accepts and sets also unknown properties (i.e. not predeclared). You have to access the unknown properties without any accessor method. All the other options will work as expected. Without this option the constructor will croak if any property does not have an accessor method.
 
-=head2 pre_process
+=head2 pre_process => \&$code
 
 You can set a code reference to preprocess @_.
 
@@ -193,11 +202,17 @@ The original C<@_> is passed to the referenced pre_process CODE. Modify C<@_> in
                          }
         }
 
-=head2 init
+=head2 default => \%props | \&$method
 
-Use this option if you want to call other methods in your class to further initialize the object. You can group methods by passing a reference to an array containing the method names.
+Use this option to supply any default properties to the constructor. Setting a default is very similar to pass the properties/values pairs to the constructor,but properties passed as arguments will override defaults.
 
-After the assignation and validation of the properties, the initialization methods in the C<init> option will be called. Each init method will receive the blessed object passed in C<$_[0]> and the other parameters in the remaining C<@_>.
+You can set the default to a HASH reference or to a method name or method reference. In case you use a method, it will be called at runtime with the blessed object passed in C<$_[0]> and the other properties in the remaining C<@_>; it must return a HASH reference.
+
+=head2 init => $method | \@methods
+
+Use this option if you want to call other methods in your class to further initialize the object. You can use methods names or method references.
+
+After the assignation and validation of the properties (i.e. those passed to the constructor, the default properties and the copied properties), the initialization methods in the C<init> option will be called. Each init method will receive the blessed object passed in C<$_[0]> and the other properties in the remaining C<@_>.
 
 Any C<init> method can cancel construction of the object by undefining C<$_[0]>. This will cause the constructor to return undef. If you prefer, you can explicitly C<croak> from your init method.
 
@@ -217,9 +232,9 @@ Any C<init> method can cancel construction of the object by undefining C<$_[0]>.
       }
    
 
-=head2 copy
+=head2 copy => 0 | 1
 
-If this option is set to a true value, the constructor will be a "copy constructor". Copy constructors allow you to create a new object that inherits data from an existing object. Values passed to the constructor will overwrite copied values, and C<init> methods will also have a chance to manipulate the values. 
+If this option is set to a true value, the constructor will be a "copy constructor". Copy constructors allow you to create a new object that inherits data from an existing object. Properties passed to the constructor will overwrite copied properties, that overwrite the default properties, and C<init> methods will also have a chance to manipulate the values.
 
 B<Warning:> The copy constructor will only perform a I<shallow> copy, which means that after a copy any references stored in properties will point to the I<same> variable in I<both> objects (the objects will share a single variable instead of each having its own private copy). If you don't want this behavior, you should reset these properties in your C<init> method. Properties created by the Object::groups pragma are effected by this. Such properties should be explicitly set to C<undef> in your C<init> method for sane behavior.
 
@@ -248,7 +263,7 @@ If you need support or if you want just to send me some feedback or request, ple
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis.
+© 2004-2005 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 

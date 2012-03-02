@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 1.76 ;
+$VERSION = 1.77 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -46,7 +46,7 @@ $VERSION = 1.76 ;
       { no strict 'refs'
       ; *{"$pkg\::$n"}
         = sub ($;$) : lvalue
-           { (@_ > 2) && croak qq(Too many arguments for "$n" property)
+           { (@_ > 2) && croak qq(Too many arguments for "$n" property, died)
            ;  my $scalar = $tool =~ /^Class/
                            ? $gr
                              ? \${(ref $_[0]||$_[0])."::$gr"}{$n}
@@ -117,6 +117,7 @@ $VERSION = 1.76 ;
                    { undef
                    }
                 }
+   ; local $_ = $val
    ; defined $_[0][3]{post_process}
      ? $_[0][3]{post_process}( $_[0][0], $val )
      : $val
@@ -137,7 +138,7 @@ $VERSION = 1.76 ;
          { last unless my $caller = caller($f++)
          ; $OK = $caller->can($_[0][1])
          }
-      ; $OK || croak qq("$_[0][1]" is a read-only property)
+      ; $OK || croak qq("$_[0][1]" is a read-only property, died)
       }
    ; if (   $_[0][3]{allowed}     # if restricted
         &&! $from_FETCH           # bypass for default
@@ -148,14 +149,14 @@ $VERSION = 1.76 ;
          { last unless my $caller = (caller($f++))[3]
          ; $OK = grep { $caller =~ qr/$_/ } @{$_[0][3]{allowed}}
          }
-        ; $OK || croak qq("$_[0][1]" is a read-only property)
+        ; $OK || croak qq("$_[0][1]" is a read-only property, died)
       }
    ; local $_ = $_[1]
    ; if ( defined $_[0][3]{validation}  # validation subref
         && defined $_                   # bypass for undef (reset to default)
         )
       { $_[0][3]{validation}( $_[0][0], $_)
-        || croak qq(Invalid ${default}value for "$_[0][1]" property)
+        || croak qq(Invalid ${default}value for "$_[0][1]" property, died)
       }
    ; ${$_[0][2]} = $_
    }
@@ -168,9 +169,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.76
+=head1 VERSION 1.77
 
-Included in OOTools 1.76 distribution.
+Included in OOTools 1.77 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -268,26 +269,28 @@ From the directory where this file is located, type:
 
 =head2 Usage
 
-    my $object = MyClass->new(digits => '123');
+    $object = MyClass->new(digits => '123');
     
     $object->digits    = '123';
     MyClass->digits    = '123';  # same thing
     
     $object->digits('123');      # old way supported
     
-    my $d = $object->digits;     # $d == 123
-       $d = $MyClass::digits     # $d == 123
+    $d = $object->digits;     # $d == 123
+    $d = $MyClass::digits     # $d == 123
     
     undef $object->digits        # $object->digits == 10 (default)
     
-    # These would croak
+    # these would croak
     $object->digits    = "xyz";
     MyClass->digits    = "xyz";
+
+    # this will bypass the accessor whithout croaking
     $MyClass::digits   = "xyz";
 
 =head1 DESCRIPTION
 
-This pragma easily implements lvalue accessor methods for the properties of your Class (I<lvalue> means that you can create a reference to it, assign to it and apply a regex to it).
+This pragma easily implements lvalue accessor methods for the properties of your Class (I<lvalue> means that you can create a reference to it, assign to it and apply a regex to it), which are very efficient function templates that your modules may import at compile time. "This technique saves on both compile time and memory use, and is less error-prone as well, since syntax checks happen at compile time." (quoted from "Function Templates" in the F<perlref> manpage).
 
 You can completely avoid to write the accessor by just declaring the names and eventually the default value, validation code and other option of your properties.
 
@@ -314,10 +317,10 @@ A Class property is accessible either through the class or through all the objec
                                class_prop2 => 22 ) ;
    
    print $object1->obj_prop    ; # would print 1
-   print $object1->{obj_prop}  ; # would print 1
+   print $$object1{obj_prop}   ; # would print 1
    
    print $object2->obj_prop    ; # would print 2
-   print $object2->{obj_prop}  ; # would print 2
+   print $$object2{obj_prop}   ; # would print 2
    
    print $object1->class_prop1 ; # would print 11
    print $object2->class_prop1 ; # would print 11
@@ -341,7 +344,7 @@ If you want to see some working example of this module, take a look at the sourc
 
 =head1 OPTIONS
 
-=head2 name
+=head2 name => $name
 
 The name of the property is used as the identifier to create the accessor method, and the scalar that contains it.
 
@@ -361,7 +364,7 @@ Given 'my_prop' as the class property name:
 
 You can group properties that have the same set of option by passing a reference to an array containing the names. If you don't use any option you can pass a list of plain names as well. See L<"SYNOPSYS">.
 
-=head2 default
+=head2 default => $value | \&code
 
 Use this option to set a I<default value>. If any C<validation> option is set, then the I<default value> is validated as well (the C<no_strict> option override this).
 
@@ -369,11 +372,11 @@ If you pass a CODE reference as default it will be evaluated at runtime and the 
 
 You can reset a property to its default value by assigning it the undef value.
 
-=head2 no_strict
+=head2 no_strict  => 0 | 1
 
 With C<no_strict> option set to a true value, the C<default> value will not be validate even if a validation option is set. Without this option the method will croak if the C<default> are not valid.
 
-=head2 validation
+=head2 validation => \&code
 
 You can set a code reference to validate a new value. If you don't set any C<validation> option, no validation will be done on the assignment.
 
@@ -397,15 +400,15 @@ You can alse use the C<validation> code as a sort of pre_process or filter for t
 
 The validation code should return true on success and false on failure. Croak explicitly if you don't like the default error message.
 
-=head2 post_process
+=head2 post_process => \&code
 
 You can set a code reference to transform the stored value, just before it is returned. If you don't set any C<post_process> option, no transformation will be done on the returned value, so in that case the returned value will be the same stored value.
 
-In the post_process code, the object or class is passed in C<$_[0]> and the value to be transformed is passed in C<$_[1]>; the accessor will return the value returned from the post_process code
+In the post_process code, the object or class is passed in C<$_[0]> and the value to be transformed is passed in C<$_[1]>, and for regexing convenience it is aliased in C<$_>; the accessor will return the value returned from the post_process code
 
     # this will uppercase all output values
     use Class::props { name         => 'uppercase_it'
-                     , post_process => sub { uc $_[1] }
+                     , post_process => sub { uc }
                      }
     
     # when used
@@ -414,7 +417,7 @@ In the post_process code, the object or class is passed in C<$_[0]> and the valu
 
 B<Warning>: The post_process code is ALWAYS executed in SCALAR context regardless the execution context of the accessor itself.
 
-=head2 allowed
+=head2 allowed => $re | \@res
 
 The property is settable only by the caller sub that matches with the content of this option. The content can be a compiled RE or a simple string that will be used to check the caller. (Pass an array ref for multiple items)
 
@@ -425,7 +428,7 @@ The property is settable only by the caller sub that matches with the content of
 
 You can however force the assignation from not matching subs by setting $Class::props::force to a true value.
 
-=head2 protected
+=head2 protected => 0 | 1
 
 Set this option to a true value and the property will be turned I<read-only> when used from outside its class or sub-classes. This allows you to normally read and set the property from your class but it will croak if your user tries to set it.
 
@@ -450,7 +453,7 @@ If you need support or if you want just to send me some feedback or request, ple
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis.
+© 2004-2005 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 

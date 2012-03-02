@@ -1,5 +1,5 @@
 package Object::groups ;
-$VERSION = 1.76 ;
+$VERSION = 1.77 ;
 
 use base 'Class::groups' ;
    
@@ -11,9 +11,9 @@ __END__
 
 Object::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.76
+=head1 VERSION 1.77
 
-Included in OOTools 1.76 distribution.
+Included in OOTools 1.77 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -101,7 +101,7 @@ From the directory where this file is located, type:
 
 =head2 Usage
 
-    my $object = MyClass->new ;
+    $object = MyClass->new ;
     
     $object->myGroup(\%hash) ;
 
@@ -109,24 +109,38 @@ From the directory where this file is located, type:
     $object->myGroup( prop1 => 1 ,
                       prop2 => 2 ) ;
     
-    my @keys     = $object->myGroup
-    my $hash_ref = $object->myGroup
+    $hash_ref = $object->myGroup
     
-    my $value = $object->prop2 ;             # $value == 2
-       $value = $object->myGroup('prop2') ;  # $value == 2
-       $value = $hash_ref->{prop2} ;         # $value == 2
-       $value = $object->{myGroup}{prop2} ;  # $value == 2
+    $value = $object->prop2 ;             # $value == 2
+    $value = $object->myGroup('prop2') ;  # $value == 2
+    $value = $$hash_ref{prop2} ;          # $value == 2
+    $value = $$object{myGroup}{prop2} ;   # $value == 2
     
+    ($p1, $p2) = $object->myGroup(['prop1','prop2']) ;
+   
     # the default will initialize the hash reference
-    my $other_hash_ref = $object->myOtherGroup
-       $value = $other_hash_ref->{prop3}     # $value eq 'something'
+    $other_hash_ref = $object->myOtherGroup
+    $value = $other_hash_ref->{prop3}     # $value eq 'something'
        
-    # adding a unknow property (see no_strict)
+    # adding an unknow property (see no_strict)
     $object->myOtherGroup(prop5 => 5) ;
+
+=head1 WARNING
+
+Don't use the group accessor in list context in order to retrieve the hash keys. It is deprecated and it will return the whole hash in a future version.
+
+    # deprecated
+    @keys     = $object->myGroup ;
+    
+    # change it with
+    @keys     = keys %{$object->myGroup} ;
+    
+    # future behaviour in list context
+    %hash = $object->myGroup ;
 
 =head1 DESCRIPTION
 
-This pragma easily implements accessor methods for group of properties.
+This pragma easily implements accessor methods for group of properties, which are very efficient function templates that your modules may import at compile time. "This technique saves on both compile time and memory use, and is less error-prone as well, since syntax checks happen at compile time." (quoted from "Function Templates" in the F<perlref> manpage).
 
 It creates an accessor method for each property in the C<props> option as you where using the L<Object::props|Object::props> pragma, and creates an accessor method for the group.
 
@@ -172,17 +186,17 @@ If you want to see some working example of this module, take a look at the sourc
 
 =head1 OPTIONS
 
-=head2 name
+=head2 name => $name
 
-The name of the group method.
+The name of the group accessor.
 
-=head2 no_strict
+=head2 no_strict => 0 | 1
 
 With C<no_strict> option set to a true value, the accessor accepts and sets also unknown properties (i.e. not predeclared). You have to access the unknown properties without any accessor method. All the other options will work as expected. Without this option the method will croak if any property does not have an accessor method.
 
 B<Note>: This option is on by default if you define an accessor group without any C<props> option (i.e. in this case you can omit the 'no_strict' option).
 
-=head2 pre_process
+=head2 pre_process => \&code
 
 You can set a code reference to preprocess @_.
 
@@ -203,13 +217,13 @@ The original C<@_> is passed to the referenced pre_process CODE. Modify C<@_> in
                          }
         }
 
-=head2 default
+=head2 default => \%props | \&$method
 
 Use this option to set a I<default value>. The I<default value> must be a HASH reference or a CODE reference. If it is a CODE reference it will be evaluated at runtime and the property will be set to the HASH reference that the referenced CODE must return.
 
 You can reset a property to its default value by assigning an empty HASH reference ({}) to it.
 
-=head2 props
+=head2 props => \@props
 
 This option creates the same properties accessor methods as you would use directly the L<Object::props|Object::props> pragma. It accepts a reference to an array, containing the same structured parameters as such accepted by the L<Object::props|Object::props> pragma.
 
@@ -232,7 +246,7 @@ If you need support or if you want just to send me some feedback or request, ple
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis.
+© 2004-2005 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 

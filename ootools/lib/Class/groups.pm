@@ -1,5 +1,5 @@
 package Class::groups ;
-$VERSION = 1.76 ;
+$VERSION = 1.77 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -14,7 +14,7 @@ $VERSION = 1.76 ;
    { my $tool = shift
    ; $tool->add_to(scalar caller, @_)
    }
-   
+
 ; sub add_to
    { my ( $tool, $pkg, @args ) = @_
    ; foreach my $group ( @args )
@@ -28,19 +28,17 @@ $VERSION = 1.76 ;
               )
             { $$group{no_strict} = 1
             }
-         ; my @default_prop
+         ; my @group_props
          ; foreach my $prop ( @{$$group{props}} )
             { $prop = $tool->_init_prop_param( $prop )
-            ; if ( defined $$prop{default} )
-               { push @default_prop, @{$$prop{name}}
-               }
+            ; push @group_props, @{$$prop{name}}
             ; $$prop{group} = $n
             ; $tool->_add_prop($pkg, $prop )
             }
          ; no strict 'refs'
          ; my $init
-         ; if ( @default_prop )
-            { ${"$tool\::D_PROPS"}{$pkg}{$n} = \@default_prop
+         ; if ( @group_props )
+            { ${"$tool\::D_PROPS"}{$pkg}{$n} = \@group_props
             ; $init = sub
                        { foreach my $p ( @{ ${"$tool\::D_PROPS"}
                                              {$_[1]}
@@ -61,39 +59,59 @@ $VERSION = 1.76 ;
               ; my $hash = $tool =~ /^Class/
                            ? \%{(ref $s||$s)."::$n"}      # class
                            : ( $$s{$n} ||= {} )           # object
-              ; if (  defined $$group{default}
-                   && not (keys %$hash)
+              ; if (  ( my $def = $$group{default} )
+                   && not keys %$hash
                    )
-                 { my $h = (ref $$group{default} eq 'CODE')
-                           ? &{$$group{default}}($s)
-                           : $$group{default}
-                 ; ref $h eq 'HASH'
-                       || croak qq(Invalid "default" option for "$$group{name}[0]")
-                 ; %$hash = %$h
+                 { my $dprops
+                   =  ref $def eq 'HASH' && $def
+                   || (ref $def eq 'CODE' || not ref $def) && $s->$def()
+                 ; ref $dprops eq 'HASH'
+                   || croak qq(Invalid "default" option for "$$group{name}[0]", died)
+                 ; %$hash = %$dprops
                  }
-              ; $init->($s, ref $s||$s) if @default_prop   # init defaults
+              ; $init->($s, ref $s||$s) if @group_props   # init defaults
               ; my $data
               ; if ( @_ )
-                 { if ( ref $_[0] eq 'HASH' )
+                 { if ( ref $_[0] eq 'HASH' ) # set
                     { $data = $_[0]
                     }
-                   elsif ( @_ == 1 )
-                    { return $$hash{$_[0]}
+                   elsif ( @_ == 1 )          # get
+                    { my @val
+                    ; my @pro = ref $_[0] eq 'ARRAY' ? @{$_[0]} : $_[0]
+                    ; foreach my $p ( @pro )
+                       { if ( my $m = $s->can($p)
+                            and exists $$hash{$p}  # no unrelated props
+                            )
+                          { push @val, $s->$m
+                          }
+                         else
+                          { if ( $$group{no_strict} )
+                             { push @val, $$hash{$p}
+                             }
+                            else
+                             { croak qq(No such property "$p", died)
+                             }
+                          }
+                       }
+                    ; return wantarray ? @val : $val[0]
                     }
-                   elsif ( not ( @_ % 2 ) )
+                   elsif ( not ( @_ % 2 ) )  # set
                     { $data = { @_ }
                     }
                    else
-                    { croak qq(Odd number of arguments for "$n")
+                    { croak qq(Odd number of arguments for "$n", died)
                     }
-                 ; while ( my ($p, $v) = each %$data )
-                    { if ( $$group{no_strict} )               #no_strict
-                       { $$hash{$p} = $v
+                 ; while ( my ($p, $v) = each %$data )  # set
+                    { if ( my $m = $s->can($p) )
+                       { $s->$m($v)
                        }
-                      else                                    # strict
-                       { $s->can($p)
-                         or croak qq(No such property "$p")
-                       ; $s->$p( $v )
+                      else
+                       { if ( $$group{no_strict} )
+                          { $$hash{$p} = $v
+                          }
+                         else
+                          { croak qq(No such property "$p", died)
+                          }
                        }
                     }
                  }
@@ -113,9 +131,9 @@ __END__
 
 Class::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.76
+=head1 VERSION 1.77
 
-Included in OOTools 1.76 distribution.
+Included in OOTools 1.77 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -206,24 +224,38 @@ From the directory where this file is located, type:
     MyClass->myGroup( prop1 => 1 ,
                       prop2 => 2 ) ;
        
-    my @keys     = MyClass->myGroup
-    my $hash_ref = MyClass->myGroup
+    $hash_ref = MyClass->myGroup
     
-    my $value = MyClass->prop2 ;             # $value == 2
-       $value = MyClass->myGroup('prop2') ;  # $value == 2
-       $value = $hash_ref->{prop2} ;         # $value == 2
-       $value = $MyClass::myGroup{prop2} ;   # $value == 2
+    $value = MyClass->prop2 ;             # $value == 2
+    $value = MyClass->myGroup('prop2') ;  # $value == 2
+    $value = $MyClass::myGroup{prop2} ;   # $value == 2
+    $value = $$hash_ref{prop2} ;          # $value == 2
+    
+    ($p1, $p2) = MyClass->myGroup(['prop1','prop2']) ;
     
     # the default will initialize the hash reference
-    my $other_hash_ref = MyClass->myOtherGroup
-       $value = $other_hash_ref->{prop3}     # $value eq 'something'
+    $other_hash_ref = MyClass->myOtherGroup
+    $value = $other_hash_ref->{prop3}     # $value eq 'something'
     
-    # adding a unknow property (see no_strict)
+    # adding an unknow property (see no_strict)
     MyClass->myOtherGroup(prop5 => 5) ;
+
+=head1 WARNING
+
+Don't use the group accessor in list context in order to retrieve the hash keys. It is deprecated and it will return the whole hash in a future version.
+
+    # deprecated
+    @keys     = MyClass->myGroup ;
+    
+    # change it with
+    @keys     = keys %{MyClass->myGroup} ;
+    
+    # future behaviour in list context
+    %hash = MyClass->myGroup ;
 
 =head1 DESCRIPTION
 
-This pragma easily implements accessor methods for group of properties.
+This pragma easily implements accessor methods for group of properties, which are very efficient function templates that your modules may import at compile time. "This technique saves on both compile time and memory use, and is less error-prone as well, since syntax checks happen at compile time." (quoted from "Function Templates" in the F<perlref> manpage).
 
 It creates an accessor method for each property in the C<props> option as you where using the L<Class::props|Class::props> pragma, and creates an accessor method for the group.
 
@@ -271,17 +303,17 @@ If you want to see some working example of this module, take a look at the sourc
 
 =over
 
-=head2 name
+=head2 name => $name
 
 The name of the group accessor.
 
-=head2 no_strict
+=head2 no_strict => 0 | 1
 
 With C<no_strict> option set to a true value, the accessor accepts and sets also unknown properties (i.e. not predeclared). You have to access the unknown properties without any accessor method. All the other options will work as expected. Without this option the method will croak if any property does not have an accessor method.
 
 B<Note>: This option is on by default if you define an accessor group without any C<props> option (i.e. in this case you can omit the 'no_strict' option).
 
-=head2 pre_process
+=head2 pre_process => \&code
 
 You can set a code reference to preprocess @_.
 
@@ -301,13 +333,13 @@ The original C<@_> is passed to the referenced pre_process CODE. Modify C<@_> in
                          }
         }
 
-=head2 default
+=head2 default => \%props | \&$method
 
 Use this option to set a I<default value>. The I<default value> must be a HASH reference or a CODE reference. If it is a CODE reference it will be evaluated at runtime and the property will be set to the HASH reference that the referenced CODE must return.
 
 You can reset a property to its default value by assigning an empty HASH reference ({}) to it.
 
-=head2 props
+=head2 props => \@props
 
 This option creates the same properties accessor methods as you would use directly the L<Class::props|Class::props> pragma. It accepts a reference to an array, containing the same structured parameters as such accepted by the L<Class::props|Class::props> pragma.
 
@@ -330,7 +362,7 @@ If you need support or if you want just to send me some feedback or request, ple
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis.
+© 2004-2005 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 

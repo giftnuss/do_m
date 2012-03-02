@@ -1,5 +1,17 @@
 OOTools Latest Versions Changes
 
+Version 1.77
+- WARNING: Deprecated the use of the group accessor in list context
+  when used to retrieve keys: see 'WARNING' POD section
+- Added 'default' option to the Class::constr pragma plus tests
+- Fixed the possibilty of setting twice the same property when copy => 1
+- Minor changes in the constructor closure
+- Added possibility to get a slice of values from groups accessors
+- A few minor improvement and fixes in the groups closure (all the props exist,
+  the groups accessor uses always the props accessor if defined, etc)
+- Added $_ aliasing for the post_process option
+- A few minor POD changes and fixes
+
 Version 1.76
 - Added add_to() method to add props and groups accessors in other packages
 - Added post_process() option to props accessors

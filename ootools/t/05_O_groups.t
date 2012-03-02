@@ -61,7 +61,7 @@
 
 ; @p =  $Oo->group1
 ; is( scalar @p
-    , 0
+    , 4
     )
 
 ; $Oo->two = 2
