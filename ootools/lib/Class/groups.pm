@@ -1,5 +1,5 @@
 package Class::groups ;
-$VERSION = 1.54 ;
+$VERSION = 1.55 ;
 
 ; use 5.006_001
 ; use base 'Class::props'
@@ -89,11 +89,11 @@ __END__
 
 =head1 NAME
 
-Class::group - Pragma to implement group of properties
+Class::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.54
+=head1 VERSION 1.55
 
-Included in OOTools 1.54 distribution. The distribution includes:
+Included in OOTools 1.55 distribution. The distribution includes:
 
 =over
 

@@ -1,5 +1,5 @@
 package Object::groups ;
-$VERSION = 1.54 ;
+$VERSION = 1.55 ;
 
 use base 'Class::groups' ;
    
@@ -9,7 +9,7 @@ __END__
 
 =head1 NAME
 
-Object::group - Pragma to implement group of properties
+Object::groups - Pragma to implement group of properties
 
 =head1 VERSION 1.54
 

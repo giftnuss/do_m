@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 1.54 ;
+$VERSION = 1.55 ;
 
 
 ; use 5.006_001
@@ -108,9 +108,9 @@ $VERSION = 1.54 ;
          }
         ; $OK || croak qq("$_[0][1]" is a read-only property)
       }
-   ; if (   $_[0][3]{allowed}  # if restricted
+   ; if (   $_[0][3]{allowed}     # if restricted
         &&! $from_FETCH           # bypass for default
-        &&! our $force            # bypass deliberately
+        &&! $Class::props::force  # bypass deliberately
         )
       { my ($OK, $f)
       ; until ( $OK )
@@ -138,9 +138,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.54
+=head1 VERSION 1.55
 
-Included in OOTools 1.54 distribution. The distribution includes:
+Included in OOTools 1.55 distribution. The distribution includes:
 
 =over
 
