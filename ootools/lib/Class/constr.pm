@@ -1,5 +1,5 @@
 package Class::constr ;
-$VERSION = 2.1 ;
+$VERSION = 2.11 ;
 use 5.006_001 ;
 use strict ;
 
@@ -19,7 +19,7 @@ use strict ;
       ; $$constr{init} &&= [ $$constr{init} ]
                            unless ref $$constr{init} eq 'ARRAY'
       ; no strict 'refs'
-      ; *{"$callpkg\::$n"}
+      ; *{$callpkg.'::'.$n}
         = sub
            { &{$$constr{pre_process}} if defined $$constr{pre_process}
            ; my $c = shift
@@ -84,9 +84,9 @@ __END__
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 2.1
+=head1 VERSION 2.11
 
-Included in OOTools 2.1 distribution.
+Included in OOTools 2.11 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

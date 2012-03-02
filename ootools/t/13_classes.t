@@ -35,6 +35,7 @@
 
 
 ; package main
+; our @ISA = qw|f|
 
 ; use Test::More tests => 3
 #; use Data::Dumper

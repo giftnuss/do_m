@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 2.1 ;
+$VERSION = 2.11 ;
 use 5.006_001 ;
 use strict ;
   
@@ -44,13 +44,13 @@ use strict ;
                   )
    ; foreach my $n ( @{$$prop{name}} )     # foreach property
       { no strict 'refs'
-      ; *{"$pkg\::$n"}
+      ; *{$pkg.'::'.$n}
         = sub : lvalue
            { (@_ > 2) && croak qq(Too many arguments for "$n" property, died)
            ;  my $scalar = $tool =~ /^Class/
                            ? $gr
-                             ? \${(ref $_[0]||$_[0])."::$gr"}{$n}
-                             : \${(ref $_[0]||$_[0])."::$n"}
+                             ? \${(ref $_[0]||$_[0]).'::'.$gr}{$n}
+                             : \${(ref $_[0]||$_[0]).'::'.$n}
                            : $gr
                              ? \$_[0]{$gr}{$n}
                              : \$_[0]{$n}
@@ -153,9 +153,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 2.1
+=head1 VERSION 2.11
 
-Included in OOTools 2.1 distribution.
+Included in OOTools 2.11 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

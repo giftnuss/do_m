@@ -1,5 +1,5 @@
 package Class::groups ;
-$VERSION = 2.1 ;
+$VERSION = 2.11 ;
 use 5.006_001 ;
 use strict ;
 
@@ -40,26 +40,26 @@ use strict ;
          ; no strict 'refs'
          ; my $init
          ; if ( @group_props )
-            { ${"$tool\::PROPS"}{$pkg}{$n} = \@group_props
+            { ${$tool.'::PROPS'}{$pkg}{$n} = \@group_props
             ; $init = sub
-                       { foreach my $p ( @{ ${"$tool\::PROPS"}
+                       { foreach my $p ( @{ ${$tool.'::PROPS'}
                                              {$_[1]}
                                              {$n}
                                           }
                                        )
                           { my $dummy = $_[0]->$p
                           }
-                       ; foreach my $c ( @{"$_[1]\::ISA"} )
+                       ; foreach my $c ( @{$_[1].'::ISA'} )
                           { $init->($_[0], $c)
                           }
                        }
             }
-         ; *{"$pkg\::$n"}
+         ; *{$pkg.'::'.$n}
            = sub
               { &{$$group{pre_process}} if defined $$group{pre_process}
               ; my $s = shift
               ; my $hash = $tool =~ /^Class/
-                           ? \%{(ref $s||$s)."::$n"}      # class
+                           ? \%{(ref $s||$s).'::'.$n}      # class
                            : ( $$s{$n} ||= {} )           # object
               ; if (  ( my $def = $$group{default} )
                    && not keys %$hash
@@ -140,9 +140,9 @@ __END__
 
 Class::groups - Pragma to implement group of properties
 
-=head1 VERSION 2.1
+=head1 VERSION 2.11
 
-Included in OOTools 2.1 distribution.
+Included in OOTools 2.11 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

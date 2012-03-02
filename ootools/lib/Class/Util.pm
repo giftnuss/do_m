@@ -1,5 +1,5 @@
 package Class::Util ;
-$VERSION = 2.1 ;
+$VERSION = 2.11 ;
 use 5.006_001 ;
 use strict ;
   
@@ -51,10 +51,10 @@ use strict ;
               : $t eq '$' ? 'SCALAR'
               : croak 'Identifier must start with [*&%@$], died'
    ;  map { $code->() }
-      map { *{$_."::$symbol"}{$type} }
+      map { *{$_.'::'.$symbol}{$type} }
      grep { defined( $type eq 'SCALAR'
-                     ? ${$_."::$symbol"}
-                     : *{$_."::$symbol"}{$type}
+                     ? ${$_.'::'.$symbol}
+                     : *{$_.'::'.$symbol}{$type}
                    )
           }
           @$packages
@@ -67,17 +67,25 @@ use strict ;
      ? ref $_[0]
      : undef
    }
-
    
 ; sub classes
-   { require Class::ISA
-   ; my $class = shift
+   { my $class = shift
+   ; return () unless $class
    ; $class  = blessed($class) || $class || caller
-   ; wantarray ?  reverse Class::ISA::self_and_super_path($class)
-               : [ reverse Class::ISA::self_and_super_path($class) ]
+   ; my @classes = ()
+   ; my @stack   = ($class)
+   ; my %skip    = ($class => 1)
+   ; my $c
+   ; while ( @stack )
+      { next unless defined($c = shift @stack) && length $c
+      ; unshift @classes, $c
+      ; no strict 'refs';
+      ; unshift @stack, map{ $skip{$_}++ ? () : $_ } @{$c.'::ISA'}
+      }
+   ; wantarray ? @classes : \@classes
    }
 
-     
+    
 ; 1
 
 __END__
@@ -88,9 +96,9 @@ __END__
 
 Class::Util - Class utility functions
 
-=head1 VERSION 2.1
+=head1 VERSION 2.11
 
-Included in OOTools 2.1 distribution.
+Included in OOTools 2.11 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -186,7 +194,7 @@ It is useful if you need to load any module from a variable, since it avoids you
 
 =head2 gather {CODE} $symbol [, $classes ]
 
-The C<gather> function executes the <CODE> block for each defined C<$symbol> found in C<$classes>, setting $_ as the reference to the found symbol and returns the list of results. C<$symbol> must be a string starting with C<*&%@$>; $classes may be a reference to an ARRAY of classes, a class name, or a blessed object. If $classes is omitted it uses the L<classes|"classes  [$class|$object]"> of the caller; if it is a scalar it consider it as a class and uses the L<classes|classes  [$class|$object]"> of that class.
+The C<gather> function executes the <CODE> block for each defined C<$symbol> found in C<$classes>, setting $_ as the reference to the found symbol and returns the list of results. C<$symbol> must be a string starting with C<*&%@$>; $classes may be a reference to an ARRAY of classes, a class name, or a blessed object. If $classes is omitted it uses the L<classes|"classes [$class|$object]"> of the caller; if it is a scalar it consider it as a class and uses the L<classes|classes [$class|$object]"> of that class.
 
 This function is very useful if you want to implement data inheritance or if you want to implement overrunning, that is running the same method for each package that defines it (see for example L<CGI::Builder/"Overrunning">).
 
@@ -213,11 +221,13 @@ This function is very useful if you want to implement data inheritance or if you
              'd' => 5
            };
 
-=head2 classes  [$class|$object]
+=head2 classes [$class|$object]
 
-This function returns the list of all the classes that compose an object or a class (included the class itself). In scalar context it returns a reference to an ARRAY. If no arguments are passed it uses the caller package. The returned classes are ordered from the more remote to the class itself (included).
+This function returns the list of all the classes that compose an object or a class (included the class itself). In scalar context it returns a reference to an ARRAY. If no arguments are passed it uses the caller package.
 
-This function internally uses the reversed Class::ISA::self_and_super_path()>. It is internally used by the gather() function.
+The returned classes are ordered from the more remote class to the class itself (included).
+
+B<Note>: The result of this function is the reversed @ISA path that perl uses in order to find methods; the only exception is the C<UNIVERSAL> class, which is always omitted: if you need it unshift it to the result.
 
 =head2 blessed $object
 

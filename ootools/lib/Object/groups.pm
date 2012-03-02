@@ -1,5 +1,5 @@
 package Object::groups ;
-$VERSION = 2.1 ;
+$VERSION = 2.11 ;
 use 5.006_001 ;
 use strict ;
 
@@ -16,9 +16,9 @@ __END__
 
 Object::groups - Pragma to implement group of properties
 
-=head1 VERSION 2.1
+=head1 VERSION 2.11
 
-Included in OOTools 2.1 distribution.
+Included in OOTools 2.11 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

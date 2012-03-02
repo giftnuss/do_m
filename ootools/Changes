@@ -1,5 +1,9 @@
 OOTools Latest Versions Changes
 
+Version 2.11
+- Changed the Class::Util::classes function
+- Removed  Class::ISA prerequisite
+
 Version 2.1
 - Added the Class::Util::gather function plus tests
 - Added the Class::Util::classes function plus tests
