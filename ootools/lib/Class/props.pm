@@ -1,7 +1,159 @@
 package Class::props ;
-$VERSION = 1.2 ;
+$VERSION = 1.3 ;
 
-use base 'Base::OOTools' ;
+
+; use 5.006_001
+; use strict
+; use Carp
+
+; use constant   # props sub chunks
+
+{ START_SUB => q!
+  sub : lvalue
+   { croak qq(Too many arguments for "$n" property)
+           if @_ > 2
+!
+, P_CLASS => q!
+   ; my $scalar = \${(ref $_[0]||$_[0])."::$n"}
+!
+, G_CLASS => q!
+   ; my $scalar = \${(ref $_[0]||$_[0])."::$gr"}{$n}
+!
+, P_OBJECT => q!
+   ; croak qq(Wrong value type passed to "$n" object property)
+           unless ref $_[0]
+   ; my $scalar = \$_[0]{$n}
+!
+, G_OBJECT => q!
+   ; croak qq(Wrong value type passed to "$n" object property)
+           unless ref $_[0]
+   ; my $scalar = \$_[0]{$gr}{$n}
+!
+, TIE => q!
+   ; unless ( tied $$scalar )
+      { tie $$scalar
+          , $pkg
+          , $_[0]
+          , $n
+          , $scalar
+          , $$prop{default}
+          , $$prop{rt_default}
+          , $$prop{protected}
+          , $$prop{validation}
+      }
+!
+, END_SUB => q!
+   ; @_ == 2
+     ? ( $$scalar = $_[1] )
+     :   $$scalar
+   }
+!
+}
+  
+; sub import
+   { my ($pkg, @args) = @_
+   ; my $callpkg = caller
+   ; foreach my $prop ( @args )
+      { $prop = $pkg->_init_prop_param( $prop )
+      ; $pkg->_create_prop( $prop, $callpkg )
+      }
+   }
+
+; sub _init_prop_param
+   { my ( $pkg, $prop ) = @_
+   ; $prop = { name => $prop }
+             unless ref $prop eq 'HASH'
+   ; $$prop{name} = [ $$prop{name} ]
+                    unless ref $$prop{name} eq 'ARRAY'
+   ; if (  $$prop{default}
+        && $$prop{rt_default}
+        )
+      { croak qq("default" and "rt_default" options are incompatible)
+      }
+   ; $prop
+   }
+
+; sub _create_prop
+   { my $callpkg = pop
+   ; my ( $pkg, $prop ) = @_
+   ; my $gr = $$prop{group}
+   ; foreach my $n ( @{$$prop{name}} )       # foreach property
+      { croak qq(Property "$n" already defined in package "$callpkg")
+              if defined &{"$callpkg\::$n"}
+      ; my $sub  = START_SUB
+      ;    $sub .= $pkg =~ /^Class/
+                   ? $gr
+                     ? G_CLASS
+                     : P_CLASS
+                   : $gr
+                     ? G_OBJECT
+                     : P_OBJECT
+      ;    $sub .= TIE if defined $$prop{validation}
+                       or defined $$prop{default}
+                       or defined $$prop{rt_default}
+                       or defined $$prop{protected}
+      ;    $sub .= END_SUB
+      ; no strict 'refs'
+#      ; print qq(### $callpkg\::$n ###$sub\n)
+      ; eval '*{"$callpkg\::$n"} = '. $sub
+#      ; if ( $@ )
+#         { croak qq(Error in props sub: $@\n)
+#               . qq(### $callpkg\::$n ###$sub\n)
+#         }
+      }
+   }
+ 
+
+      
+# [0] object/class
+# [1] prop name
+# [2] lvalue ref
+# [3] default
+# [4] rt_default
+# [5] protected
+# [6] validation subref
+
+; sub TIESCALAR
+   { bless \@_, shift
+   }
+   
+; sub FETCH
+   { return ${$_[0][2]} if defined ${$_[0][2]}
+   ; if (defined $_[0][3])                      # default
+      { $_[0]->STORE( $_[0][3] )
+      }
+     elsif (defined $_[0][4])                   # rt_default
+      { $_[0]->STORE( $_[0][4]( $_[0][0] ) )
+      }
+   }
+
+; sub STORE
+   { my $from_FETCH = (caller(1))[3]
+                   && (caller(1))[3] =~ /::FETCH$/
+   ; my $default = $from_FETCH
+                   ? 'default '
+                   : ''
+   ; if (   $_[0][5]            # if protected
+        &&! $from_FETCH         # bypass for default
+        &&! our $force          # bypass deliberately
+        )
+      { my ($OK, $f)
+      ; until ( $OK )
+         { last unless my $caller = caller($f++)
+         ; $OK = $caller->can($_[0][1])
+         }
+        ; croak qq("$_[0][1]" is a read-only property)
+          unless $OK
+      }
+   ; local $_ = $_[1]
+   ; if ( defined $_[0][6]     # validation subref
+        && defined $_          # bypass for undef (reset to default)
+        )
+      { $_[0][6]( $_[0][0], $_)
+        or croak qq(Invalid ${default}value for "$_[0][1]" property)
+      }
+   ; ${$_[0][2]} = $_
+   }
    
 1 ;
 
@@ -11,13 +163,13 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.2
+=head1 VERSION 1.3
 
-Included in OOTools 1.2 distribution. The distribution includes:
+Included in OOTools 1.3 distribution. The distribution includes:
 
 =over
 
-=item * Class::new
+=item * Class::constr
 
 Pragma to implement constructor methods
 
@@ -25,9 +177,17 @@ Pragma to implement constructor methods
 
 Pragma to implement lvalue accessors with options
 
+=item * Class::group
+
+Pragma to implement group of properties accessors with options
+
 =item * Object::props
 
 Pragma to implement lvalue accessors with options
+
+=item * Object::group
+
+Pragma to implement group of properties accessors with options
 
 =back
 
@@ -38,36 +198,37 @@ Pragma to implement lvalue accessors with options
     package MyClass ;
     
     # implement constructor without options
-    use Class::new ;
+    use Class::constr ;
     
     # just accessors without options (list of strings)
-    use Class::props @prop_names ;
+    use Class::props @prop_names ;                       # @prop_names (1)
     
     # a property with validation and default (list of hash refs)
     use Class::props { name       => 'digits',
-                       validation => sub{ /^\d+\z/ }       # just digits
+                       validation => sub{ /^\d+\z/ }     # just digits
                        default    => 10
                      } ;
     
     # a group of properties with common full options
-    use Class::props { name       => \@other_prop_names,   # array ref
+    use Class::props { name       => \@prop_names2,      # @prop_names2 (1)
                        rt_default => sub{$_[0]->other_default} ,
                        validation => sub{ /\w+/ }
                        protected  => 1
                      } ;
                      
     # all the above in just one step (list of strings and hash refs)
-    use Class::props @prop_names ,
+    use Class::props @prop_names ,                       # @prop_names (1)
                      { name       => 'digits',
                        validation => sub{ /^\d+\z/ }
                        default    => 10
                      } ,
-                     { name       => \@other_prop_names,
+                     { name       => \@prop_names2,      # @prop_names2 (1)
                        rt_default => sub{$_[0]->other_default} ,
                        validation => sub{ /\w+/ }
                        protected  => 1
                      } ;
-
+                     
+    # (1) must be set in a BEGIN block to have effect at compile time
 
 =head2 Usage
 
@@ -79,7 +240,7 @@ Pragma to implement lvalue accessors with options
     $object->digits('123');      # old way supported
     
     my $d = $object->digits;     # $d == 123
-    $d = $MyClass::digits        # $d == 123
+       $d = $MyClass::digits     # $d == 123
     
     undef $object->digits        # $object->digits == 10 (default)
     
@@ -94,7 +255,7 @@ This pragma easily implements lvalue accessor methods for the properties of your
 
 You can completely avoid to write the accessor by just declaring the names and eventually the default value, validation code and other option of your properties.
 
-The accessor method creates a scalar in the class that implements it (e.g. $ImplementingClass::property_name) and ties it to the options you set, so even if you access the scalar without using the accessor, the options will have effect.
+The accessor method creates a scalar in the class that implements it (e.g. $Class::property) and ties it to the options you set, so even if you access the scalar without using the accessor, the options will have effect.
 
 =head2 Class properties vs Object properties
 
@@ -103,7 +264,7 @@ The main difference between C<Object::props> and C<Class::props> is that the fir
 A Class property is accessible either through the class or through all the objects of that class, while an object property is accessible only through the object that set it.
 
    package MyClass;
-   use Class::new ;
+   use Class::constr ;
    use Object::props 'obj_prop' ;
    use Class::props qw( class_prop1
                         class_prop2 ) ;
@@ -129,7 +290,7 @@ A Class property is accessible either through the class or through all the objec
    print $MyClass::class_prop2 ; # would print 22
    
    $object2->class_prop1 = 100 ; # object method
-   MyClass->class_prop2  = 200 ; # static method
+   MyClass->class_prop2  = 200 ; # static method works as well
    
    print $object1->class_prop1 ; # would print 100
    print $object2->class_prop1 ; # would print 100
@@ -176,8 +337,8 @@ Given 'my_prop' as the class property name:
     $object->my_prop = 10 ;  # assign 10 to $MyClass::my_prop
     $object->my_prop( 10 );  # assign 10 to $MyClass::my_prop
     
-    # same thing if MyClass::new is implemented
-    # by the Class::new pragma
+    # same thing if MyClass::constr is implemented
+    # by the Class::constr pragma
     
     $object = MyClass->new( my_prop => 10 );
 
@@ -233,19 +394,11 @@ I would like to have just a line of feedback from everybody who tries or actuall
 
 More information at http://perl.4pro.net/?Class::props.
 
-=head1 AUTHOR
+=head1 AUTHOR and COPYRIGHT
 
-Domizio Demichelis, <dd@4pro.net>.
+© 2003 by Domizio Demichelis <dd@4pro.net>.
 
-=head1 COPYRIGHT
-
-Copyright (c)2002 Domizio Demichelis. All Rights Reserved. This is free software; it may be used freely and redistributed for free providing this copyright header remains part of the software. You may not charge for the redistribution of this software. Selling this code without Domizio Demichelis' written permission is expressly forbidden.
-
-This software may not be modified without first notifying the author (this is to enable me to track modifications). In all cases the copyright header should remain fully intact in all modifications.
-
-This code is provided on an "As Is'' basis, without warranty, expressed or implied. The author disclaims all warranties with regard to this software, including all implied warranties of merchantability and fitness, in no event shall the author, be liable for any special, indirect or consequential damages or any damages whatsoever including but not limited to loss of use, data or profits. By using this software you agree to indemnify the author from any liability that might arise from it is use. Should this code prove defective, you assume the cost of any and all necessary repairs, servicing, correction and any other costs arising directly or indrectly from it is use.
-
-The copyright notice must remain fully intact at all times. Use of this software or its output, constitutes acceptance of these terms.
+All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 
 
 =head1 CREDITS

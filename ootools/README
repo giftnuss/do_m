@@ -5,29 +5,23 @@ OOTools README File
 Description
 -----------
 
-OOTools are a collection of pragmas to easily create constructors methods and
-lvalue accessor methods at compile time.
+OOTools is a collection of pragmas to easily create constructors methods and
+lvalue accessor methods at compile time. OOTools distribution includes:
 
-Class::new
-This pragma allows you to create a constructor method and set some optional parameters:
-- a method name (default set on 'new')
-- an init method(s) (default on '_init' if your class implements it)
- 
+Class::constr
+Pragma to implement constructor methods
+
 Class::props
-This pragma allows you to create lvalue accessor methods and set some optional
-parameters for the property of your class:
-- a default value
-- a validation code to validate assignments
-- a 'protected' flag that allows you to make the property read-only
-  when called from outside its class
-  
+Pragma to implement lvalue accessors with options
+
+Class::group
+Pragma to implement group of properties accessors with options
+
 Object::props
-This pragma allows you to create lvalue accessor methods and set some optional
-parameters for the property of your object:
-- a default value
-- a validation code to validate assignments
-- a 'protected' flag that allows you to make the property read-only
-  when called from outside its class
+Pragma to implement lvalue accessors with options
+
+Object::group
+Pragma to implement group of properties accessors with options
   
     
 Installation
@@ -53,4 +47,4 @@ Installation
 
 --
 Domizio Demichelis <dd@4pro.net>
-2003-12-19
+2003-12-26

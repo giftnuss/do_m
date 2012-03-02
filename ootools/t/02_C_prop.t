@@ -129,7 +129,7 @@
 
 
 ; package BaseClass
-; use Class::new
+; use Class::constr
 
 
 ; use Class::props ( qw | BpropA

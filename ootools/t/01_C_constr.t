@@ -21,12 +21,12 @@
 
 ; package BaseClass
 
-; use Class::new
+; use Class::constr
 
 
-; use Class::new ( name => 'N_init_constr'
-                 , init => 'N_init'
-                 )
+; use Class::constr ( name => 'N_init_constr'
+                    , init => 'N_init'
+                    )
 ; sub N_init { $BaseClass::N_init = 1 }
 
                                  
