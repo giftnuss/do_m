@@ -1,0 +1,10 @@
+lib/Base/OOTools.pm
+lib/Class/new.pm
+lib/Class/props.pm
+lib/Object/props.pm
+Makefile.PL
+MANIFEST			This list of files
+META.yml
+README
+t/01_ObjectTool.t
+t/02_ClassTool.t
