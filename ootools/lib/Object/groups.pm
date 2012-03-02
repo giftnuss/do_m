@@ -1,5 +1,5 @@
 package Object::groups ;
-$VERSION = 1.55 ;
+$VERSION = 1.6 ;
 
 use base 'Class::groups' ;
    
@@ -49,14 +49,15 @@ Pragma to implement groups of properties accessors with options
     use Class::costr ;
     
     # implement group method without options
-    use Object::group { name  => 'myGroup' ,
-                        props => [qw(prop1 prop2)]
-                      } ;
+    use Object::groups { name  => 'myGroup' ,
+                         props => [qw(prop1 prop2)]
+                       } ;
     
     # with options
-    use Object::group
+    use Object::groups
         { name      => 'myOtherGroup' ,
           no_strict => 1 ,
+          default   => { aProp => 'some value' } ,
           pre_process=> sub
                          { if ( ref $_[1] eq 'ARRAY' )
                             { $_[1] = { map { $_=>$_ } @{$_[1]} }
@@ -135,6 +136,10 @@ all the properties with a C<default> or C<rt_default> option (of the class and b
 
 B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work. (see also L<"CONTRIBUTION">) 
 
+=head2 Examples
+
+If you want to see some working example of this distribution, take a look at the source of the modules of the F<CGI-Application-Plus> distribution, and the F<Template-Magic> distribution.
+
 =head1 INSTALLATION
 
 =over
@@ -191,6 +196,11 @@ The original <@_> is passed to the referenced pre_process CODE. Modify C<@_> in 
                          }
         }
 
+=item default
+
+Use this option to set a I<default value>. The I<default value> must be a HASH reference or a CODE reference. If it is a Code reference it will be evaluated at runtime and the property will be set to the HASH reference that the referenced CODE must return.
+
+You can reset a property to its default value by assigning an empty HASH reference ({}) to it.
 
 =item props
 

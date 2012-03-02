@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 1.55 ;
+$VERSION = 1.6 ;
 
 
 ; use 5.006_001
@@ -36,9 +36,7 @@ $VERSION = 1.55 ;
                   || defined $$prop{validation}
                   )
    ; foreach my $n ( @{$$prop{name}} )     # foreach property
-      { croak qq(Property "$n" already defined in package "$callpkg")
-              if defined &{"$callpkg\::$n"}
-      ; no strict 'refs'
+      { no strict 'refs'
       ; *{"$callpkg\::$n"}
         = sub : lvalue
            { (@_ > 2) && croak qq(Too many arguments for "$n" property)
@@ -128,7 +126,7 @@ $VERSION = 1.55 ;
       }
    ; ${$_[0][2]} = $_
    }
-   
+
 
 1 ;
 
@@ -138,9 +136,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.55
+=head1 VERSION 1.6
 
-Included in OOTools 1.55 distribution. The distribution includes:
+Included in OOTools 1.6 distribution. The distribution includes:
 
 =over
 
@@ -277,6 +275,10 @@ A Class property is accessible either through the class or through all the objec
    print $object2->class_prop1 ; # would print 100
    print $object1->class_prop2 ; # would print 200
    print $object2->class_prop2 ; # would print 200
+
+=head2 Examples
+
+If you want to see some working example of this distribution, take a look at the source of the modules of the F<CGI-Application-Plus> distribution, and the F<Template-Magic> distribution.
 
 =head1 INSTALLATION
 

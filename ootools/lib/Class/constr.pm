@@ -1,5 +1,5 @@
 package Class::constr ;
-$VERSION = 1.55 ;
+$VERSION = 1.6 ;
 
 ; use 5.006_001
 ; use strict
@@ -50,9 +50,9 @@ __END__
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 1.55
+=head1 VERSION 1.6
 
-Included in OOTools 1.55 distribution. The distribution includes:
+Included in OOTools 1.6 distribution. The distribution includes:
 
 =over
 
@@ -104,11 +104,15 @@ Pragma to implement groups of properties accessors with options
 
 =head1 DESCRIPTION
 
-This pragma easily implements lvalue constructor methods for your class. Use it with C<Class::props> and C<Object::props> to automatically validate the input passed with C<new()>, or use the C<no_strict> option to accept unknow properties as well.
+This pragma easily implements constructor methods for your class. Use it with C<Class::props> and C<Object::props> to automatically validate the input passed with C<new()>, or use the C<no_strict> option to accept unknow properties as well.
 
 You can completely avoid to write the constructor by just using it and eventually declaring the name and the init methods to call.
 
 B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work. (see also L<"CONTRIBUTION">) 
+
+=head2 Examples
+
+If you want to see some working example of this distribution, take a look at the source of the modules of the F<CGI-Application-Plus> distribution, and the F<Template-Magic> distribution.
 
 =head1 INSTALLATION
 

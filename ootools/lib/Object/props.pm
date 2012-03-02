@@ -1,5 +1,5 @@
 package Object::props ;
-$VERSION = 1.55 ;
+$VERSION = 1.6 ;
 
 use base 'Class::props' ;
 
@@ -11,9 +11,9 @@ __END__
 
 Object::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.55
+=head1 VERSION 1.6
 
-Included in OOTools 1.55 distribution. The distribution includes:
+Included in OOTools 1.6 distribution. The distribution includes:
 
 =over
 
@@ -148,6 +148,10 @@ A Class property is accessible either through the class or through all the objec
    print $object2->class_prop1 ; # would print 100
    print $object1->class_prop2 ; # would print 200
    print $object2->class_prop2 ; # would print 200
+
+=head2 Examples
+
+If you want to see some working example of this distribution, take a look at the source of the modules of the F<CGI-Application-Plus> distribution, and the F<Template-Magic> distribution.
 
 =head1 INSTALLATION
 

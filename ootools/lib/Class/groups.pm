@@ -1,5 +1,5 @@
 package Class::groups ;
-$VERSION = 1.55 ;
+$VERSION = 1.6 ;
 
 ; use 5.006_001
 ; use base 'Class::props'
@@ -13,9 +13,7 @@ $VERSION = 1.55 ;
       { $$group{name} = [ $$group{name} ]
                         unless ref $$group{name} eq 'ARRAY'
       ; foreach my $n ( @{$$group{name}} )
-         { croak qq(Group "$n" already defined in package "$callpkg")
-                 if defined &{"$callpkg\::$n"}
-         ; my @default_prop
+         { my @default_prop
          ; foreach my $prop ( @{$$group{props}} )
             { $prop = $pkg->_init_prop_param( $prop )
             ; if (  defined $$prop{default} )
@@ -48,6 +46,15 @@ $VERSION = 1.55 ;
               ; my $hash = $pkg =~ /^Class/
                            ? \%{(ref $s||$s)."::$n"}      # class
                            : ( $$s{$n} ||= {} )           # object
+              ; if (  defined $$group{default}
+                   && not keys %$hash
+                   )
+                 { $hash = (ref $$group{default} eq 'CODE')
+                           ? $$group{default}($s)
+                           : $$group{default}
+                 ; ref $hash eq 'HASH'
+                       || croak qq(Invalid "default" option)
+                 }
               ; my $data
               ; if ( @_ )
                  { if ( ref $_[0] eq 'HASH' )
@@ -91,9 +98,9 @@ __END__
 
 Class::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.55
+=head1 VERSION 1.6
 
-Included in OOTools 1.55 distribution. The distribution includes:
+Included in OOTools 1.6 distribution. The distribution includes:
 
 =over
 
@@ -126,14 +133,15 @@ Pragma to implement groups of properties accessors with options
     package MyClass ;
     
     # implement group method without options
-    use Class::group { name  => 'myGroup' ,
-                       props => [qw(prop1 prop2)]
-                     } ;
+    use Class::groups { name  => 'myGroup' ,
+                        props => [qw(prop1 prop2)]
+                      } ;
     
     # with options
-    use Class::group
+    use Class::groups
         { name      => 'myOtherGroup' ,
           no_strict => 1 ,
+          default   => { aProp => 'some value' } ,
           pre_process=> sub
                          { if ( ref $_[1] eq 'ARRAY' )
                             { $_[1] = { map { $_=>$_ } @{$_[1]} }
@@ -204,11 +212,15 @@ all the already set properties of the class and base classes
 
 =item *
 
-all the properties with a C<default> option (of the class and base classes, even if they have not been set yet)
+all the properties with a I<default> option (of the class and base classes, even if they have not been set yet)
 
 =back
 
 B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work. (see also L<"CONTRIBUTION">)
+
+=head2 Examples
+
+If you want to see some working example of this distribution, take a look at the source of the modules of the F<CGI-Application-Plus> distribution, and the F<Template-Magic> distribution.
 
 =head1 INSTALLATION
 
@@ -264,6 +276,12 @@ The original <@_> is passed to the referenced pre_process CODE. Modify C<@_> in 
                             }
                          }
         }
+
+=item default
+
+Use this option to set a I<default value>. The I<default value> must be a HASH reference or a CODE reference. If it is a Code reference it will be evaluated at runtime and the property will be set to the HASH reference that the referenced CODE must return.
+
+You can reset a property to its default value by assigning an empty HASH reference ({}) to it.
 
 =item props
 
