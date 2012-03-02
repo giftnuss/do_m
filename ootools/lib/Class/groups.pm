@@ -1,5 +1,5 @@
 package Class::groups ;
-$VERSION = 1.75 ;
+$VERSION = 1.76 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -11,8 +11,12 @@ $VERSION = 1.75 ;
 ; $Carp::Internal{+__PACKAGE__}++
 
 ; sub import
-   { my ( $pkg, @args ) = @_
-   ; my $callpkg = caller
+   { my $tool = shift
+   ; $tool->add_to(scalar caller, @_)
+   }
+   
+; sub add_to
+   { my ( $tool, $pkg, @args ) = @_
    ; foreach my $group ( @args )
       { $group = { name => $group }
                  unless ref $group eq 'HASH'
@@ -26,19 +30,19 @@ $VERSION = 1.75 ;
             }
          ; my @default_prop
          ; foreach my $prop ( @{$$group{props}} )
-            { $prop = $pkg->_init_prop_param( $prop )
-            ; if (  defined $$prop{default} )
+            { $prop = $tool->_init_prop_param( $prop )
+            ; if ( defined $$prop{default} )
                { push @default_prop, @{$$prop{name}}
                }
             ; $$prop{group} = $n
-            ; $pkg->_create_prop( $prop, $callpkg )
+            ; $tool->_add_prop($pkg, $prop )
             }
          ; no strict 'refs'
          ; my $init
          ; if ( @default_prop )
-            { ${"$pkg\::D_PROPS"}{$callpkg}{$n} = \@default_prop
+            { ${"$tool\::D_PROPS"}{$pkg}{$n} = \@default_prop
             ; $init = sub
-                       { foreach my $p ( @{ ${"$pkg\::D_PROPS"}
+                       { foreach my $p ( @{ ${"$tool\::D_PROPS"}
                                              {$_[1]}
                                              {$n}
                                           }
@@ -50,11 +54,11 @@ $VERSION = 1.75 ;
                           }
                        }
             }
-         ; *{"$callpkg\::$n"}
+         ; *{"$pkg\::$n"}
            = sub
               { &{$$group{pre_process}} if defined $$group{pre_process}
               ; my $s = shift
-              ; my $hash = $pkg =~ /^Class/
+              ; my $hash = $tool =~ /^Class/
                            ? \%{(ref $s||$s)."::$n"}      # class
                            : ( $$s{$n} ||= {} )           # object
               ; if (  defined $$group{default}
@@ -64,7 +68,7 @@ $VERSION = 1.75 ;
                            ? &{$$group{default}}($s)
                            : $$group{default}
                  ; ref $h eq 'HASH'
-                       || croak qq(Invalid "default" option)
+                       || croak qq(Invalid "default" option for "$$group{name}[0]")
                  ; %$hash = %$h
                  }
               ; $init->($s, ref $s||$s) if @default_prop   # init defaults
@@ -97,7 +101,6 @@ $VERSION = 1.75 ;
                 ? keys %$hash
                 : $hash
               }
-
          }
       }
    }
@@ -110,9 +113,9 @@ __END__
 
 Class::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.75
+=head1 VERSION 1.76
 
-Included in OOTools 1.75 distribution.
+Included in OOTools 1.76 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -262,7 +265,7 @@ B<IMPORTANT NOTE>: If you write any script that rely on this module, you better 
 
 =head2 Examples
 
-If you want to see some working example of this distribution, take a look at the source of the modules of the F<CGI-Application-Plus> distribution, and the F<Template-Magic> distribution.
+If you want to see some working example of this module, take a look at the source of my other distributions.
 
 =head1 OPTIONS
 
@@ -307,6 +310,19 @@ You can reset a property to its default value by assigning an empty HASH referen
 =head2 props
 
 This option creates the same properties accessor methods as you would use directly the L<Class::props|Class::props> pragma. It accepts a reference to an array, containing the same structured parameters as such accepted by the L<Class::props|Class::props> pragma.
+
+=head1 METHODS
+
+=head2 add_to( package, groups )
+
+This will add to the package I<package> the accessors for the I<groups>. It is useful to add properties in other packages.
+
+   package Any::Package;
+   Class::groups->('My::Package', { name => 'any_name', ... });
+   
+   # which has the same effect of
+   package My::Package;
+   use Class::groups { name => 'any_name', ... }
 
 =head1 SUPPORT and FEEDBACK
 

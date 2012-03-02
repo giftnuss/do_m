@@ -1,5 +1,5 @@
 package Class::constr ;
-$VERSION = 1.75 ;
+$VERSION = 1.76 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -23,7 +23,7 @@ $VERSION = 1.75 ;
         = sub
            { &{$$constr{pre_process}} if defined $$constr{pre_process}
            ; my $c = shift
-           ; my $class = ref($c) || $c 
+           ; my $class = ref($c) || $c
            ; (@_ % 2) && croak qq(Odd number of arguments for "$class->$n")
          
            ; my $s = bless {}, $class
@@ -72,9 +72,9 @@ __END__
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 1.75
+=head1 VERSION 1.76
 
-Included in OOTools 1.75 distribution.
+Included in OOTools 1.76 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -161,7 +161,7 @@ B<IMPORTANT NOTE>: If you write any script that rely on this module, you better 
 
 =head2 Examples
 
-If you want to see some working example of this distribution, take a look at the source of the modules of the F<CGI-Application-Plus> distribution, and the F<Template-Magic> distribution.
+If you want to see some working example of this module, take a look at the source of my other distributions. 
 
 =head1 OPTIONS
 

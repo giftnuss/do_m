@@ -1,5 +1,5 @@
 package Object::groups ;
-$VERSION = 1.75 ;
+$VERSION = 1.76 ;
 
 use base 'Class::groups' ;
    
@@ -11,9 +11,9 @@ __END__
 
 Object::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.75
+=head1 VERSION 1.76
 
-Included in OOTools 1.75 distribution.
+Included in OOTools 1.76 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -168,7 +168,7 @@ B<IMPORTANT NOTE>: If you write any script that rely on this module, you better 
 
 =head2 Examples
 
-If you want to see some working example of this distribution, take a look at the source of the modules of the F<CGI-Application-Plus> distribution, and the F<Template-Magic> distribution.
+If you want to see some working example of this module, take a look at the source of my other distributions. 
 
 =head1 OPTIONS
 
@@ -213,7 +213,18 @@ You can reset a property to its default value by assigning an empty HASH referen
 
 This option creates the same properties accessor methods as you would use directly the L<Object::props|Object::props> pragma. It accepts a reference to an array, containing the same structured parameters as such accepted by the L<Object::props|Object::props> pragma.
 
-=back
+=head1 METHODS
+
+=head2 add_to( package, groups )
+
+This will add to the package I<package> the accessors for the I<groups>. It is useful to add properties in other packages.
+
+   package Any::Package;
+   Object::groups->('My::Package', { name => 'any_name', ... });
+   
+   # which has the same effect of
+   package My::Package;
+   use Object::groups { name => 'any_name', ... }
 
 =head1 SUPPORT and FEEDBACK
 

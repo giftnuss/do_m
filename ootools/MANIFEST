@@ -6,7 +6,6 @@ lib/Object/groups.pm
 lib/Object/props.pm
 Makefile.PL
 MANIFEST			This list of files
-META.yml
 README
 t/01_C_constr.t
 t/02_C_props.t
@@ -14,3 +13,4 @@ t/03_O_props.t
 t/04_C_groups.t
 t/05_O_groups.t
 t/06_C_constr-instance.t
+META.yml                                 Module meta-data (added by MakeMaker)

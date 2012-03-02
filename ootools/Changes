@@ -1,5 +1,10 @@
 OOTools Latest Versions Changes
 
+Version 1.76
+- Added add_to() method to add props and groups accessors in other packages
+- Added post_process() option to props accessors
+- A few minor POD changes
+
 Version 1.75
 - Constructors can now be called as instance methods
 - Added the 'copy' option to create copy constructors

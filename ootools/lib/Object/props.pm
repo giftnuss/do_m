@@ -1,5 +1,5 @@
 package Object::props ;
-$VERSION = 1.75 ;
+$VERSION = 1.76 ;
 
 use base 'Class::props' ;
 
@@ -11,9 +11,9 @@ __END__
 
 Object::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.75
+=head1 VERSION 1.76
 
-Included in OOTools 1.75 distribution.
+Included in OOTools 1.76 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -178,7 +178,7 @@ A Class property is accessible either through the class or through all the objec
 
 =head2 Examples
 
-If you want to see some working example of this distribution, take a look at the source of the modules of the F<CGI-Application-Plus> distribution, and the F<Template-Magic> distribution.
+If you want to see some working example of this module, take a look at the source of my other distributions. 
 
 =head1 OPTIONS
 
@@ -215,24 +215,42 @@ With C<no_strict> option set to a true value, the C<default> value will not be v
 You can set a code reference to validate a new value. If you don't set any C<validation> option, no validation will be done on the assignment.
 
 In the validation code, the object is passed in C<$_[0]> and the value to be
-validated is passed in C<$_[1]> and for regexing convenience it is aliased in C<$_>. Assign to C<$_> in the validation code to change the actual imput value.
+validated is passed in C<$_[1]> and for regexing convenience it is aliased in C<$_>.
 
     # web color validation
     use Object::props { name       => 'web_color'
                         validation => sub { /^#[0-9A-F]{6}$/ }
                       }
-    
-    # this will uppercase all input value
+    # this would croak
+    $object->web_color = 'dark gray'
+
+You can alse use the C<validation> code as a sort of pre_process or filter for the input values: just assign to C<$_> in the validation code in order to change the actual imput value.
+
+    # this will uppercase all input values
     use Object::props { name       => 'uppercase_it'
                         validation => sub { $_ = uc }
                       }
-    # this would croak
-    $object->web_color = 'dark gray'
-    
     # when used
-    $object->uppercase_it = 'abc' # actual value will be 'ABC'
+    $object->uppercase_it = 'abc' # stored value will be 'ABC'
 
 The validation code should return true on success and false on failure. Croak explicitly if you don't like the default error message.
+
+=head2 post_process
+
+You can set a code reference to transform the stored value, just before it is returned. If you don't set any C<post_process> option, no transformation will be done on the returned value, so in that case the returned value will be the same stored value.
+
+In the post_process code, the object is passed in C<$_[0]> and the value to be transformed is passed in C<$_[1]>; the accessor will return the value returned from the post_process code
+
+    # this will uppercase all output values
+    use Object::props { name         => 'uppercase_it'
+                        post_process => sub { uc $_[1] }
+                      }
+    
+    # when used
+    $object->uppercase_it = 'aBc'; # stored value will be 'aBc'
+    print $object->uppercase_it  ; # would print 'ABC'
+
+B<Warning>: The post_process code is ALWAYS executed in SCALAR context regardless the execution context of the accessor itself.
 
 =head2 allowed
 
@@ -250,6 +268,19 @@ You can however force the assignation from not matching subs by setting $Class::
 Set this option to a true value and the property will be turned I<read-only> when used from outside its class or sub-classes. This allows you to normally read and set the property from your class but it will croak if your user tries to set it.
 
 You can however force the protection and set the property from outside the class that implements it by setting $Class::props::force to a true value.
+
+=head1 METHODS
+
+=head2 add_to( package, properties )
+
+This will add to the package I<package> the accessors for the I<properties>. It is useful to add properties in other packages.
+
+   package Any::Package;
+   Object::props->('My::Package', { name => 'any_name', ... });
+   
+   # which has the same effect of
+   package My::Package;
+   use Object::props { name => 'any_name', ... }
 
 =head1 SUPPORT and FEEDBACK
 

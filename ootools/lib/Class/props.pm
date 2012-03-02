@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 1.75 ;
+$VERSION = 1.76 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -10,16 +10,20 @@ $VERSION = 1.75 ;
 ; $Carp::Internal{+__PACKAGE__}++
 
 ; sub import
-   { my ($pkg, @args) = @_
-   ; my $callpkg = caller
+   { my $tool = shift
+   ; $tool->add_to(scalar caller, @_)
+   }
+
+; sub add_to
+   { my ($tool, $pkg, @args) = @_
    ; foreach my $prop ( @args )
-      { $prop = $pkg->_init_prop_param( $prop )
-      ; $pkg->_create_prop( $prop, $callpkg )
+      { $prop = $tool->_init_prop_param( $prop )
+      ; $tool->_add_prop( $pkg, $prop )
       }
    }
 
 ; sub _init_prop_param
-   { my ( $pkg, $prop ) = @_
+   { my ( $tool, $prop ) = @_
    ; $prop = { name => $prop }
              unless ref $prop eq 'HASH'
    ; $$prop{name} = [ $$prop{name} ]
@@ -29,21 +33,21 @@ $VERSION = 1.75 ;
    ; $prop
    }
                       
-; sub _create_prop
-   { my $callpkg = pop
-   ; my ( $pkg, $prop ) = @_
+; sub _add_prop
+   { my ( $tool, $pkg, $prop ) = @_
    ; my $gr = delete $$prop{group}
    ; my $to_tie = (  defined $$prop{default}
                   || defined $$prop{protected}
                   || defined $$prop{allowed}
                   || defined $$prop{validation}
+                  || defined $$prop{post_process}
                   )
    ; foreach my $n ( @{$$prop{name}} )     # foreach property
       { no strict 'refs'
-      ; *{"$callpkg\::$n"}
+      ; *{"$pkg\::$n"}
         = sub ($;$) : lvalue
            { (@_ > 2) && croak qq(Too many arguments for "$n" property)
-           ;  my $scalar = $pkg =~ /^Class/
+           ;  my $scalar = $tool =~ /^Class/
                            ? $gr
                              ? \${(ref $_[0]||$_[0])."::$gr"}{$n}
                              : \${(ref $_[0]||$_[0])."::$n"}
@@ -79,11 +83,11 @@ $VERSION = 1.75 ;
    { bless \@_, shift
    }
    
-; sub FETCH
+; sub FETCH__
    { if ( defined ${$_[0][2]} )
       { ${$_[0][2]}
       }
-     elsif ( defined $_[0][3]{default} )          
+     elsif ( defined $_[0][3]{default} )
       { my $def = ref $_[0][3]{default} eq 'CODE'
                   ? $_[0][3]{default}( $_[0][0] )
                   : $_[0][3]{default}
@@ -94,6 +98,28 @@ $VERSION = 1.75 ;
      else
       { undef
       }
+   }
+   
+; sub FETCH
+   { my $val = do
+                { if ( defined ${$_[0][2]} )
+                   { ${$_[0][2]}
+                   }
+                  elsif ( defined $_[0][3]{default} )
+                   { my $def = ref $_[0][3]{default} eq 'CODE'
+                               ? $_[0][3]{default}( $_[0][0] )
+                               : $_[0][3]{default}
+                   ; $_[0][3]{no_strict}
+                     ? ${$_[0][2]} = $def
+                     : $_[0]->STORE( $def )
+                   }
+                  else
+                   { undef
+                   }
+                }
+   ; defined $_[0][3]{post_process}
+     ? $_[0][3]{post_process}( $_[0][0], $val )
+     : $val
    }
 
 ; sub STORE
@@ -142,9 +168,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.75
+=head1 VERSION 1.76
 
-Included in OOTools 1.75 distribution.
+Included in OOTools 1.76 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -265,9 +291,9 @@ This pragma easily implements lvalue accessor methods for the properties of your
 
 You can completely avoid to write the accessor by just declaring the names and eventually the default value, validation code and other option of your properties.
 
-The accessor method creates a scalar in the class that implements it (e.g. $Class::property) and access it using the options you set.
+The accessor method creates a scalar in the class that implements it (e.g. $Class::property) and sets/gets it using the options you set.
 
-B<IMPORTANT NOTE>: Since the version 1.7 the options don't work if you access the scalar without using the accessor, so you can direct access to bypass the options.
+B<IMPORTANT NOTE>: Since the version 1.7 the options don't work if you access the scalar without using the accessor, so you can access the value directly when you need to bypass the options.
 
 =head2 Class properties vs Object properties
 
@@ -311,7 +337,7 @@ A Class property is accessible either through the class or through all the objec
 
 =head2 Examples
 
-If you want to see some working example of this distribution, take a look at the source of the modules of the F<CGI-Application-Plus> distribution, and the F<Template-Magic> distribution.
+If you want to see some working example of this module, take a look at the source of my other distributions.
 
 =head1 OPTIONS
 
@@ -351,24 +377,42 @@ With C<no_strict> option set to a true value, the C<default> value will not be v
 
 You can set a code reference to validate a new value. If you don't set any C<validation> option, no validation will be done on the assignment.
 
-In the validation code, the object or class is passed in C<$_[0]> and the value to be validated is passed in C<$_[1]> and for regexing convenience it is aliased in C<$_>. Assign to C<$_> in the validation code to change the actual imput value.
+In the validation code, the object or class is passed in C<$_[0]> and the value to be validated is passed in C<$_[1]> and for regexing convenience it is aliased in C<$_>.
 
     # web color validation
     use Class::props { name       => 'web_color'
-                       validation => sub { /^#[0-9A-F]{6}$/ }
-                     }
-    
-    # this will uppercase all input value
-    use MyClass::props { name       => 'uppercase_it'
-                         validation => sub { $_ = uc }
-                       }
+                     , validation => sub { /^#[0-9A-F]{6}$/ }
+                     } ;
     # this would croak
-    MyClass->web_color = 'dark gray'
-    
+    $object->web_color = 'dark gray' ;
+
+You can alse use the C<validation> code as a sort of pre_process or filter for the input values: just assign to C<$_> in the validation code in order to change the actual imput value.
+
+    # this will uppercase all input values
+    use Class::props { name       => 'uppercase_it'
+                     , validation => sub { $_ = uc }
+                     } ;
     # when used
-    MyClass->uppercase_it = 'abc' # actual value will be 'ABC'
+    $object->uppercase_it = 'abc' ; # stored value will be 'ABC'
 
 The validation code should return true on success and false on failure. Croak explicitly if you don't like the default error message.
+
+=head2 post_process
+
+You can set a code reference to transform the stored value, just before it is returned. If you don't set any C<post_process> option, no transformation will be done on the returned value, so in that case the returned value will be the same stored value.
+
+In the post_process code, the object or class is passed in C<$_[0]> and the value to be transformed is passed in C<$_[1]>; the accessor will return the value returned from the post_process code
+
+    # this will uppercase all output values
+    use Class::props { name         => 'uppercase_it'
+                     , post_process => sub { uc $_[1] }
+                     }
+    
+    # when used
+    Class->uppercase_it = 'aBc'; # stored value will be 'aBc'
+    print Class->uppercase_it  ; # would print 'ABC'
+
+B<Warning>: The post_process code is ALWAYS executed in SCALAR context regardless the execution context of the accessor itself.
 
 =head2 allowed
 
@@ -387,6 +431,18 @@ Set this option to a true value and the property will be turned I<read-only> whe
 
 You can however force the protection and set the property from outside the class that implements it by setting $Class::props::force to a true value.
 
+=head1 METHODS
+
+=head2 add_to( package, properties )
+
+This will add to the package I<package> the accessors for the I<properties>. It is useful to add properties in other packages.
+
+   package Any::Package;
+   Class:props->('My::Package', { name => 'any_name', ... });
+   
+   # which has the same effect of
+   package My::Package;
+   use Class::props { name => 'any_name', ... }
 
 =head1 SUPPORT and FEEDBACK
 
