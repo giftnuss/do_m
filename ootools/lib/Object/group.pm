@@ -1,5 +1,5 @@
 package Object::group ;
-$VERSION = 1.3 ;
+$VERSION = 1.31 ;
 
 use base 'Class::group' ;
    
@@ -11,9 +11,9 @@ __END__
 
 Object::group - Pragma to implement group of properties
 
-=head1 VERSION 1.3
+=head1 VERSION 1.31
 
-Included in OOTools 1.3 distribution. The distribution includes:
+Included in OOTools 1.31 distribution. The distribution includes:
 
 =over
 

@@ -1,27 +1,25 @@
 package Class::group ;
-$VERSION = 1.3 ;
+$VERSION = 1.31 ;
 
 ; use base 'Class::props'
 ; use strict
 ; use Carp
 
 
-; use constant  # group sub chunks
-
-{ START_SUB => q!
+; use constant START_SUB => q!
   sub
    { my $s = shift
 !
-, AUTO_INIT => q!
+; use constant AUTO_INIT => q!
    ; $init->($s, ref $s||$s)
 !
-, CLASS => q!
+; use constant CLASS => q!
    ; my $hash = \%{(ref $s||$s)."::$gr"}
 !
-, OBJECT => q!
+; use constant OBJECT => q!
    ; my $hash = $$s{$gr}
 !
-, END_SUB => q!
+; use constant END_SUB => q!
    ; return $$hash{$_[0]} if @_ == 1
    ; croak qq(Odd number of arguments for "$gr")
            if @_ % 2
@@ -40,7 +38,6 @@ $VERSION = 1.3 ;
      : $hash || $$s{$gr}  # rare perl bug?
    }
 !
-}
 
 ; sub import
    { my ( $pkg, @args ) = @_
@@ -97,9 +94,9 @@ __END__
 
 Class::group - Pragma to implement group of properties
 
-=head1 VERSION 1.3
+=head1 VERSION 1.31
 
-Included in OOTools 1.3 distribution. The distribution includes:
+Included in OOTools 1.31 distribution. The distribution includes:
 
 =over
 

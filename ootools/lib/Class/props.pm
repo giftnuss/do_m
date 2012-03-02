@@ -1,35 +1,33 @@
 package Class::props ;
-$VERSION = 1.3 ;
+$VERSION = 1.31 ;
 
 
 ; use 5.006_001
 ; use strict
 ; use Carp
 
-; use constant   # props sub chunks
-
-{ START_SUB => q!
+; use constant START_SUB => q!
   sub : lvalue
    { croak qq(Too many arguments for "$n" property)
            if @_ > 2
 !
-, P_CLASS => q!
+; use constant P_CLASS => q!
    ; my $scalar = \${(ref $_[0]||$_[0])."::$n"}
 !
-, G_CLASS => q!
+; use constant G_CLASS => q!
    ; my $scalar = \${(ref $_[0]||$_[0])."::$gr"}{$n}
 !
-, P_OBJECT => q!
+; use constant P_OBJECT => q!
    ; croak qq(Wrong value type passed to "$n" object property)
            unless ref $_[0]
    ; my $scalar = \$_[0]{$n}
 !
-, G_OBJECT => q!
+; use constant G_OBJECT => q!
    ; croak qq(Wrong value type passed to "$n" object property)
            unless ref $_[0]
    ; my $scalar = \$_[0]{$gr}{$n}
 !
-, TIE => q!
+; use constant TIE => q!
    ; unless ( tied $$scalar )
       { tie $$scalar
           , $pkg
@@ -42,13 +40,13 @@ $VERSION = 1.3 ;
           , $$prop{validation}
       }
 !
-, END_SUB => q!
+; use constant END_SUB => q!
    ; @_ == 2
      ? ( $$scalar = $_[1] )
      :   $$scalar
    }
 !
-}
+
   
 ; sub import
    { my ($pkg, @args) = @_
@@ -155,6 +153,7 @@ $VERSION = 1.3 ;
    ; ${$_[0][2]} = $_
    }
    
+
 1 ;
 
 __END__
@@ -163,9 +162,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.3
+=head1 VERSION 1.31
 
-Included in OOTools 1.3 distribution. The distribution includes:
+Included in OOTools 1.31 distribution. The distribution includes:
 
 =over
 

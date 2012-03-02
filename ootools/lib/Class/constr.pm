@@ -1,13 +1,11 @@
 package Class::constr ;
-$VERSION = 1.3 ;
+$VERSION = 1.31 ;
 
 ; use 5.006_001
 ; use strict
 ; use Carp
 
-; use constant
-
-{ START_SUB => q!
+; use constant START_SUB => q!
   sub
    { my $c = shift
    ; croak qq(Can't call method "$n" on a reference)
@@ -28,16 +26,15 @@ $VERSION = 1.3 ;
          }
       }
 !
-, INIT_LOOP => q!
+; use constant INIT_LOOP => q!
    ; foreach my $m ( @{$constr{init}} )
       { $s->$m(@_)
       }
 !
-, END_SUB => q!
+; use constant END_SUB => q!
    ; $s
    }
 !
-}
 
 ; sub import
    { my ($pkg, %constr) = @_
@@ -46,13 +43,10 @@ $VERSION = 1.3 ;
  
    ; $constr{init} &&= [ $constr{init} ]
                      unless ref $constr{init} eq 'ARRAY'
-   
-   ###### SUB ######
    ; my $sub = START_SUB
    ;    $sub .= INIT_LOOP if $constr{init}
    ;    $sub .= END_SUB
-   ###### END SUB ######
-   
+
    ; no strict 'refs'
    ; eval '*{"$callpkg\::$n"} ='. $sub
    ; croak $@ if $@
@@ -68,9 +62,9 @@ __END__
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 1.3
+=head1 VERSION 1.31
 
-Included in OOTools 1.3 distribution. The distribution includes:
+Included in OOTools 1.31 distribution. The distribution includes:
 
 =over
 
