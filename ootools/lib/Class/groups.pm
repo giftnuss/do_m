@@ -1,5 +1,5 @@
 package Class::groups ;
-$VERSION = 1.73 ;
+$VERSION = 1.74 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -19,8 +19,8 @@ $VERSION = 1.73 ;
       ; $$group{name} = [ $$group{name} ]
                         unless ref $$group{name} eq 'ARRAY'
       ; foreach my $n ( @{$$group{name}} )
-         { if (  not($$group{no_strict})
-              && not($$group{props})
+         { if (  not(defined $$group{no_strict})
+              && not(defined $$group{props})
               )
             { $$group{no_strict} = 1
             }
@@ -110,9 +110,9 @@ __END__
 
 Class::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.73
+=head1 VERSION 1.74
 
-Included in OOTools 1.73 distribution.
+Included in OOTools 1.74 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -162,8 +162,6 @@ From the directory where this file is located, type:
     make
     make test
     make install
-
-B<Note>: The installation of this module runs an automatic version check connection which will warn you in case a newer version is available: please don't use old versions, because I can give you full support only for current versions. Besides, since CPAN does not provide any download statistic to the authors, this check allows me also to keep my own installation counter. Version checking is transparent to regular users, while CPAN testers should skip it by running the Makefile.PL with NO_VERSION_CHECK=1.
 
 =back
 
