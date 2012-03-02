@@ -1,5 +1,5 @@
 package Object::props ;
-$VERSION = 1.6 ;
+$VERSION = 1.61 ;
 
 use base 'Class::props' ;
 
@@ -11,9 +11,13 @@ __END__
 
 Object::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.6
+=head1 VERSION 1.61
 
-Included in OOTools 1.6 distribution. The distribution includes:
+Included in OOTools 1.61 distribution.
+
+The latest versions changes are reported in the F<Changes> file in this distribution.
+
+The distribution includes:
 
 =over
 
@@ -36,6 +40,29 @@ Pragma to implement lvalue accessors with options
 =item * Object::groups
 
 Pragma to implement groups of properties accessors with options
+
+=back
+
+=head1 INSTALLATION
+
+=over
+
+=item Prerequisites
+
+    Perl version >= 5.6.1
+
+=item CPAN
+
+    perl -MCPAN -e 'install OOTools'
+
+=item Standard installation
+
+From the directory where this file is located, type:
+
+    perl Makefile.PL
+    make
+    make test
+    make install
 
 =back
 
@@ -107,7 +134,7 @@ You can completely avoid to write the accessor by just declaring the names and e
 
 The accessor method creates a key in the hash object that implements it (e.g. $object->{property}) and ties it to the options you set, so even if you access the key without using the accessor, the options will have effect.
 
-B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work. (see also L<"CONTRIBUTION">) 
+B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work. 
 
 =head2 Class properties vs Object properties
 
@@ -153,34 +180,9 @@ A Class property is accessible either through the class or through all the objec
 
 If you want to see some working example of this distribution, take a look at the source of the modules of the F<CGI-Application-Plus> distribution, and the F<Template-Magic> distribution.
 
-=head1 INSTALLATION
+=head1 OPTIONS
 
-=over
-
-=item Prerequisites
-
-    Perl version >= 5.6.1
-
-=item CPAN
-
-    perl -MCPAN -e 'install OOTools'
-
-=item Standard installation
-
-From the directory where this file is located, type:
-
-    perl Makefile.PL
-    make
-    make test
-    make install
-
-=back
-
-=head2 OPTIONS
-
-=over
-
-=item name
+=head2 name
 
 The name of the property is used as the identifier to create the accessor method, and as the key of the blessed object hash.
 
@@ -196,7 +198,7 @@ Given 'my_prop' as the property name:
 
 You can group properties that have the same set of option by passing a reference to an array containing the names. If you don't use any option you can pass a list of plain names as well. See L<"SYNOPSYS">.
 
-=item default
+=head2 default
 
 Use this option to set a I<default value>. If any C<validation> option is set, then the I<default value> is validated as well (the C<no_strict> option override this).
 
@@ -204,11 +206,11 @@ If you pass a CODE reference as default it will be evaluated at runtime and the 
 
 You can reset a property to its default value by assigning it the undef value.
 
-=item no_strict
+=head2 no_strict
 
 With C<no_strict> option set to a true value, the C<default> value will not be validate even if a C<validation> option is set. Without this option the method will croak if the C<default> are not valid.
 
-=item validation
+=head2 validation
 
 You can set a code reference to validate a new value. If you don't set any C<validation> option, no validation will be done on the assignment.
 
@@ -232,27 +234,26 @@ validated is passed in C<$_[1]> and for regexing convenience it is aliased in C<
 
 The validation code should return true on success and false on failure. Croak explicitly if you don't like the default error message.
 
-=item allowed
+=head2 allowed
 
-The property is settable only by the caller sub that match with the content of this option. The content can be a compiled RE or a simple string that will be used to check the caller. (Pass an array ref for multiple items)
+The property is settable only by the caller sub that matches with the content of this option. The content can be a compiled RE or a simple string that will be used to check the caller. (Pass an array ref for multiple items)
 
     use Object::props { name    => 'restricted'
                         allowed => [ qr/::allowed_sub1$/ ,
                                      qr/::allowed_sub2$/ ]
                       }
-=item protected
+
+You can however force the assignation from not matching subs by setting $Class::props::force to a true value.
+
+=head2 protected
 
 Set this option to a true value and the property will be turned I<read-only> when used from outside its class or sub-classes. This allows you to normally read and set the property from your class but it will croak if your user tries to set it.
 
-You can however force the protection and set the property from outside the class that implements it by setting $Base::OOTools::force to a true value.
-
-=back
+You can however force the protection and set the property from outside the class that implements it by setting $Class::props::force to a true value.
 
 =head1 SUPPORT and FEEDBACK
 
-I would like to have just a line of feedback from everybody who tries or actually uses this module. PLEASE, write me any comment, suggestion or request. ;-)
-
-More information at http://perl.4pro.net/?Object::props.
+If you need support or if you want just to send me some feedback or request, please use this link: http://perl.4pro.net/?Object::props.
 
 =head1 AUTHOR and COPYRIGHT
 
@@ -263,7 +264,3 @@ All Rights Reserved. This module is free software. It may be used, redistributed
 =head1 CREDITS
 
 Thanks to Juerd Waalboer (http://search.cpan.org/author/JUERD) that with its I<Attribute::Property> inspired the creation of this distribution.
-
-=head1 CONTRIBUTION
-
-I always answer to each and all the message i receive from users, but I have almost no time to find, install and organize a mailing list software that could improve a lot the support to people that use my modules. Besides I have too little time to write more detailed documentation, more examples and tests. Your contribution would be precious, so if you can and want to help, just contact me. Thank you in advance.

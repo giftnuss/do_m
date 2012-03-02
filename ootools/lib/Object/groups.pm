@@ -1,5 +1,5 @@
 package Object::groups ;
-$VERSION = 1.6 ;
+$VERSION = 1.61 ;
 
 use base 'Class::groups' ;
    
@@ -11,9 +11,13 @@ __END__
 
 Object::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.54
+=head1 VERSION 1.61
 
-Included in OOTools 1.54 distribution. The distribution includes:
+Included in OOTools 1.61 distribution.
+
+The latest versions changes are reported in the F<Changes> file in this distribution.
+
+The distribution includes:
 
 =over
 
@@ -36,6 +40,29 @@ Pragma to implement lvalue accessors with options
 =item * Object::groups
 
 Pragma to implement groups of properties accessors with options
+
+=back
+
+=head1 INSTALLATION
+
+=over
+
+=item Prerequisites
+
+    Perl version >= 5.6.1
+
+=item CPAN
+
+    perl -MCPAN -e 'install OOTools'
+
+=item Standard installation
+
+From the directory where this file is located, type:
+
+    perl Makefile.PL
+    make
+    make test
+    make install
 
 =back
 
@@ -134,48 +161,25 @@ all the properties with a C<default> or C<rt_default> option (of the class and b
 
 =back
 
-B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work. (see also L<"CONTRIBUTION">) 
+B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work.
 
 =head2 Examples
 
 If you want to see some working example of this distribution, take a look at the source of the modules of the F<CGI-Application-Plus> distribution, and the F<Template-Magic> distribution.
 
-=head1 INSTALLATION
+=head1 OPTIONS
 
-=over
-
-=item Prerequisites
-
-    Perl version >= 5.6.1
-
-=item CPAN
-
-    perl -MCPAN -e 'install OOTools'
-
-=item Standard installation
-
-From the directory where this file is located, type:
-
-    perl Makefile.PL
-    make
-    make test
-    make install
-
-=back
-
-=head2 OPTIONS
-
-=over
-
-=item name
+=head2 name
 
 The name of the group method.
 
-=item no_strict
+=head2 no_strict
 
-With C<no_strict> option set to a true value, the method accepts and sets also unknown properties (i.e. not predeclared). You have to access the unknown properties without any accessor method. All the other options will work as expected. Without this option the method will croak if any property does not have an accessor method.
+With C<no_strict> option set to a true value, the accessor accepts and sets also unknown properties (i.e. not predeclared). You have to access the unknown properties without any accessor method. All the other options will work as expected. Without this option the method will croak if any property does not have an accessor method.
 
-=item pre_process
+B<Note>: This option is on by default if you define an accessor group without any C<props> option (i.e. in this case you can omit the 'no_strict' option).
+
+=head2 pre_process
 
 You can set a code reference to preprocess @_.
 
@@ -196,13 +200,13 @@ The original <@_> is passed to the referenced pre_process CODE. Modify C<@_> in 
                          }
         }
 
-=item default
+=head2 default
 
 Use this option to set a I<default value>. The I<default value> must be a HASH reference or a CODE reference. If it is a Code reference it will be evaluated at runtime and the property will be set to the HASH reference that the referenced CODE must return.
 
 You can reset a property to its default value by assigning an empty HASH reference ({}) to it.
 
-=item props
+=head2 props
 
 This option creates the same properties accessor methods as you would use directly the L<Object::props|Object::props> pragma. It accepts a reference to an array, containing the same structured parameters as such accepted by the L<Object::props|Object::props> pragma.
 
@@ -210,9 +214,7 @@ This option creates the same properties accessor methods as you would use direct
 
 =head1 SUPPORT and FEEDBACK
 
-I would like to have just a line of feedback from everybody who tries or actually uses this module. PLEASE, write me any comment, suggestion or request. ;-)
-
-More information at http://perl.4pro.net/?Object::group.
+If you need support or if you want just to send me some feedback or request, please use this link: http://perl.4pro.net/?Object::groups.
 
 =head1 AUTHOR and COPYRIGHT
 
@@ -223,7 +225,3 @@ All Rights Reserved. This module is free software. It may be used, redistributed
 =head1 CREDITS
 
 Thanks to Juerd Waalboer (http://search.cpan.org/author/JUERD) that with its I<Attribute::Property> inspired the creation of this distribution.
-
-=head1 CONTRIBUTION
-
-I always answer to each and all the message i receive from users, but I have almost no time to find, install and organize a mailing list software that could improve a lot the support to people that use my modules. Besides I have too little time to write more detailed documentation, more examples and tests. Your contribution would be precious, so if you can and want to help, just contact me. Thank you in advance.
