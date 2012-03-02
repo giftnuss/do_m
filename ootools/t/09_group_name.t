@@ -1,7 +1,7 @@
 #!perl -w
 ; use strict
 ; use warnings
-; use Test::More tests => 5
+; use Test::More tests => 6
 #; use Data::Dumper
 
 
@@ -17,6 +17,9 @@
 ; is( $o->group1->{one} => 20 )
 ; is( $o->group1->{two} => 30 )
  
+; $o->group1(three => 15)
+; is $o->group1('three') => 15
+
 ; package MyTest
 
 ; use Class::constr
@@ -33,6 +36,7 @@
                 }
    }
 
+; sub three {}
 
 
 

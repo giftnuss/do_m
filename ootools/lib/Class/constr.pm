@@ -1,5 +1,5 @@
 package Class::constr ;
-$VERSION = 1.78 ;
+$VERSION = 1.79 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -77,9 +77,9 @@ __END__
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 1.78
+=head1 VERSION 1.79
 
-Included in OOTools 1.78 distribution.
+Included in OOTools 1.79 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

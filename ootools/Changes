@@ -1,5 +1,9 @@
 OOTools Latest Versions Changes
 
+Version 1.79
+- Fixed a bug related to set *::groups
+- A test addition
+
 Version 1.78
 - Fixed a bug related to naming props and group props with the same name
 - The properties defined with a group get initialized just once
