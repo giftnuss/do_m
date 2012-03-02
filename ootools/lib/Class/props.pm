@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 1.4 ;
+$VERSION = 1.5 ;
 
 
 ; use 5.006_001
@@ -21,26 +21,31 @@ $VERSION = 1.4 ;
              unless ref $prop eq 'HASH'
    ; $$prop{name} = [ $$prop{name} ]
                     unless ref $$prop{name} eq 'ARRAY'
-   ; if (  $$prop{default}
-        && $$prop{rt_default}
-        )
-      { croak qq("default" and "rt_default" options are incompatible)
-      }
+   ; $$prop{allowed} &&= [ $$prop{allowed} ]
+                         unless ref $$prop{allowed} eq 'ARRAY'
+   ;  defined $$prop{default}
+   && defined $$prop{rt_default}
+   && croak qq("default" and "rt_default" options are incompatible)
    ; $prop
    }
-
+                      
 ; sub _create_prop
    { my $callpkg = pop
    ; my ( $pkg, $prop ) = @_
-   ; my $gr = $$prop{group}
-   ; foreach my $n ( @{$$prop{name}} )       # foreach property
+   ; my $gr = delete $$prop{group}
+   ; my $to_tie = (  defined $$prop{default}
+                  || defined $$prop{rt_default}
+                  || defined $$prop{protected}
+                  || defined $$prop{allowed}
+                  || defined $$prop{validation}
+                  )
+   ; foreach my $n ( @{$$prop{name}} )     # foreach property
       { croak qq(Property "$n" already defined in package "$callpkg")
               if defined &{"$callpkg\::$n"}
       ; no strict 'refs'
       ; *{"$callpkg\::$n"}
         = sub : lvalue
-           { croak qq(Too many arguments for "$n" property)
-                   if @_ > 2
+           { (@_ > 2) && croak qq(Too many arguments for "$n" property)
            ;  my $scalar = $pkg =~ /^Class/
                            ? $gr
                              ? \${(ref $_[0]||$_[0])."::$gr"}{$n}
@@ -48,22 +53,15 @@ $VERSION = 1.4 ;
                            : $gr
                              ? \$_[0]{$gr}{$n}
                              : \$_[0]{$n}
-           ; if (  defined $$prop{default}
-                || defined $$prop{rt_default}
-                || defined $$prop{protected}
-                || defined $$prop{validation}
+           ; if (   $to_tie
+                &&! tied $$scalar
                 )
-              { unless ( tied $$scalar )
-                 { tie $$scalar
-                     , $pkg
-                     , $_[0]                   # [0] object/class
-                     , $n                      # [1] prop name
-                     , $scalar                 # [2] lvalue ref
-                     , $$prop{default}         # [3] default
-                     , $$prop{rt_default}      # [4] rt_default
-                     , $$prop{protected}       # [5] protected
-                     , $$prop{validation}      # [6] validation subref
-                 }
+              { tie $$scalar
+                  , 'Class::props::Tie'
+                  , $_[0]                   # [0] object/class
+                  , $n                      # [1] prop name
+                  , $scalar                 # [2] lvalue ref
+                  , $prop                   # [3] options ref
               }
            ; @_ == 2
              ? ( $$scalar = $_[1] )
@@ -72,17 +70,30 @@ $VERSION = 1.4 ;
       }
    }
 
+; package Class::props::Tie
+; use Carp
+; use strict
+
 ; sub TIESCALAR
    { bless \@_, shift
    }
    
 ; sub FETCH
-   { return ${$_[0][2]} if defined ${$_[0][2]}
-   ; if (defined $_[0][3])                      # default
-      { $_[0]->STORE( $_[0][3] )
+   { if ( defined ${$_[0][2]} )
+      { ${$_[0][2]}
       }
-     elsif (defined $_[0][4])                   # rt_default
-      { $_[0]->STORE( $_[0][4]( $_[0][0] ) )
+     elsif ( defined $_[0][3]{default} )                      # default
+      { $_[0][3]{no_strict}
+        ? ${$_[0][2]} = $_[0][3]{default}
+        : $_[0]->STORE( $_[0][3]{default} )
+      }
+     elsif ( defined $_[0][3]{rt_default} )                # rt_default
+      { $_[0][3]{no_strict}
+        ? ${$_[0][2]} = $_[0][3]{rt_default}( $_[0][0] )
+        : $_[0]->STORE( $_[0][3]{rt_default}( $_[0][0] ) )
+      }
+     else
+      { undef
       }
    }
 
@@ -92,7 +103,7 @@ $VERSION = 1.4 ;
    ; my $default = $from_FETCH
                    ? 'default '
                    : ''
-   ; if (   $_[0][5]            # if protected
+   ; if (   $_[0][3]{protected} # if protected
         &&! $from_FETCH         # bypass for default
         &&! our $force          # bypass deliberately
         )
@@ -101,15 +112,25 @@ $VERSION = 1.4 ;
          { last unless my $caller = caller($f++)
          ; $OK = $caller->can($_[0][1])
          }
-        ; croak qq("$_[0][1]" is a read-only property)
-          unless $OK
+        ; $OK || croak qq("$_[0][1]" is a read-only property)
+      }
+   ; if (   $_[0][3]{allowed}  # if restricted
+        &&! $from_FETCH           # bypass for default
+        &&! our $force            # bypass deliberately
+        )
+      { my ($OK, $f)
+      ; until ( $OK )
+         { last unless my $caller = (caller($f++))[3]
+         ; $OK = grep { $caller =~ qr/$_/ } @{$_[0][3]{allowed}}
+         }
+        ; $OK || croak qq("$_[0][1]" is a read-only property)
       }
    ; local $_ = $_[1]
-   ; if ( defined $_[0][6]     # validation subref
-        && defined $_          # bypass for undef (reset to default)
+   ; if ( defined $_[0][3]{validation}  # validation subref
+        && defined $_                   # bypass for undef (reset to default)
         )
-      { $_[0][6]( $_[0][0], $_)
-        or croak qq(Invalid ${default}value for "$_[0][1]" property)
+      { $_[0][3]{validation}( $_[0][0], $_)
+        || croak qq(Invalid ${default}value for "$_[0][1]" property)
       }
    ; ${$_[0][2]} = $_
    }
@@ -123,9 +144,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.4
+=head1 VERSION 1.5
 
-Included in OOTools 1.4 distribution. The distribution includes:
+Included in OOTools 1.5 distribution. The distribution includes:
 
 =over
 
@@ -137,17 +158,17 @@ Pragma to implement constructor methods
 
 Pragma to implement lvalue accessors with options
 
-=item * Class::group
+=item * Class::groups
 
-Pragma to implement group of properties accessors with options
+Pragma to implement groups of properties accessors with options
 
 =item * Object::props
 
 Pragma to implement lvalue accessors with options
 
-=item * Object::group
+=item * Object::groups
 
-Pragma to implement group of properties accessors with options
+Pragma to implement groups of properties accessors with options
 
 =back
 
@@ -165,27 +186,31 @@ Pragma to implement group of properties accessors with options
     
     # a property with validation and default (list of hash refs)
     use Class::props { name       => 'digits',
-                       validation => sub{ /^\d+\z/ }     # just digits
+                       validation => sub{ /^\d+\z/ } ,    # just digits
                        default    => 10
                      } ;
     
     # a group of properties with common full options
     use Class::props { name       => \@prop_names2,      # @prop_names2 (1)
                        rt_default => sub{$_[0]->other_default} ,
-                       validation => sub{ /\w+/ }
-                       protected  => 1
+                       validation => sub{ /\w+/ } ,
+                       protected  => 1 ,
+                       no_strict  => 1 ,
+                       allowed    => qr/::allowed_sub$/
                      } ;
                      
     # all the above in just one step (list of strings and hash refs)
     use Class::props @prop_names ,                       # @prop_names (1)
                      { name       => 'digits',
-                       validation => sub{ /^\d+\z/ }
+                       validation => sub{ /^\d+\z/ } ,
                        default    => 10
                      } ,
                      { name       => \@prop_names2,      # @prop_names2 (1)
                        rt_default => sub{$_[0]->other_default} ,
-                       validation => sub{ /\w+/ }
-                       protected  => 1
+                       validation => sub{ /\w+/ } ,
+                       protected  => 1 ,
+                       no_strict  => 1 ,
+                       allowed    => qr/::allowed_sub$/
                      } ;
                      
     # (1) must be set in a BEGIN block to have effect at compile time
@@ -216,6 +241,8 @@ This pragma easily implements lvalue accessor methods for the properties of your
 You can completely avoid to write the accessor by just declaring the names and eventually the default value, validation code and other option of your properties.
 
 The accessor method creates a scalar in the class that implements it (e.g. $Class::property) and ties it to the options you set, so even if you access the scalar without using the accessor, the options will have effect.
+
+B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work. (see also L<"CONTRIBUTION">) 
 
 =head2 Class properties vs Object properties
 
@@ -317,6 +344,10 @@ Almost the same as the C<default> option, but it accepts a code references that 
 
 B<Note>:  C<default> and  C<rt_default> are incompatible options: the module will croak if you try to use both for the same property.
 
+=item no_strict
+
+With C<no_strict> option set to a true value, the C<default> or C<rt_default> value will not be validate even if a validation option is set. Without this option the method will croak if the C<default> or C<rt_default> are not valid.
+
 =item validation
 
 You can set a code reference to validate a new value. If you don't set any C<validation> option, no validation will be done on the assignment.
@@ -340,6 +371,15 @@ In the validation code, the object or class is passed in C<$_[0]> and the value 
 
 The validation code should return true on success and false on failure. Croak explicitly if you don't like the default error message.
 
+=item allowed
+
+The property is settable only by the caller sub that match with the content of this option. The content can be a compiled RE or a simple string that will be used to check the caller. (Pass an array ref for multiple items)
+
+    use Class::props { name    => 'restricted'
+                       allowed => [ qr/::allowed_sub1$/ ,
+                                    qr/::allowed_sub2$/ ]
+                     }
+
 =item protected
 
 Set this option to a true value and the property will be turned I<read-only> when used from outside its class or sub-classes. This allows you to normally read and set the property from your class but it will croak if your user tries to set it.
@@ -356,7 +396,7 @@ More information at http://perl.4pro.net/?Class::props.
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2003 by Domizio Demichelis <dd@4pro.net>.
+© 2004 by Domizio Demichelis <dd@4pro.net>.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 
@@ -365,4 +405,6 @@ All Rights Reserved. This module is free software. It may be used, redistributed
 
 Thanks to Juerd Waalboer (http://search.cpan.org/author/JUERD) that with its I<Attribute::Property> inspired the creation of this distribution.
 
+=head1 CONTRIBUTION
 
+I always answer to each and all the message i receive from users, but I have almost no time to find, install and organize a mailing list software that could improve a lot the support to people that use my modules. Besides I have too little time to write more detailed documentation, more examples and tests. Your contribution would be precious, so if you can and want to help, just contact me. Thank you in advance.

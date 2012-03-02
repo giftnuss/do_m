@@ -1,8 +1,10 @@
 package Class::new ;
 
-; warn qq("Class::new" is an obsolete namespace. )
-     . qq(You should use "Class::constr" instead)
-       if $^W
+; BEGIN
+   { warn qq("Class::new" is an obsolete namespace. )
+        . qq(You should use "Class::constr" instead\n)
+          if $^W
+   }
 
 ; use base 'Class::constr'
 
@@ -20,6 +22,6 @@ Obsolete namespace maintained for backward compatibility. Use Class::constr inst
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2003 by Domizio Demichelis <dd@4pro.net>.
+© 2004 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.

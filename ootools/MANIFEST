@@ -1,15 +1,17 @@
 lib/Class/constr.pm
 lib/Class/group.pm
+lib/Class/groups.pm
 lib/Class/new.pm
 lib/Class/props.pm
 lib/Object/group.pm
+lib/Object/groups.pm
 lib/Object/props.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
 README
 t/01_C_constr.t
-t/02_C_prop.t
-t/03_O_prop.t
-t/04_C_group.t
-t/05_O_group.t
+t/02_C_props.t
+t/03_O_props.t
+t/04_C_groups.t
+t/05_O_groups.t

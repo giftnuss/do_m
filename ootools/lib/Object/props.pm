@@ -1,5 +1,5 @@
 package Object::props ;
-$VERSION = 1.4 ;
+$VERSION = 1.5 ;
 
 use base 'Class::props' ;
 
@@ -11,9 +11,9 @@ __END__
 
 Object::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.4
+=head1 VERSION 1.5
 
-Included in OOTools 1.4 distribution. The distribution includes:
+Included in OOTools 1.5 distribution. The distribution includes:
 
 =over
 
@@ -25,17 +25,17 @@ Pragma to implement constructor methods
 
 Pragma to implement lvalue accessors with options
 
-=item * Class::group
+=item * Class::groups
 
-Pragma to implement group of properties accessors with options
+Pragma to implement groups of properties accessors with options
 
 =item * Object::props
 
 Pragma to implement lvalue accessors with options
 
-=item * Object::group
+=item * Object::groups
 
-Pragma to implement group of properties accessors with options
+Pragma to implement groups of properties accessors with options
 
 =back
 
@@ -53,27 +53,31 @@ Pragma to implement group of properties accessors with options
     
     # a property with validation and default (list of hash refs)
     use Object::props { name       => 'digits',
-                        validation => sub{ /^\d+\z/ }    # just digits
+                        validation => sub{ /^\d+\z/ } ,  # just digits
                         default    => 10
                       } ;
     
     # a group of properties with common full options
     use Object::props { name       => \@prop_names2,     # @prop_names2 (1)
                         rt_default => sub{$_[0]->other_default} ,
-                        validation => sub{ /\w+/ }
-                        protected  => 1
+                        validation => sub{ /\w+/ } ,
+                        protected  => 1 ,
+                        no_strict  => 1 ,
+                        allowed    => qr/::allowed_sub$/
                       } ;
                       
     # all the above in just one step (list of strings and hash refs)
     use Object::props @prop_names ,                      # @prop_names (1)
                       { name       => 'digits',
-                        validation => sub{ /^\d+\z/ }
+                        validation => sub{ /^\d+\z/ } ,
                         default    => 10
                       } ,
                       { name       => \@prop_names2,     # @prop_names2 (1)
                         rt_default => sub{$_[0]->other_default} ,
-                        validation => sub{ /\w+/ }
-                        protected  => 1
+                        validation => sub{ /\w+/ } ,
+                        protected  => 1 ,
+                        no_strict  => 1 ,
+                        allowed    => qr/::allowed_sub$/
                       } ;
                       
     # (1) must be set in a BEGIN block to have effect at compile time
@@ -102,6 +106,8 @@ This pragma easily implements lvalue accessor methods for the properties of your
 You can completely avoid to write the accessor by just declaring the names and eventually the default value, validation code and other option of your properties.
 
 The accessor method creates a key in the hash object that implements it (e.g. $object->{property}) and ties it to the options you set, so even if you access the key without using the accessor, the options will have effect.
+
+B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work. (see also L<"CONTRIBUTION">) 
 
 =head2 Class properties vs Object properties
 
@@ -199,6 +205,10 @@ Almost the same as the C<default> option, but it accepts a code references that 
 
 B<Note>:  C<default> and  C<rt_default> are incompatible options: the module will croak if you try to use both for the same property.
 
+=item no_strict
+
+With C<no_strict> option set to a true value, the C<default> or C<rt_default> value will not be validate even if a validation option is set. Without this option the method will croak if the C<default> or C<rt_default> are not valid.
+
 =item validation
 
 You can set a code reference to validate a new value. If you don't set any C<validation> option, no validation will be done on the assignment.
@@ -223,6 +233,14 @@ validated is passed in C<$_[1]> and for regexing convenience it is aliased in C<
 
 The validation code should return true on success and false on failure. Croak explicitly if you don't like the default error message.
 
+=item allowed
+
+The property is settable only by the caller sub that match with the content of this option. The content can be a compiled RE or a simple string that will be used to check the caller. (Pass an array ref for multiple items)
+
+    use Object::props { name    => 'restricted'
+                        allowed => [ qr/::allowed_sub1$/ ,
+                                     qr/::allowed_sub2$/ ]
+                      }
 =item protected
 
 Set this option to a true value and the property will be turned I<read-only> when used from outside its class or sub-classes. This allows you to normally read and set the property from your class but it will croak if your user tries to set it.
@@ -239,7 +257,7 @@ More information at http://perl.4pro.net/?Object::props.
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2003 by Domizio Demichelis <dd@4pro.net>.
+© 2004 by Domizio Demichelis <dd@4pro.net>.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 
@@ -247,4 +265,6 @@ All Rights Reserved. This module is free software. It may be used, redistributed
 
 Thanks to Juerd Waalboer (http://search.cpan.org/author/JUERD) that with its I<Attribute::Property> inspired the creation of this distribution.
 
+=head1 CONTRIBUTION
 
+I always answer to each and all the message i receive from users, but I have almost no time to find, install and organize a mailing list software that could improve a lot the support to people that use my modules. Besides I have too little time to write more detailed documentation, more examples and tests. Your contribution would be precious, so if you can and want to help, just contact me. Thank you in advance.
