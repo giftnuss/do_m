@@ -1,5 +1,5 @@
 package Object::props ;
-$VERSION = 1.52 ;
+$VERSION = 1.53 ;
 
 use base 'Class::props' ;
 
@@ -11,9 +11,9 @@ __END__
 
 Object::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.52
+=head1 VERSION 1.53
 
-Included in OOTools 1.52 distribution. The distribution includes:
+Included in OOTools 1.53 distribution. The distribution includes:
 
 =over
 
@@ -252,7 +252,7 @@ More information at http://perl.4pro.net/?Object::props.
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis <dd@4pro.net>.
+© 2004 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 
