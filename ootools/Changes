@@ -1,5 +1,8 @@
 OOTools Latest Versions Changes
 
+Version 2.21
+- Little documentation improvement
+
 Version 2.2
 - Added Package::props and Package::groups pragmas
 - Added improved tests

@@ -1,5 +1,5 @@
 package Class::Util ;
-$VERSION = 2.2 ;
+$VERSION = 2.21 ;
 use 5.006_001 ;
 use strict ;
   
@@ -9,13 +9,17 @@ use strict ;
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
 
-; require Exporter
-; our @ISA = 'Exporter'
-; our @EXPORT_OK = qw| load
-                       gather
-                       blessed
-                       classes
-                     |
+; sub import
+   { return unless @_
+   ; require Exporter
+   ; our @ISA = 'Exporter'
+   ; our @EXPORT_OK = qw| load
+                          gather
+                          blessed
+                          classes
+                        |
+   ; $_[0]->export_to_level(1, @_)
+   }
 
 ; sub load
    { local $_ = $_[0] if defined $_[0]
@@ -64,7 +68,7 @@ use strict ;
 ; sub classes ($)
    { my $class = shift
    ; return () unless $class
-   ; $class  = blessed($class) || $class || caller
+   ; $class  = blessed($class) || $class 
    ; my @stack   = ($class)
    ; my %skip    = ($class => 1)
    ; my (@classes, $c)
@@ -88,9 +92,9 @@ __END__
 
 Class::Util - Class utility functions
 
-=head1 VERSION 2.2
+=head1 VERSION 2.21
 
-Included in OOTools 2.2 distribution.
+Included in OOTools 2.21 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

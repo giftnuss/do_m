@@ -1,5 +1,5 @@
 package Package::props ;
-$VERSION = 2.2 ;
+$VERSION = 2.21 ;
 use 5.006_001 ;
 use strict ;
 
@@ -16,9 +16,9 @@ __END__
 
 Object::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 2.2
+=head1 VERSION 2.21
 
-Included in OOTools 2.2 distribution.
+Included in OOTools 2.21 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

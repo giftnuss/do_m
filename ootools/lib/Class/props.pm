@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 2.2 ;
+$VERSION = 2.21 ;
 use 5.006_001 ;
 use strict ;
   
@@ -156,9 +156,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 2.2
+=head1 VERSION 2.21
 
-Included in OOTools 2.2 distribution.
+Included in OOTools 2.21 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -293,13 +293,15 @@ From the directory where this file is located, type:
 
 =head1 DESCRIPTION
 
-This pragma easily implements lvalue accessor methods for the properties of your Class (I<lvalue> means that you can create a reference to it, assign to it and apply a regex to it), which are very efficient function templates that your modules may import at compile time. "This technique saves on both compile time and memory use, and is less error-prone as well, since syntax checks happen at compile time." (quoted from "Function Templates" in the F<perlref> manpage).
+This pragma easily implements lvalue accessor methods for the properties of your Class (I<lvalue> means that you can create a reference to it, assign to it and apply a regex to it; see also L<KNOWN ISSUE>), which are very efficient function templates that your modules may import at compile time. "This technique saves on both compile time and memory use, and is less error-prone as well, since syntax checks happen at compile time." (quoted from "Function Templates" in the F<perlref> manpage).
 
 You can completely avoid to write the accessor by just declaring the names and eventually the default value, validation code and other option of your properties.
 
-The accessor method creates a scalar in the class that implements it (e.g. $Class::property) and sets/gets it using the options you set.
+The accessor method creates a scalar in the class that implements it (e.g. $Class::any_property) and sets/gets it using the options you set.
 
-B<IMPORTANT NOTE>: Since the version 1.7 the options don't work if you access the scalar without using the accessor, so you can access the value directly when you need to bypass the options.
+This module allows also "lazy" data computing (see the C<default> option).
+
+B<IMPORTANT NOTE>: Since the version 1.7 the options are ignored if you access the underlaying scalar without using the accessor, so you can directly access it when you need to bypass the options.  
 
 =head2 Package, Class or Object properties?
 
@@ -404,7 +406,7 @@ You can group properties that have the same set of option by passing a reference
 
 Use this option to set a I<default value>. If any C<validation> option is set, then the I<default value> is validated as well (the C<no_strict> option override this).
 
-If you pass a CODE reference as default it will be evaluated at runtime and the property will be set to the result of the referenced CODE.
+If you pass a CODE reference as the default it will be evaluated only when the property will be accessed, and only if the property has no defined value (this allows "lazy" data computing and may save some CPU); the property will be set to the result of the referenced CODE.
 
 You can reset a property to its default value by assigning it the undef value.
 
@@ -482,6 +484,30 @@ This will add to the package I<package> the accessors for the I<properties>. It 
    # which has the same effect of
    package My::Package;
    use Class::props { name => 'any_name', ... }
+
+=head1 KNOWN ISSUE
+
+Due to the perl bug #17663 I<(Perl 5 Debugger doesn't handle properly lvalue sub assignment)>, you must know that under the B<-d> switch the lvalue sub assignment will not work, so your program will not run as you expect.
+
+In order to avoid the perl-bug you have 3 alternatives:
+
+=over
+
+=item 1
+
+patch perl itself as suggested in this post: http://www.talkaboutprogramming.com/group/comp.lang.perl.moderated/messages/13142.html (See also the cgi-builder-users mailinglist about that topic)
+
+=item 2
+
+use the lvalue sub assignment (e.g. C<< $s->any_property = 'something' >>) only if you will never need B<-d>
+
+=item 3
+
+if you plan to use B<-d>, use only standard assignments (e.g. C<< $s->any_property('something') >>)
+
+=back
+
+Maybe a next version of perl will fix the bug, or maybe lvalue subs will be banned forever, meanwhile be careful with lvalue sub assignment.
 
 =head1 SUPPORT and FEEDBACK
 

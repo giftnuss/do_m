@@ -11,11 +11,13 @@
 ; our $test = 'B'
 ; our @test = ('B')
 ; our %default = (a=>10, c=>3)
+; sub My::b::_::test { '_b'}
 
 ; package My::c
 ; sub test { 'c' }
 ; our $test = 'C'
 ; our @test = ('C')
+; sub My::c::_::test { '_c'}
 
 
 ; package My::d
@@ -24,6 +26,7 @@
 ; our @test = ('D')
 ; our @ISA = qw| My::a  My::b  My::c |
 ; our %default = ( d=>5 )
+; sub My::d::_::test
 
 ; package main
 ; use strict
@@ -53,7 +56,6 @@
 
 ; eval {gather { %$_ } 'default'}
 ; ok $@, 'Symbol check'
-
 
 
 __END__

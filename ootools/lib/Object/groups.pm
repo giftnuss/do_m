@@ -1,5 +1,5 @@
 package Object::groups ;
-$VERSION = 2.2 ;
+$VERSION = 2.21 ;
 use 5.006_001 ;
 use strict ;
 
@@ -16,9 +16,9 @@ __END__
 
 Object::groups - Pragma to implement group of properties
 
-=head1 VERSION 2.2
+=head1 VERSION 2.21
 
-Included in OOTools 2.2 distribution.
+Included in OOTools 2.21 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -166,9 +166,11 @@ Don't use the group accessor in list context in order to retrieve the hash keys:
 
 This pragma easily implements accessor methods for group of properties, which are very efficient function templates that your modules may import at compile time. "This technique saves on both compile time and memory use, and is less error-prone as well, since syntax checks happen at compile time." (quoted from "Function Templates" in the F<perlref> manpage).
 
-It creates an accessor method for each property in the C<props> option as you where using the L<Object::props|Object::props> pragma, and creates an accessor method for the group.
+This module allows also "lazy" data computing (see the C<default> option).
 
-B<Note>: The grouped properties will be stored in e.g. C<< $Object->{group}{property} >> instead of the usual C<< $Object->{property} >>
+This module creates an accessor method with a hash in the class that implements it (e.g. $object->{any_group}) and sets/gets it using the options you set; it also creates an accessor method for each property in the C<props> option as you were using the L<Object::props|Object::props> pragma.
+
+B<Note>: The grouped properties will be stored in e.g. C<< $Object->{any_group}{any_property} >> instead of the usual C<< $Object->{any_property} >>
 
 Whit the accessor method for the group you can:
 
@@ -243,7 +245,9 @@ The original C<@_> is passed to the referenced pre_process CODE. Modify C<@_> in
 
 =head2 default => \%props | \&$method
 
-Use this option to set a I<default value>. The I<default value> must be a HASH reference or a CODE reference. If it is a CODE reference it will be evaluated at runtime and the property will be set to the HASH reference that the referenced CODE must return.
+Use this option to set a I<default value>. The I<default value> must be a HASH reference or a CODE reference.
+
+If you pass a CODE reference as the default it will be evaluated only when the group will be accessed, and only if the group has no defined (HASH) value (this allows "lazy" data computing and may save some CPU); the group will be set to the HASH reference that the referenced CODE must return.
 
 You can reset a property to its default value by assigning an empty HASH reference ({}) to it.
 
