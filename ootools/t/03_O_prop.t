@@ -1,6 +1,6 @@
 #!perl -w
 ; use strict
-; use Test::More tests => 32
+; use Test::More tests => 40
 
 
 ; common_test('BaseClass');
@@ -10,7 +10,6 @@
    {
    ; my ($class) = @_
 
-   # 01 ############
    ; my $o1 = $class->new
    ; ok( ref $o1 eq "$class"
        , 'Object creation'
@@ -18,18 +17,17 @@
    ; $o1->BpropA = 2
    ; $o1->BpropB = 3
 
-   # 02 ############
    ; my $o2 = $class->new( BpropA => 25
                             , BpropB => 3
                             )
    ; is( $o2->BpropA * $o2->BpropB
        , 75
        , 'Passing new properties with new' )
+       
    ; is( $o1->BpropA * $o1->BpropB
        , 6
        , 'Other object same test' )
 
-   # 03 ############
    ; eval
       { my $o3 = $class->new( unknown => 10 )
       }
@@ -37,27 +35,30 @@
        , 'Passing an unknow property'
        )
     
-   # 04 ############
+   ; eval
+      { my $o3 = $class->new( Bprot => 10 )
+      }
+   ; ok( $@
+       , 'Passing a value to a protected property'
+       )
+
    ; is( $o1->Bdefault
        , 25
        , "Reading default"
        )
 
-   # 05 ############
    ; $o1->Bvalid = 5
    ; is( $o1->Bvalid
        , 5
        , 'Writing an always valid property'
        )
 
-   # 06 ############
    ; $o1->writeBprotA(5)
    ; is( $o1->BprotA
        , 5
        , "Writing protected property from class"
        )
        
-   # 07 ############
    ; eval
       { $o1->BprotA = 10
       }
@@ -65,20 +66,17 @@
        , 'Trying to write a protected property from outside'
        )
 
-   # 08############
    ; $o1->writeBprotA(8)
    ; is( $o1->BprotA
        , 8
        , "Writing again protected property from class"
        )
 
-   # 09 ############
    ; is( $o1->Bvalidat('aawwwbb')
        , 'aawwwbb'
        , 'Writing a valid value'
        )
 
-   # 10 ############
    ; eval
       { $o1->Bvalidat = 10
       }
@@ -86,24 +84,20 @@
        , 'Writing an invalid value'
        )
        
-   # 11 ############
    ; is( $o1->Bvalidat('aawwwbb')
        , 'aawwwbb'
        , 'Writing again a valid value'
        )
        
-   # 12 ############
    ; is( $o1->Bvalidat_default('aawwwbb')
        , 'aawwwbb'
        , 'Writing a valid value in a property with default'
        )
 
-## 13 ############
    ; ok( (not $o1->Barr_namedA)
        , 'Default undef value'
        )
 
-   ## 14 ############
    ; $o1->Bdefault = 56
    ; undef $o1->Bdefault
    ; is( $o1->Bdefault
@@ -111,11 +105,27 @@
        , 'Reset to default'
        )
 
-   ## 15 ############
    ; $o1->Bmod_input = 'abc'
    ; is( $o1->Bmod_input
        , 'ABC'
        , 'Modifying input'
+       )
+       
+   ; is( $o1->Brt_default
+       , 25
+       , 'Passing a sub ref as the rt_default'
+       )
+ 
+   ; eval
+      { my $v = $o1->Brt_default_val
+      }
+   ; ok( $@
+       , 'Passing an invalid sub ref as the rt_default'
+       )
+
+   ; is( $o1->Brt_default_val_prot
+       , 5
+       , "Bypass protection for rt_default"
        )
 
    }
@@ -124,6 +134,7 @@
 ; package BaseClass
 
 ; use Class::new
+
 
 ; use Object::props ( qw | BpropA
                            BpropB
@@ -137,6 +148,14 @@
                       }
                     , { name       => 'Bdefault'
                       , default    => 25
+                      }
+                    , { name       => 'Brt_default'
+                      , rt_default => sub{ 25 }
+                      }
+                    , { name       => 'Brt_default_val_prot'
+                      , rt_default => sub{ 5 }
+                      , validation => sub { $_ < 25 }
+                      , protected => 1
                       }
                     , { name       => 'BprotA'
                       , protected  => 1

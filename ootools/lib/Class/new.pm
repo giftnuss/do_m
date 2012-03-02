@@ -1,45 +1,56 @@
 package Class::new ;
-$VERSION = 1.12 ;
+$VERSION = 1.2 ;
 
 ; use 5.006_001
 ; use strict
 ; use Carp
 
+; use constant
+
+{ START_SUB => q!
+  sub
+   { my $c = shift
+   ; croak qq(Can't call method "$n" on a reference)
+           if ref $c
+   ; croak qq(Odd number of arguments for "$c->$n")
+           if @_ % 2
+   ; my $o = bless {}, $c
+   ; while ( my ($p, $v) = splice @_, 0, 2 )
+      { $o->can($p)
+        or croak qq(No such property "$p")
+      ; { local $Carp::Internal{+__PACKAGE__} = 1
+        ; $o->$p( $v )
+        }
+      }
+!
+, INIT_LOOP => q!
+   ; foreach my $m ( @{$args{init}} )
+      { $o->$m(@_)
+      }
+!
+, END_SUB => q!
+   ; $o
+   }
+!
+}
 
 ; sub import
    { my ($pkg, %args) = @_
    ; my $callpkg = caller
    ; my $n = $args{name} || 'new'
+ 
    ; $args{init} &&= [ $args{init} ]
                      unless ref $args{init} eq 'ARRAY'
-   ; my $init_default = '_init'
-   ###### CONSTRUCTOR ######                  # exported sub
+   
+   ###### SUB ######
+   ; my $sub = START_SUB
+   ;    $sub .= INIT_LOOP if $args{init}
+   ;    $sub .= END_SUB
+   ###### END SUB ######
+   
    ; no strict 'refs'
-   ; *{"$callpkg\::$n"}
-     = sub
-        { my $c = shift
-        ; croak qq(Can't call method "$n" on a reference)
-                if ref $c
-        ; croak qq(Odd number of arguments for "$c->$n")
-                if @_ % 2
-        ; my $o = bless {}, $c
-        ; while ( my ($p, $v) = splice @_, 0, 2 )
-           { $o->can($p)
-             or croak qq(No such property "$p")
-           ; { local $Carp::Internal{+__PACKAGE__} = 1
-             ; $o->$p( $v )
-             }
-           }
-        ; if ( $o->can( $init_default )
-             &&! $args{init}
-             )
-           { $args{init} = [ $init_default ]
-           }
-        ; foreach my $m ( @{$args{init}} )
-           { $o->$m(@_)
-           }
-        ; $o
-        }
+   ; eval '*{"$callpkg\::$n"} ='. $sub
+   ; print "### $n ###$sub\n" if $Base::OOTools::print_codes
    }
 
 
@@ -51,9 +62,9 @@ __END__
 
 Class::new - Pragma to implement constructor methods
 
-=head1 VERSION 1.12
+=head1 VERSION 1.2
 
-Included in OOTools 1.12 distribution. The distribution includes:
+Included in OOTools 1.2 distribution. The distribution includes:
 
 =over
 
@@ -80,25 +91,21 @@ Pragma to implement lvalue accessors with options
     # implement constructor without options
     use Class::new ;
     
-    # this will be called by default if defined
-    sub _init
-    {
-      my ($s, @args) = @_
-      ....
-    }
-    
     # with options
     use Class::new  name  => 'new_object'
                     init  => [ qw( init1 init2 ) ] ;
+                    
+    # init1 and init2 will be called at run-time
     
-
 =head2 Usage
 
+    # creates a new object and eventually validates
+    # the properties if any validation property option is set
     my $object = MyClass->new(digits => '123');
-
+                                 
 =head1 DESCRIPTION
 
-This pragma easily implements lvalue constructor methods for your class.
+This pragma easily implements lvalue constructor methods for your class. Use it with C<Class::props> and C<Object::props> to automatically validate the input passed with C<new()>
 
 You can completely avoid to write the constructor by just using it and eventually declaring the name and the init methods to call.
 
@@ -135,7 +142,7 @@ The name of the constructor method. If you omit this option the 'new' name will 
 
 =item init
 
-use this option if you want to call other method in your class to further initialize the object. You can group method by passing a reference to an array containing the methods names.
+Use this option if you want to call other method in your class to further initialize the object. You can group methods by passing a reference to an array containing the method names.
 
 After the assignation and validation of the properties, the initialization methods in the C<init> option will be called. Each init method will receive the blessed object passed in C<$_[0]> and the other (original) parameter in the remaining C<@_>.
 

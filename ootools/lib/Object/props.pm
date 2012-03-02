@@ -1,5 +1,5 @@
 package Object::props ;
-$VERSION = 1.12 ;
+$VERSION = 1.2 ;
 
 use base 'Base::OOTools' ;
 
@@ -11,9 +11,9 @@ __END__
 
 Object::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.12
+=head1 VERSION 1.2
 
-Included in OOTools 1.12 distribution. The distribution includes:
+Included in OOTools 1.2 distribution. The distribution includes:
 
 =over
 
@@ -51,7 +51,7 @@ Pragma to implement lvalue accessors with options
     
     # a group of properties with common full options
     use Object::props { name       => \@other_prop_names,   # array ref
-                        default    => 'something' ,
+                        rt_default => sub{$_[0]->other_default} ,
                         validation => sub{ /\w+/ }
                         protected  => 1
                       } ;
@@ -63,7 +63,7 @@ Pragma to implement lvalue accessors with options
                         default    => 10
                       } ,
                       { name       => \@other_prop_names,
-                        default    => 'something' ,
+                        rt_default => sub{$_[0]->other_default} ,
                         validation => sub{ /\w+/ }
                         protected  => 1
                       } ;
@@ -75,21 +75,24 @@ Pragma to implement lvalue accessors with options
     
     $object->digits    = '123';
     
-    $object->digits('123');
+    $object->digits('123');      # old way supported
     
-    my $d = $object->digits;  # $d == 123
+    my $d = $object->digits;     # $d == 123
+    $d = $object->{digits}       # $d == 123
     
-    undef $object->digits     # $object->digits == 10 (default)
+    undef $object->digits        # $object->digits == 10 (default)
     
-    # This would croak
+    # These would croak
     $object->digits    = "xyz";
-
+    $object->{digits}  = "xyz";
 
 =head1 DESCRIPTION
 
 This pragma easily implements lvalue accessor methods for the properties of your object (I<lvalue> means that you can create a reference to it, assign to it and apply a regex to it).
 
 You can completely avoid to write the accessor by just declaring the names and eventually the default value, validation code and other option of your properties.
+
+The accessor method creates a key in the hash object that implements it (e.g. $object->{property_name}) and ties it to the options you set, so even if you access the key without using the accessor, the options will have effect.
 
 =head2 Class properties vs Object properties
 
@@ -176,15 +179,16 @@ You can group properties that have the same set of option by passing a reference
 
 =item default
 
-The property will be initially set to the I<default value>.  You can reset a property to its default value by assigning it the undef value.
+Use this option to set a I<default value>. If any C<validation> option is set, then the I<default value> is validated as well.
+You can reset a property to its default value by assigning it the undef value.
 
-    # this will reset the property to its default
-    $object->my_prop = undef ;
-    
-    # this works as well
-    undef $object->my_prop ;
+B<Note>:  C<default> and  C<rt_default> are incompatible options: the module will croak if you try to use both for the same property.
 
-If any C<validation> option is set, then the I<default value> is validated at compile time. If no C<default> option is set, then the property will return the undef value and will bypass the C<validation> sub.
+=item rt_default
+
+Almost the same as the C<default> option, but it accepts a code references that will be executed at run-time and should return the default value ('rt' stands for 'run time'). The referenced code will receive the same C<@_> parameters that the property accessor method recieves.
+
+B<Note>:  C<default> and  C<rt_default> are incompatible options: the module will croak if you try to use both for the same property.
 
 =item validation
 
@@ -206,7 +210,7 @@ validated is passed in C<$_[1]> and for regexing convenience it is aliased in C<
     $object->web_color = 'dark gray'
     
     # when used
-    $object->uppercase_it = 'abc' # real value will be 'ABC'
+    $object->uppercase_it = 'abc' # actual value will be 'ABC'
 
 The validation code should return true on success and false on failure. Croak explicitly if you don't like the default error message.
 
@@ -214,7 +218,7 @@ The validation code should return true on success and false on failure. Croak ex
 
 Set this option to a true value and the property will be turned I<read-only> when used from outside its class or sub-classes. This allows you to normally read and set the property from your class but it will croak if your user tries to set it.
 
-You can however force the protection and set the property from outside the class that implements it by setting $MyClass::force to a true value. (Substitute 'MyClass' with the actual name of your class).
+You can however force the protection and set the property from outside the class that implements it by setting $Base::OOTools::force to a true value.
 
 =back
 
@@ -238,10 +242,6 @@ This code is provided on an "As Is'' basis, without warranty, expressed or impli
 
 The copyright notice must remain fully intact at all times. Use of this software or its output, constitutes acceptance of these terms.
 
-
-=head1 BUGS
-
-None known, but the module is not completely tested.
 
 =head1 CREDITS
 

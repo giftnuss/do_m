@@ -1,5 +1,5 @@
 package Base::OOTools ;
-$VERSION = 1.12 ;
+$VERSION = 1.2 ;
 
 ; use 5.006_001
 ; use strict
@@ -12,48 +12,32 @@ $VERSION = 1.12 ;
    { croak qq(Too many arguments for "$n" property)
            if @_ > 2
 !
-, DECLARE_WRITE_PROTECTED => q!
-   ; my $write_protected
-!
-, SET_CLASS => q!
-   ; my $class = ref $_[0] || $_[0]
-!
 , CLASS => q!
+   ; my $class = ref $_[0] || $_[0]
    ; my $scalar = \${"$class\::$n"}
 !
 , OBJECT => q!
-   ; croak qq(Wrong value type passed to "$n")
+   ; croak qq(Wrong value type passed to "$n" object property)
            unless ref $_[0]
    ; my $scalar = \$_[0]{$n}
 !
-, DEFAULT => q!
-   ; $$scalar = $default
-                unless defined $$scalar
-!
-, PROTECTED => q!
-   ; unless ( ${"$class\::force"} )
-      { my $caller = (caller)[0] eq 'Class::new'
-                     ? (caller(1))[0]
-                     : (caller)[0]
-      ; $write_protected = $caller->can($n)
-                           ? 0
-                           : 1
+, TIE => q!
+   ; unless ( tied $$scalar )
+      { tie $$scalar
+          , $pkg
+          , $_[0]
+          , $n
+          , $scalar
+          , $$item{default}
+          , $$item{rt_default}
+          , $$item{protected}
+          , $$item{validation}
       }
 !
-, TIE => q!
-   ; tie $$scalar                     # scalar
-       , $pkg                         # class
-       , $_[0]                        # [0] object/class
-       , $n                           # [1] prop name
-       , $$item{validation}           # [2] validation subref
-       , $write_protected             # [3] bool
-       , $$scalar                     # [4] lvalue
-!
-                
 , END_SUB => q!
    ; @_ == 2
-     ? ( $$scalar = $_[1] )           # old fashioned ()
-     :   $$scalar                     # lvalue assignment
+     ? ( $$scalar = $_[1] )
+     :   $$scalar
    }
 !
 }
@@ -61,87 +45,84 @@ $VERSION = 1.12 ;
 ; sub import
    { my ($pkg, @args) = @_
    ; my $callpkg = caller
-   ; foreach my $item ( @args )                  # foreach items
-      { $item = { name => $item }
+   ; foreach my $item ( @args )                 # foreach items
+      {      ; $item = { name => $item }
                 unless ref $item eq 'HASH'
       ; $$item{name} = [ $$item{name} ]
                        unless ref $$item{name} eq 'ARRAY'
-      ; foreach my $n ( @{$$item{name}} )        # foreach property
+      ;  $$item{default}
+      && $$item{rt_default}
+      && croak qq("default" and "rt_default" options are incompatible)
+      ; foreach my $n ( @{$$item{name}} )       # foreach property
          {
-         ###### DEFAULT ######
-         ; my $default
-         ; if ( defined $$item{default} )        # if default key
-            { $default = $$item{default}         # set the default
-            ; if ( defined $$item{validation} )  # if validation key
-               { local $_ = $default             # set $_
-               ; $$item{validation}( $_[0]       # check value (only if def key)
-                                   , $_
-                                   )
-                 or croak qq(Invalid default value for "$n" property)
-               ; $default = $_                   # set default
-               }
-            }
-         ; my $is_class = $pkg =~ /^Class::props$/
-         ; my $sub = START_SUB
-         ; if (  $is_class
-              || $$item{protected}
-              )
-            { $sub .= SET_CLASS
-            }
-         ; if ( $is_class )
-            { $sub .= CLASS
-            }
-           else
-            { $sub .= OBJECT
-            }
-         ; if ( defined $default )
-            { $sub .= DEFAULT
-            }
-         ; if (  defined $$item{validation}
-              || $$item{protected}
-              )
-            { $sub .= DECLARE_WRITE_PROTECTED
-            }
-         ; if ( $$item{protected} )
-            { $sub .= PROTECTED
-            }
-         ; if (  defined $$item{validation}
-              || $$item{protected}
-              )
-            { $sub .= TIE
-            }
+         ###### SUB ######
+         ; my $sub  = START_SUB
+         ;    $sub .= $pkg =~ /^Class::props$/
+                      ? CLASS
+                      : OBJECT
+         ;    $sub .= TIE if defined $$item{validation}
+                          or defined $$item{default}
+                          or defined $$item{rt_default}
+                          or defined $$item{protected}
          ;    $sub .= END_SUB
-        # ; warn "### $n ###\n$sub\n"
+         ###### ENDSUB ######
          ; no strict 'refs'
          ; eval '*{"$callpkg\::$n"} ='. $sub
+         ; print "### $n ###$sub\n" if our $print_codes
          }
       }
    }
+   
                 
+# [0] object/class
+# [1] prop name
+# [2] lvalue ref
+# [3] default
+# [4] rt_default
+# [5] protected
+# [6] validation subref
+
 ; sub TIESCALAR
    { bless \@_, shift
    }
    
 ; sub FETCH
-   { $_[0][4]
+   { return ${$_[0][2]} if defined ${$_[0][2]}
+   ; if (defined $_[0][3])                      # default
+      { $_[0]->STORE( $_[0][3] )
+      }
+     elsif (defined $_[0][4])                   # rt_default
+      { $_[0]->STORE( $_[0][4]( $_[0][0] ) )
+      }
    }
 
 ; sub STORE
-   { local $_ = $_[1]
-   ; if ( $_[0][3] )             # write protected
-      { croak qq("$_[0][1]" is a read-only property)
+   { my $from_FETCH = (caller(1))[3] =~ /::FETCH$/
+   ; my $default = $from_FETCH
+                   ? 'default '
+                   : ''
+   ; if (   $_[0][5]            # if protected
+        &&! $from_FETCH         # bypass for default
+        &&! our $force          # bypass deliberately
+        )
+      { my ($OK, $f)
+      ; until ( $OK )
+         { last unless my $caller = caller($f++)
+         ; $OK = $caller->can($_[0][1])
+         }
+        ; croak qq("$_[0][1]" is a read-only property)
+          unless $OK
       }
-             
-   ; if ( defined $_[0][2] )     # validation subref
-      { $_[0][2]( $_[0][0]
-                , $_
-                )
-        or croak qq(Invalid value for "$_[0][1]" property)
+   ; local $_ = $_[1]
+   ; if ( defined $_[0][6]     # validation subref
+        && defined $_          # bypass for undef (reset to default)
+        )
+      { $_[0][6]( $_[0][0], $_)
+        or croak qq(Invalid ${default}value for "$_[0][1]" property)
       }
-   ; $_[0][4] = $_
+   ; ${$_[0][2]} = $_
    }
-
-
+   
 ; 1
 
 __END__
@@ -150,9 +131,9 @@ __END__
 
 Base::OOTools - Base class for OOTools pragmas
 
-=head1 VERSION 1.12
+=head1 VERSION 1.2
 
-Included in OOTools 1.12 distribution. The distribution includes:
+Included in OOTools 1.2 distribution. The distribution includes:
 
 =over
 
