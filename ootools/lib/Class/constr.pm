@@ -1,5 +1,5 @@
 package Class::constr ;
-$VERSION = 1.7 ;
+$VERSION = 1.71 ;
 
 ; use 5.006_001
 ; use strict
@@ -24,12 +24,15 @@ $VERSION = 1.7 ;
            ; (@_ % 2) && croak qq(Odd number of arguments for "$c->$n")
            ; my $s = bless {}, $c
            ; while ( my ($p, $v) = splice @_, 0, 2 )
-              { unless ( $$constr{no_strict} )       # if strict
-                 { $s->can($p)                       # and no method
-                   || croak qq(No such property "$p")
+              { if ($s->can($p))                     # if method
+                 { $s->$p( $v )          
                  }
-              ; eval { $s->$p( $v ) }                # if method or AUTOLOAD
-              ; $@ && ( $$s{$p} = $v )               # anyway
+                else
+                 { croak qq(No such property "$p")
+                         unless $$constr{no_strict}
+                 ; eval { $s->$p( $v ) }             # try AUTOLOAD
+                 ; $@ && ( $$s{$p} = $v )            # anyway
+                 }
               }
            ; if ( $$constr{init} )
               { foreach my $m ( @{$$constr{init}} )
@@ -50,9 +53,9 @@ __END__
 
 Class::constr - Pragma to implement constructor methods
 
-=head1 VERSION 1.7
+=head1 VERSION 1.71
 
-Included in OOTools 1.7 distribution.
+Included in OOTools 1.71 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

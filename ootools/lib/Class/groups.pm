@@ -1,5 +1,5 @@
 package Class::groups ;
-$VERSION = 1.7 ;
+$VERSION = 1.71 ;
 
 ; use 5.006_001
 ; use base 'Class::props'
@@ -107,9 +107,9 @@ __END__
 
 Class::groups - Pragma to implement group of properties
 
-=head1 VERSION 1.7
+=head1 VERSION 1.71
 
-Included in OOTools 1.7 distribution.
+Included in OOTools 1.71 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -279,7 +279,7 @@ B<Note>: This option is on by default if you define an accessor group without an
 
 You can set a code reference to preprocess @_.
 
-The original <@_> is passed to the referenced pre_process CODE. Modify C<@_> in the CODE to change the actual input value.
+The original C<@_> is passed to the referenced pre_process CODE. Modify C<@_> in the CODE to change the actual input value.
 
     # This code will transform the @_ on input
     # if it's passed a ref to an ARRAY

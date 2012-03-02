@@ -1,6 +1,9 @@
 OOTools Latest Versions Changes
 
 
+Version 1.71
+- Fixed validation for constructor arguments
+
 Version 1.7
 - Substancial changes in the internal structure to allow more efficient
   object destroying: now the objects that uses OOTools get destroyed always

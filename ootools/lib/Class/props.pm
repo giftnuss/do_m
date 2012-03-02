@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 1.7 ;
+$VERSION = 1.71 ;
 
 
 ; use 5.006_001
@@ -27,7 +27,7 @@ $VERSION = 1.7 ;
    ; $prop
    }
                       
-; sub _create_prop
+; sub _create_prop 
    { my $callpkg = pop
    ; my ( $pkg, $prop ) = @_
    ; my $gr = delete $$prop{group}
@@ -39,7 +39,7 @@ $VERSION = 1.7 ;
    ; foreach my $n ( @{$$prop{name}} )     # foreach property
       { no strict 'refs'
       ; *{"$callpkg\::$n"}
-        = sub : lvalue
+        = sub ($;$) : lvalue
            { (@_ > 2) && croak qq(Too many arguments for "$n" property)
            ;  my $scalar = $pkg =~ /^Class/
                            ? $gr
@@ -140,9 +140,9 @@ __END__
 
 Class::props - Pragma to implement lvalue accessors with options
 
-=head1 VERSION 1.7
+=head1 VERSION 1.71
 
-Included in OOTools 1.7 distribution.
+Included in OOTools 1.71 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
