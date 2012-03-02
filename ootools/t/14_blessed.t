@@ -1,7 +1,7 @@
 #!perl -w
 ; use strict
 ; use warnings
-; use Test::More tests => 7
+; use Test::More tests => 8
 #; use Data::Dumper
 
 ; BEGIN
@@ -16,3 +16,6 @@
 ; is blessed('something'), undef
 ; is blessed(\'something'), undef
 ; is blessed({}), undef
+
+; $_ = bless {}, 'aclass'
+; is blessed, 'aclass'

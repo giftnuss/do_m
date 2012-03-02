@@ -1,5 +1,5 @@
 package Class::Util ;
-$VERSION = 2.11 ;
+$VERSION = 2.12 ;
 use 5.006_001 ;
 use strict ;
   
@@ -17,19 +17,13 @@ use strict ;
                        classes
                      |
 
-; sub import
-   { my ($pkg, @subs) = @_
-   ; require Class::ISA   if grep /^classes$/ , @subs
-   ; $pkg->export_to_level(1, @_)
-   }
-   
 ; sub load
-   { my $class = shift || $_
-   ; my $r = eval "require $class;"
+   { local $_ = $_[0] if defined $_[0]
+   ; my $r = eval "require $_;"
    ; if ($@)
-      { (my $c = $class.'.pm') =~ s|\b::\b|/|g
+      { (my $c = $_.'.pm') =~ s|\b::\b|/|g
       ; croak $@ if $@ !~ /^Can't locate $c in \@INC/
-                    || not defined %{$class.'::'}
+                    || not defined %{$_.'::'}
       }
    ; $r
    }
@@ -60,22 +54,20 @@ use strict ;
           @$packages
    }
 
-; sub blessed ($)
-   { defined( $_[0] )
-     && length( $_[0] )
-     && eval{ $_[0]->isa( ref $_[0] ) }
-     ? ref $_[0]
+; sub blessed
+   { local $_ = $_[0] if defined $_[0]
+   ; defined && length && eval{ $_->isa( ref ) }
+     ? ref
      : undef
    }
    
-; sub classes
+; sub classes ($)
    { my $class = shift
    ; return () unless $class
    ; $class  = blessed($class) || $class || caller
-   ; my @classes = ()
    ; my @stack   = ($class)
    ; my %skip    = ($class => 1)
-   ; my $c
+   ; my (@classes, $c)
    ; while ( @stack )
       { next unless defined($c = shift @stack) && length $c
       ; unshift @classes, $c
@@ -96,9 +88,9 @@ __END__
 
 Class::Util - Class utility functions
 
-=head1 VERSION 2.11
+=head1 VERSION 2.12
 
-Included in OOTools 2.11 distribution.
+Included in OOTools 2.12 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -229,9 +221,9 @@ The returned classes are ordered from the more remote class to the class itself 
 
 B<Note>: The result of this function is the reversed @ISA path that perl uses in order to find methods; the only exception is the C<UNIVERSAL> class, which is always omitted: if you need it unshift it to the result.
 
-=head2 blessed $object
+=head2 blessed [$object]
 
-This function returns the blessed class of C<$object> ONLY if the object is blessed. It returns the undef value if C<$object> is not blessed.
+This function returns the blessed class of C<$object> ONLY if the object is blessed. It returns the undef value if C<$object> is not blessed. If C<$object> is omitted it uses C<$_>.
 
 =head1 SUPPORT
 

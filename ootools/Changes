@@ -1,5 +1,8 @@
 OOTools Latest Versions Changes
 
+Version 2.12
+- Fixed the Class::Util::import function
+
 Version 2.11
 - Changed the Class::Util::classes function
 - Removed  Class::ISA prerequisite
