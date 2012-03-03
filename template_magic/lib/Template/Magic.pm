@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.32 ;
+$VERSION = 1.33 ;
 use AutoLoader 'AUTOLOAD' ;
 
 # This file uses the "Perlish" coding style
@@ -146,6 +146,7 @@ use AutoLoader 'AUTOLOAD' ;
       ; $$s{_re}{start_label}    = qr/$S($ID)($A)$E/s
       ; $$s{_re}{end_label}      = qr/$S$I($ID)$E/s
       ; $$s{_re}{include_label}  = qr/$S\bINCLUDE_TEMPLATE\s+($A)$E/s
+      ; $$s{_re}{container_include_label}  = qr/$S\bINCLUDE_TEMPLATE$E/s
       }
    ; wantarray
      ? @{$$s{markers}}
@@ -211,11 +212,20 @@ use AutoLoader 'AUTOLOAD' ;
 ; sub _process
    { my ($s, $args) = @_
    ; $$s{_temp_lookups} = $$args{lookups} if exists $$args{lookups}
-   ; my $z = $s->load( $$args{template} )
+   ; my $t
+   ; if ( $t =  $$args{container_template}
+             || ${$$s{container_template}}[0]
+        )
+      { $$s{_included_template} = $$args{template}
+      }
+     else
+      { $t = $$args{template}
+      }
+   ; my $z = $s->load( $t )
    ; $$z{tm} = $s
    ; $z->content_process($s)
    ; delete $$z{tm} # to avoid tm object caching
-   ; delete @$s{qw|_temp_lookups _NOT_lookup|}
+   ; delete @$s{qw|_included_template _temp_lookups _NOT_lookup|}
    }
 
 
@@ -264,6 +274,8 @@ use AutoLoader 'AUTOLOAD' ;
    ; my @temp = map { [ $_
                       , do {  /$$re{end_label}/     && $1
                            || /$$re{include_label}/ && $s->load($1)
+                           || /$$re{container_include_label}/
+                              && 'CONTAINER_INCLUDE'
                            || /$$re{start_label}/   && { id         => $1
                                                        , attributes => $2
                                                        }
@@ -301,7 +313,7 @@ use AutoLoader 'AUTOLOAD' ;
                                , is_main => 1
                                )
    }
-   
+    
 
 ############################# STANDARD HANDLERS #############################
 
@@ -628,9 +640,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.32
+=head1 VERSION 1.33
 
-Included in Template-Magic 1.32 distribution.
+Included in Template-Magic 1.33 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -947,10 +959,11 @@ B<Note>: if I<template> is a path, the object will cache it automatically, so Te
 
 =head2 noutput ( arguments )
 
-A named arguments interface for the L<output()|"output ( template [, temporary lookups ] )"> method.
+A named arguments interface for the L<output()|"output ( template [, temporary lookups ] )"> method, which add also the possibility to pass the 'container_template' argument.
 
     $tm->nprint( template => '/path/to/template',
-                 lookups  => [ \%special_hash, 'My::lookups'] ) ;
+                 lookups  => [ \%special_hash, 'My::lookups'],
+                 container_template => '/path/to/container_template') ;
 
 =head2 print ( template [, temporary lookups ] )
 
@@ -974,10 +987,11 @@ B<Note>: if I<template> is a path, the object will cache it automatically, so Te
 
 =head2 nprint ( arguments )
 
-A named arguments interface for the L<print()|"print ( template [, temporary lookups ] )"> method.
+A named arguments interface for the L<print()|"print ( template [, temporary lookups ] )"> method, which add also the possibility to pass the 'container_template' argument.
 
     $tm->nprint( template => '/path/to/template',
-                 lookups  => [ \%special_hash, 'My::lookups'] ) ;
+                 lookups  => [ \%special_hash, 'My::lookups'],
+                 container_template => '/path/to/container_template') ;
 
 =head2 ID_list ( [identation_string [, end_marker]] )
 
@@ -1515,6 +1529,12 @@ Control the caching of the templates structures. 'cache' is the default, so you 
 
 =back
 
+=head3 container_template
+
+You can pass a generic template which will be used as a sort of frame for all the printed templates. It can be set to one I<template> parameter that can be a reference to a SCALAR content, a path to a template file or a filehandle.
+
+(See L<"Surrounding the output with a container template">)
+
 =head3 Constants
 
 If you write your own handler you can find useful a couple of constants that you can import:
@@ -1659,6 +1679,38 @@ Sometimes it may be useful to include a template only if a condition is true. To
 The template:
 
     this is the template {include_if_some_condition} end template
+
+=head2 Surrounding the output with a container template
+
+Sometime you may have headers and footers to add to a single or all the templates you want to print. You can use the 'container_template' argument, to pass the container template to the object constructor or to the C<noutput>  or C<nprint> methods:
+
+    # will work with all the outputs
+    $tm = new Template::Magic
+              container_template => '/path/to/container_template';
+    
+    $tm->print('/path/to/template');
+    
+    # will work just for a single output
+    $tm = new Template::Magic
+    
+    $tm->nprint(container_template => '/path/to/container_template',
+               template => '/path/to/template' );
+
+The container template file is a regular template, but MUST include an INCLUDE_TEMPLATE label B<without any attribute>: the original template will be used as the included template:
+
+   An header
+   {INCLUDE_TEMPLATE}
+   a footer
+
+The template file:
+
+   The template content
+
+The output:
+
+   An header
+   The template content
+   a footer
 
 =head2 Include (huge) text files without memory charges
 

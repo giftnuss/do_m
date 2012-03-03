@@ -1,5 +1,11 @@
 Template-Magic Latest Versions Changes
 
+Version 1.33
+- Added 'container_template' argument to the new(), nprint() and noutput()
+  methods, useult to surround the template being printed with other output
+- Added container_template test
+- Added 'Surrounding the output with a container template'
+  in 'HOW TO...' POD section
 
 Version 1.32
 - Added direct array handling in loops (changed ARRAY handler),

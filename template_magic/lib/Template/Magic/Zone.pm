@@ -1,5 +1,5 @@
 package Template::Magic::Zone ;
-$VERSION = 1.32 ;
+$VERSION = 1.33 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -106,11 +106,14 @@ $VERSION = 1.32 ;
                                 , container => $z
                                 , _t        => $z->_t
                                 )
-         ; $i = $nz->_e + 1 if $nz->_e
+         ; $i = $nz->_e + 1 if $nz->_e         # skip block content
          ; next ZONE if $nz->zone_process
          ; $nz->lookup_process
          ; $nz->value_process
          ; $nz->post_process
+         }
+        elsif ( $item eq 'CONTAINER_INCLUDE' )
+         { $z->include_template($z->tm->{_included_template})
          }
         elsif ( $item->is_main )               # included file
          { $z->_include($item)
@@ -204,9 +207,9 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.32
+=head1 VERSION 1.33
 
-Included in Template-Magic 1.32 distribution.
+Included in Template-Magic 1.33 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
