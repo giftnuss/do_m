@@ -1,5 +1,8 @@
 package Template::Magic::Zone ;
-$VERSION = 1.21 ;
+$VERSION = 1.22 ;
+
+# This file uses the "Perlish" coding style
+# please read http://perl.4pro.net/perlish_coding_style.html
 
 ; use 5.006_001
 ; use strict
@@ -197,9 +200,9 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.21
+=head1 VERSION 1.22
 
-Included in Template-Magic 1.21 distribution.
+Included in Template-Magic 1.22 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

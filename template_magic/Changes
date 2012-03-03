@@ -1,5 +1,8 @@
 Template-Magic Latest Versions Changes
- 
+
+
+Version 1.22
+- Minor POD changes
 
 Verson 1.21
 - Changed Makefile.PL version check
