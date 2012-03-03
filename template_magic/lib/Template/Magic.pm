@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.04 ;
+$VERSION = 1.05 ;
 use AutoLoader 'AUTOLOAD' ;
 
 ; use strict
@@ -593,10 +593,11 @@ sub INCLUDE_TEXT # zone handler
 
 sub TableTiler # value handler
    { eval
-      { require HTML::TableTiler 1.14
+      { require HTML::TableTiler
+      ; return $HTML::TableTiler::VERSION >= 1.14
       }
    ; if ( $@ )
-      { carp qq("HTML::TableTiler" is not installed on this system\n)
+      { carp qq("HTML::TableTiler" is not installed on this system or it is not current\n)
       ; return sub {}  # no action
       }
      else
@@ -654,9 +655,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.04
+=head1 VERSION 1.05
 
-Included in Template-Magic 1.04 distribution.
+Included in Template-Magic 1.05 distribution.
 
 =head1 INSTALLATION
 
@@ -909,11 +910,11 @@ This module and its extensions are written in pure perl. You don't need any comp
 
 =head2 Policy
 
-The main principle of Template::Magic is: B<keep the designing separated from the coding>, giving all the power to the programmer and letting designer do only design. In other words: while the code includes ALL the active and dynamic directions to generate the output, the template is a mere passive and static file, containing just placeholder (zones) that the code will replace with real data.
+The main principle of Template::Magic is: B<keeping the designing separated from the coding>, giving all the power to the programmer and letting designer do only design. In other words: while the code includes ALL the active and dynamic directions to generate the output, the template is a mere passive and static file, containing just placeholder (zones) that the code will replace with real data.
 
-This philosophy keep both jobs very tidy and simple to do, avoiding confusion and enforcing clearness, specially when programmer and designer are 2 different people. But another aspect of the philosophy of Template::Magic is flexibility, something that gives you the possibility to easily B<bypass the rules>.
+This philosophy keeps both jobs very tidy and simple to do, avoiding confusion and enforcing clearness, specially when programmer and designer are 2 different people. But another aspect of the philosophy of Template::Magic is flexibility, something that gives you the possibility to easily B<bypass the rules>.
 
-Even if I don't encourage breaking the main principle (keep the designing separated from the coding), sometimes you might find useful to put inside a template some degree of perl code, or may be you want just to interact DIRECTLY with the content of the template. See L<"Use subroutines to rewrite links"> and L<"Embed perl into a template"> for details.
+Even if I don't encourage breaking the main principle (keeping the designing separated from the coding), sometimes you might find useful to put inside a template some degree of perl code, or may be you want just to interact DIRECTLY with the content of the template. See L<"Use subroutines to rewrite links"> and L<"Embed perl into a template"> for details.
 
 Other important principles of Template::Magic are scalability and expandability. The whole extension system is built on these principles, giving you the possibility of control the behaviour of this module by omitting, changing the orders and/or adding your own handlers, without the need of subclassing the module. See L<"CUSTOMIZATION">.
 
@@ -954,7 +955,7 @@ B<Note>: if I<template> is a path, the object will cache it automatically, so Te
 
 =head2 noutput ( arguments )
 
-A named arguments interface for the L<noutput()|"output ( template [, temporary lookups ] )"> method.
+A named arguments interface for the L<output()|"output ( template [, temporary lookups ] )"> method.
 
     $tm->nprint( template => '/path/to/template',
                  lookups  => [ \%special_hash, 'My::lookups'] ) ;
@@ -1035,7 +1036,7 @@ See also L<"Prepare the identifiers description list">.
 =head2 load( template )
 
 This method explicitly (pre)loads and parses the template in order to cache it for future use.
-You shouldn't need to use this method unless you want to build the cache in advance (e.g the F<setup.pl> for C<mod_perl> advanced users).
+You shouldn't need to use this method unless you want to build the cache in advance (e.g the F<startup.pl> for C<mod_perl> advanced users).
 
 =head2 purge_cache ( [template_path] )
 

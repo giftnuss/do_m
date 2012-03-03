@@ -5,11 +5,12 @@
 ; use Template::Magic
 ; use Template::Magic::HTML
 
+; our $matrix
+; $matrix = [ [ 1.. 5]
+            , [ 6..10]
+            , [11..15]
+            ]
 
-; our $matrix = [ [ 1.. 5]
-                , [ 6..10]
-                , [11..15]
-                ]
 
 ; our $expected = << "__EOT__";
 <table border="0" cellspacing="1" cellpadding="3">
@@ -62,11 +63,12 @@ EOT
                                      ]
                  ) ;
                                        
-SKIP: { skip("HTML::TableTiler not installed", 2 )
+SKIP: { skip("HTML::TableTiler not installed or not current", 2 )
         unless eval
                 { require HTML::TableTiler
+                ; $HTML::TableTiler::VERSION >= 1.14
                 }
-     
+
       ; my $tiled_table = $tm->output(\$tmp)
       ; is( $$tiled_table
           , $expected
