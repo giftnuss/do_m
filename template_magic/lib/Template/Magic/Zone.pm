@@ -1,5 +1,5 @@
 package Template::Magic::Zone ;
-$VERSION = 1.05 ;
+$VERSION = 1.06 ;
 
 ; use 5.006_001
 ; use strict
@@ -181,21 +181,23 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.05
+=head1 VERSION 1.06
 
-Included in Template-Magic 1.05 distribution.
+Included in Template-Magic 1.06 distribution.
+
+The latest versions changes are reported in the F<Changes> file in this distribution.
 
 =head1 DESCRIPTION
 
 Template::Magic uses the Template::Magic::Zone objects to internally represent zones. A reference to the I<Zone object> is passed as a parameter to each handler and is passed to your subroutines whenever an identifier trigger their execution.
 
-Unless you plan to write an extension, you will find useful just the L<"attributes">, L<"content"> and L<"param"> properties, that you can use to retrieve parameters from your subroutines. (see L<Template::Magic/"Pass parameters to a subroutine">).
+B<Note>: Unless you plan to write an extension or some custom solution, you will find useful just the L<"attributes">, L<"content"> and L<"param"> properties that you can use to retrieve parameters from your subroutines (see L<Template::Magic/"Pass parameters to a subroutine">), and the L<"include_template()"> method that you can use to include templates from inside your code (see L<Template::Magic/"Conditionally include and process a template file">).
 
 =head1 ZONE OBJECT METHODS
 
 B<Note>: If you plan to write your own extension, please, feel free to ask for more support: the documentation in this distribution is not yet complete for that purpose.
 
-With Template::Magic the output generation is so flexible and customizable, because it can be changed DURING THE PROCESS by several factors coming both from the code I<(for examplee.g. the type of value found by the C<lookup()>)>, or from the template I<(e.g. the literal id of a zone)>, or whatever combination of factors you prefer.
+With Template::Magic the output generation is so flexible and customizable, because it can be changed DURING THE PROCESS by several factors coming both from the code I<(e.g. the type of value found by the C<lookup()>)>, or from the template I<(e.g. the literal id of a zone)>, or whatever combination of factors you prefer.
 
 It's important to understand that - for this reason - the output generation is done recursively by several processes (all customizable by the user) that are executed zone-by-zone, step-by-step, deciding the next step by evaluating the handlers conditions.
 
@@ -350,13 +352,13 @@ Obsolete and deprecated property: use C<tm> instead.
 
 =head2 id
 
-The C<id> property allows you to access and set the B<zone identifier>. It is undefined only if the zone is the I<main template zone>
+The C<id> property allows you to access the B<zone identifier>. It is undefined only if the zone is the I<main template zone>
 
 B<Note>: this is a read only property.
 
 =head2 attributes
 
-The C<attributes> property allows you to access and set the B<attributes string>. This string contains everything between the end of the label IDENTIFIER and the END_LABEL marker. It returns the empty string when there are no attributes.
+The C<attributes> property allows you to access the B<attributes string>. This string contains everything between the end of the label IDENTIFIER and the END_LABEL marker. It returns the empty string when there are no attributes.
 
 B<Note>: this is a read only property.
 
@@ -448,10 +450,13 @@ This property holds the offset of the template chunk where the content ends. Use
 
 =head1 SUPPORT and FEEDBACK
 
-If you need support or if you want just to send me some feedback or request, please use this link: http://perl.4pro.net/?Template::Magic::Zone.
+You can join the CBF mailing list at this url:
+
+    http://lists.sourceforge.net/lists/listinfo/template-magic-users
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2002-2004 by Domizio Demichelis.
+© 2004 by Domizio Demichelis (http://perl.4pro.net)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
+

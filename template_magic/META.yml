@@ -1,12 +1,14 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         Template-Magic
-version:      1.05
+version:      1.06
 version_from: 
 installdirs:  site
 requires:
     Class::constr:                 1.52
     Class::props:                  1.52
+    File::Spec:                    0
+    IO::Util:                      1.1
     Object::props:                 1.52
 
 distribution_type: module

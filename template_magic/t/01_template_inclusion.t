@@ -1,7 +1,7 @@
 #!perl -w
 ; use strict
 ; use Test::More tests => 3
-; use Template::Magic
+; use Template::Magic 
 
 ; our ( $tm
       , $tm2

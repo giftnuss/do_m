@@ -1,7 +1,15 @@
 Template-Magic Latest Versions Changes
 
+Version 1.06
+- New mailing list available at this url:
+  http://lists.sourceforge.net/lists/listinfo/template-magic-users
+- Use of IO::Util
+- Fixed File::Spec prerequisite in Makefile.PM and Bundle
+- Added a couple of notes in the POD about escaping markers and magic lookups
+- Fixed POD errors in the Template::Magic::Zone
+
 Version 1.05
-- Fixed test bug  
+- Fixed test bug
 
 Version 1.04
 - Fixed typo in TableTiler handler

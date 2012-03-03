@@ -1,7 +1,7 @@
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'Template::Magic'
-; my $vers = '1.05'
+; my $vers = '1.06'
 
 ; WriteMakefile
    ( NAME           => $dist
@@ -14,6 +14,8 @@
    , PREREQ_PM      => { 'Class::constr'  => '1.52'
                        , 'Class::props'   => '1.52'
                        , 'Object::props'  => '1.52'
+                       , 'IO::Util'       => '1.1'
+                       , 'File::Spec'     => '0'
                        }
    )
 

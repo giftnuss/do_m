@@ -1,5 +1,5 @@
 package Bundle::Template::Magic;
-$VERSION = 1.05;
+$VERSION = 1.06;
 __END__
 
 =head1 NAME
@@ -25,6 +25,10 @@ Class::constr           - used by Template::Magic::Zone
 Class::props            - used by Template::Magic::Zone
 
 Object::props           - used by Template::Magic::Zone
+
+File::Spec              - used by Template::Magic
+
+IO::Util                - used by Template::Magic
 
 Template::Magic         - the main distribution
 

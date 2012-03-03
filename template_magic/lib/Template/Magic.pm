@@ -1,26 +1,28 @@
 package Template::Magic ;
-$VERSION = 1.05 ;
+$VERSION = 1.06 ;
 use AutoLoader 'AUTOLOAD' ;
 
 ; use strict
 ; use 5.006_001
 ; use Carp
+; $Carp::Internal{+__PACKAGE__}++
 ; use Template::Magic::Zone
+; use IO::Util
 ; use File::Spec
 ; use base 'Exporter'
 ; use constant NEXT_HANDLER => 0
 ; use constant LAST_HANDLER => 1
 
-; our @EXPORT_OK   = qw| NEXT_HANDLER
-                         LAST_HANDLER
-                       |
-; our @autoloaded = qw | _EVAL_
-                         _EVAL_ATTRIBUTES_
-                         TRACE_DELETIONS
-                         INCLUDE_TEXT
-                         TableTiler
-                         FillInForm
-                       |
+; our @EXPORT_OK  = qw| NEXT_HANDLER
+                        LAST_HANDLER
+                      |
+; our @autoloaded = qw| _EVAL_
+                        _EVAL_ATTRIBUTES_
+                        TRACE_DELETIONS
+                        INCLUDE_TEXT
+                        TableTiler
+                        FillInForm
+                      |
                        
 # predeclaration of autoloaded methods
 ; use subs @autoloaded
@@ -216,7 +218,7 @@ use AutoLoader 'AUTOLOAD' ;
    ; my $args
    ; $$args{template} = shift
    ; $$args{lookups}  = [ @_ ] if @_
-   ; $s->_oprocess( $args )
+   ; IO::Util::capture { $s->_process( $args ) }
    }
 
 ; sub print
@@ -231,7 +233,7 @@ use AutoLoader 'AUTOLOAD' ;
    { my ($s, %args) = @_
    ; $args{lookups} = [ $args{lookups} ]
                       unless ref $args{lookups} eq 'ARRAY'
-   ; $s->_oprocess( \%args )
+   ; IO::Util::capture { $s->_process( \%args ) }
    }
 
 ; sub nprint
@@ -241,23 +243,11 @@ use AutoLoader 'AUTOLOAD' ;
    ; $s->_process( \%args )
    }
 
-; sub _oprocess
-   { my ($s, $args) = @_
-   ; local *H
-   ; my $oldfh = select(H)
-   ; my $output = ''
-   ; tie *H , 'Template::Magic::Capt' , \ $output
-   ; $s->_process($args)
-   ; untie *H
-   ; select($oldfh)
-   ; \$output
-   }
-
 ; sub _process
    { my ($s, $args) = @_
-   ; $$s{_temp_lookups}     = $$args{lookups}           # init temp
+   ; $$s{_temp_lookups} = $$args{lookups}           # init temp
                               if exists $$args{lookups}
-   ; my $z  = $s->load( $$args{template} )
+   ; my $z = $s->load( $$args{template} )
    ; do { local $Class::props::force = 1
         ; $z->tm = $s           # init top main zone tm is a class property
         }
@@ -510,20 +500,6 @@ use AutoLoader 'AUTOLOAD' ;
           }
        ]
    }
-   
-###############################
-; package Template::Magic::Capt
-
-; sub TIEHANDLE
-   { bless \@_, shift
-   }
- 
-; sub PRINT
-   { my $s = shift
-   ; ${$$s[0]} .= join $,||'', map{defined $_ ? $_ : ''} @_
-   }
-
-package Template::Magic
 
 ; 1
 
@@ -655,9 +631,11 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.05
+=head1 VERSION 1.06
 
-Included in Template-Magic 1.05 distribution.
+Included in Template-Magic 1.06 distribution.
+
+The latest versions changes are reported in the F<Changes> file in this distribution.
 
 =head1 INSTALLATION
 
@@ -725,7 +703,7 @@ Template::Magic is a "magic" interface between programming and design. It makes 
     a label: {identifier}
     a block: {identifier} content of the block {/identifier}
 
-From the designer point of view, this makes things very simple. The designer has just to decide B<what> value and B<where> to put it. Nothing else is required, no complicated new syntax to learn!
+From the designer point of view, this makes things very simple. The designer has just to decide B<what> value and B<where> to put it. Nothing else is required, no complicated new syntax to learn! B<This feature make this template system the perfect choice when the templates file has to be edited by unskilled people>.
 
 On the other side, the programmer has just to define variables and subroutines as usual and their values will appear in the right place within the output. The automatic interface allows the programmer to focus just on the code, saving him the hassle of interfacing code with output, and even complicated output - with complex switch branching and nested loops - can be easily organized by minding just a few simple concepts.
 
@@ -745,9 +723,7 @@ When a match is found the object replaces the label or the block with the value 
 
 =back
 
-B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work.
-
-B<Note>: If you are planning to use this module in CGI environment, take a look at L<CGI::Application::Magic|CGI::Application::Magic> and L<Apache::Application::Magic|Apache::Application::Magic> that transparently integrates this module in a very handy and powerful framework.
+B<Note>: If you are planning to use this module in CGI environment, take a look at L<CGI::Builder::Magic|CGI::Builder::Magic> that transparently integrates this module in a very handy and powerful framework.
 
 =head2 Simple example
 
@@ -1140,6 +1116,14 @@ You can also pass compiled RE:
     $tm = new Template::Magic
               markers => [ $start, $end_ID, $end ];
 
+B<Note>: Remember that if the characters you chose as the markers have a special meaning in RE (e.g. the '[' and ']'), you need to escape them as you would do inside a pattern match.
+
+    # this would generate an error
+    $tm = Template::Magic->new( markers => [ '[', '/', ']' ] )
+    
+    # you probably mean this
+    $tm = Template::Magic->new( markers => [ '\[', '/', '\]' ] )
+
 =head4 standard markers
 
 Template::Magic offers 2 standar markers: B<DEFAULT> and B<HTML>:
@@ -1205,7 +1189,7 @@ Use this constructor array to explicitly define where to look up the values in y
 
 With B<packages names> the lookup is done with all the IDENTIFIERS (variables and subroutines) defined in the package namespace.
 
-B<Note>: Please, note that the lexical variables (those declared with C<my>) are unaccessible from outside the enclosing block, file, or eval, so don't expect that the lookup could work with these variables: it is a perl intentional restriction, not a limitation of this module. However, you could declare them  with the old C<vars> pragma or C<our> declaration instead, and the lookup will work as expected.
+B<Note>: Please, notice that the lexical variables (those declared with C<my>) are unaccessible from outside the enclosing block, file, or eval, so don't expect that the lookup could work with these variables: it is a perl intentional restriction, not a limitation of this module. However, you could declare them  with the old C<vars> pragma or C<our> declaration instead, and the lookup will work as expected.
 
 With B<blessed objects> the lookup is done with all the IDENTIFIERS (variables and methods) defined in the class namespace. B<Note>: Use this type of location when you want to call an object method from a template: the method will receive the blessed object as the first parameter and it will work as expected.
 
@@ -1220,6 +1204,8 @@ If you want to make available all the identifiers of your current package, just 
     $tm = new Template::Magic
               lookups => __PACKAGE__ ;
 
+B<Warning>: Template::Magic can be used to write sloppy code or very strict code, exactly as perl itself can. Magic lookups is a very handly feature for simple scripts, while it is not recommended for complex script where you should explicitly limit the lookups to some specific package or hash.
+
 If you want to keep unavailable some variable or subroutine from the template, you can pass just the reference of some hash containing just the identifiers used in the template. This is the best method to use the module IF you allow untrustworthy people to edit the template AND if you have any potentially dangerous subroutine in your code. (see L<"Allow untrustworthy people to edit the template">).
 
     # lookup in %my_hash only
@@ -1232,9 +1218,9 @@ B<Note>: If you have multiple symbols in your code that maches the label id in y
 
     # lookup in several locations
     $tm = new Template::Magic
-              lookups => [ \%my_hash, 'main', \%my_other_hash ] ;
+              lookups => [ \%my_hash, 'My::Pack', \%my_other_hash ] ;
 
-In this example, the lookup will be done in C<%my_hash> first - if unsuccessful - it will be done in the C<'main' package> and - if unsuccessful - it will be done in C<%my_other_hash>.
+In this example, the lookup will be done in C<%my_hash> first - if unsuccessful - it will be done in the C<My::Pack> package and - if unsuccessful - it will be done in C<%my_other_hash>.
 
 If you use Template::Magic inside another module, you can pass the blessed object as the location:
 
@@ -1530,7 +1516,7 @@ If you write your own handler you can find useful a couple of constants that you
 
 =head1 HOW TO...
 
-This section is oriented to suggest you specific solutions to specific needs. If you need some more help, feel free to send me an e-mail to dd@4pro.net.
+This section is oriented to suggest you specific solutions to specific needs. If you need some more help, feel free to send me a message.
 
 =head2 Understand the output generation
 
@@ -1825,7 +1811,7 @@ A nested loop is represented by a block nested into another block:
                - {quantity} {item}{/details}
     {/my_nested_loop}-------------------
 
-Note that the block I<'details'> is nested into the block I<'my_nested_loop'>.
+Notice that the block I<'details'> is nested into the block I<'my_nested_loop'>.
 
 =item the code
 
@@ -1865,7 +1851,7 @@ You should have some array nested into some other array, defined somewhere:
                           }
                       ] ;
 
-Note that the value of the keys I<'details'> are a reference to an array of hashes.
+Notice that the value of the keys I<'details'> are a reference to an array of hashes.
 
 =item the output
 
@@ -1948,7 +1934,7 @@ A false $OK would leave undefined C<$OK_block>, so it would produce this output:
 
     This is the NO block
 
-Note that C<$OK_block> and C<$NO_block> should not return a SCALAR value, that would replace the whole block with the value of the scalar.
+Notice that C<$OK_block> and C<$NO_block> should not return a SCALAR value, that would replace the whole block with the value of the scalar.
 
 =back
 
@@ -2229,13 +2215,13 @@ The handler will generate as the output the evaluated content of the block.
 
 Since a block can contain any quantity of text, you could use this type of configuration as a cheap way to embed perl into (HTML) files.
 
-Note that the default syntax markers ({/}) could somehow clash with perl blocks, so if you want to embed perl into your templates, you should consider to redefine the syntax with some more appropriate marker (See L<"Redefine Markers">).
+Notice that the default syntax markers ({/}) could somehow clash with perl blocks, so if you want to embed perl into your templates, you should consider to redefine the syntax with some more appropriate marker (See L<"Redefine Markers">).
 
 =back
 
 =head2 Caching or not the template
 
-Template::Magic cache the template structure by default if it is passed asa a path to a file. You can avoid the caching either by passing a filehandler or a reference to a template content (not so memory efficient) or by using the 'cache/nocache' L<"options">:
+Template::Magic cache the template structure by default if it is passed as a path to a file. You can avoid the caching either by passing a filehandler or a reference to a template content (not so memory efficient) or by using the 'cache/nocache' L<"options">:
 
     $tm = new Template::Magic
               options => 'no_cache' ;
@@ -2319,7 +2305,7 @@ If you want to compile some or all the AUTOLOADed handlers at import time you ca
     # or compiles just '_EVAL_' AUTOLOADed handlers at import, without importing
     use Template::Magic qw( -compile _EVAL_ ) ;
     
-e.g. this could be useful if you plan to load the module in F<setup.pl> when using C<mod_perl>.
+e.g. this could be useful if you plan to load the module in F<startup.pl> when using C<mod_perl>.
     
     # normal import can follow the -compile
     use Template::Magic qw( -compile ) ;
@@ -2465,6 +2451,8 @@ A I<zone object> is an internal object representing a zone.
 
 =item * L<Template::Magic::HTML|Template::Magic::HTML>
 
+=item * L<CGI::Builder::Magic|CGI::Builder::Magic>
+
 =item * L<CGI::Application::Magic|CGI::Application::Magic>
 
 =item * L<Apache::Application::Magic|Apache::Application::Magic>
@@ -2473,10 +2461,12 @@ A I<zone object> is an internal object representing a zone.
 
 =head1 SUPPORT and FEEDBACK
 
-If you need support or if you want just to send me some feedback or request, please use this link: http://perl.4pro.net/?Template::Magic.
+You can join the Template Magic mailing list at this url:
+
+    http://lists.sourceforge.net/lists/listinfo/template-magic-users
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2002-2004 by Domizio Demichelis.
+© 2004 by Domizio Demichelis (http://perl.4pro.net)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
