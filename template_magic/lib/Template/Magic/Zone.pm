@@ -1,5 +1,5 @@
 package Template::Magic::Zone ;
-$VERSION = 1.3 ;
+$VERSION = 1.31 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -69,7 +69,7 @@ $VERSION = 1.3 ;
    ; until (defined $$az{tm}){ $az = $az->container }
    ; $$az{tm}
    }
-
+   
 ; sub value_process
    { my ($z) = @_
    ; my $tm = $z->tm 
@@ -120,11 +120,12 @@ $VERSION = 1.3 ;
 
 ; sub _include
    { my ($z, $iz) = @_
-
-   ; $iz->level = $z->level
-   ; $iz->container = $z->container
+   ; @$iz{qw|container level tm|} = ( $z->container
+                                    , $z->level
+                                    , $z->tm
+                                    )
    ; $iz->content_process
-   ; delete @$iz{qw|container level|}   # reset
+   ; delete @$iz{qw|container level tm|}   # reset
    }
    
 ; sub lookup_process
@@ -203,9 +204,9 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.3
+=head1 VERSION 1.31
 
-Included in Template-Magic 1.3 distribution.
+Included in Template-Magic 1.31 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

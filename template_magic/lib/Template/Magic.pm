@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.25 ;
+$VERSION = 1.31 ;
 use AutoLoader 'AUTOLOAD' ;
 
 # This file uses the "Perlish" coding style
@@ -103,11 +103,11 @@ use AutoLoader 'AUTOLOAD' ;
          { $_
          }
         elsif ( not ref )
-         { my $C =  $s->can($_)
+         { my $C = $s->can($_)
                 || $s->can( join ( '_'
                                  , $_
                                  , uc $n
-                                 ,'HANDLERS'
+                                 , 'HANDLERS'
                                  )
                           )
                 || croak qq(Unknown handler "$_")
@@ -618,9 +618,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.3
+=head1 VERSION 1.31
 
-Included in Template-Magic 1.3 distribution.
+Included in Template-Magic 1.31 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

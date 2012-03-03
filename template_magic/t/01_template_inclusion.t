@@ -1,6 +1,6 @@
 #!perl -w
 ; use strict
-; use Test::More tests => 2
+; use Test::More tests => 3
 ; use Template::Magic
 
 ; use Carp
@@ -17,6 +17,7 @@
       , $content2
       , $content3
       , $content4
+      , $content5
       )
 ; $tm = new Template::Magic
 
@@ -35,6 +36,15 @@
 ; $content4 = $tm4->output(\$tmp4);
 }
 ; is ( $$content4
+     , 'text from template SCALAR, text from file SCALAR'
+     )
+     
+; {
+; my $tm5 = new Template::Magic
+; my $tmp5 = 'text from template {scalar_test}, {INCLUDE_TEMPLATE text_file}'
+; $content5 = $tm5->output(\$tmp5);
+}
+; is ( $$content5
      , 'text from template SCALAR, text from file SCALAR'
      )
 

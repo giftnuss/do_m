@@ -5,7 +5,7 @@
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'Template::Magic'
-; my $vers = '1.3'
+; my $vers = '1.31'
 
 ; WriteMakefile
    ( NAME           => $dist
