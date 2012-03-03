@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.1 ;
+$VERSION = 1.11 ;
 use AutoLoader 'AUTOLOAD' ;
 
 ; use strict
@@ -167,7 +167,7 @@ use AutoLoader 'AUTOLOAD' ;
 
 ; sub get_block  # deprecated method
    { my ($s, $t, $id) = @_
-   ; $t = $s->read_temp($t)
+   ; $t = IO::Util::slurp $t
           unless ref $t eq 'SCALAR'
    ; $$t or croak 'The template content is empty'
    ; my ($S, $I, $E, $A) = $s->_re
@@ -180,29 +180,6 @@ use AutoLoader 'AUTOLOAD' ;
                          /xs
       }
    ; $t
-   }
-
-; sub read_temp  # deprecated method
-   { my ($s, $t) = @_
-   ; local $_ = $t or croak 'No template parameter passed'
-   ; if (  ref     eq 'GLOB'  # file handler
-        || ref \$_ eq 'GLOB'
-        )
-      { $_ = do { local $/    # slurp in $_
-                ; <$_>
-                }
-      }
-     elsif ( $_ && not ref )  # it's a path
-      { open _ or croak qq(Error opening template "$_": $^E)
-      ; $_ = do { local $/    # slurp in $_
-                ; <_>
-                }
-      ; close _
-      }
-     else                     # it's something else
-      { croak 'Wrong template parameter type: "'. ( ref || 'UNDEF' ) . '"'
-      }
-   ; \$_
    }
 
 ; sub set_block # deprecated method
@@ -631,9 +608,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.1
+=head1 VERSION 1.11
 
-Included in Template-Magic 1.1 distribution.
+Included in Template-Magic 1.11 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -644,7 +621,9 @@ The latest versions changes are reported in the F<Changes> file in this distribu
 =item Prerequisites
 
     Perl version >= 5.6.1
-    OOTools  >= 1.52
+    OOTools      >= 1.52
+    IO::Util     >= 1.2
+    File::Spec   >= 0
 
 =item CPAN
 
@@ -893,6 +872,28 @@ This philosophy keeps both jobs very tidy and simple to do, avoiding confusion a
 Even if I don't encourage breaking the main principle (keeping the designing separated from the coding), sometimes you might find useful to put inside a template some degree of perl code, or may be you want just to interact DIRECTLY with the content of the template. See L<"Use subroutines to rewrite links"> and L<"Embed perl into a template"> for details.
 
 Other important principles of Template::Magic are scalability and expandability. The whole extension system is built on these principles, giving you the possibility of control the behaviour of this module by omitting, changing the orders and/or adding your own handlers, without the need of subclassing the module. See L<"CUSTOMIZATION">.
+
+=head2 Useful links
+
+=over
+
+=item *
+
+A simple and useful navigation system between my modules is available at this URL: http://perl.4pro.net
+
+=item *
+
+More practical topics are probably discussed in the mailing list at this URL: http://lists.sourceforge.net/lists/listinfo/template-magic-users
+
+=back
+
+=head2 A Personal Note
+
+I don't ask you any money to use this software! I am happy if you find it useful for your needs, but I would be a lot more happy if I could know anything about you and/or about the specific usage you give to my modules.
+
+Please, write me a simple message: like this software, it does not cost you any money, but it will give me one more reason to keep publishing modules like this framework. Thank you.
+
+I<(please, use this page to send your message: http://perl.4pro.net)>
 
 =head1 METHODS
 

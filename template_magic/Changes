@@ -1,6 +1,11 @@
 Template-Magic Latest Versions Changes
 
 
+Version 1.11
+- Changed the prerequisite IO::Util to version 1.2
+- Internal changes to extend the use of IO::Util
+- A few POD fixes
+
 Version 1.1
 - Substancial changes in the internal structure to allow more efficient
   object caching and destroying.
