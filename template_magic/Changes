@@ -1,6 +1,11 @@
 Template-Magic Latest Versions Changes
 
 
+Version 1.24
+- Eliminated version check and installation feedback system
+  ("phone home" opt-out) from Makefile.PL to make Randal L Schwartz happy :-)
+  and sad the author :-(
+
 Version 1.23
 - Fixed a REF handler bug
 - Fixed a INCLUDE_TEMPLATE warning bug

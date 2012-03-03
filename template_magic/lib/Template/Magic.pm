@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.23 ;
+$VERSION = 1.24 ;
 use AutoLoader 'AUTOLOAD' ;
 
 # This file uses the "Perlish" coding style
@@ -392,9 +392,9 @@ use AutoLoader 'AUTOLOAD' ;
 ; sub REF # value handler
    { sub
       { my ($z) = @_
-      ; if (ref($z->value) =~ /^(SCALAR|REF)$/)  # if is a reference
-         { $z->value = ${$z->value}             # dereference
-         ; $z->value_process                    # process the new value
+      ; if (ref($z->value) =~ /^(SCALAR|REF)$/)  # if it's a reference
+         { $z->value = ${$z->value}              # dereference
+         ; $z->value_process                     # process the new value
          ; LAST_HANDLER
          }
       }
@@ -619,9 +619,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.23
+=head1 VERSION 1.24
 
-Included in Template-Magic 1.23 distribution.
+Included in Template-Magic 1.24 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -652,8 +652,6 @@ From the directory where this file is located, type:
     make install
 
 B<Note>: this installs just the main distribution and does not install the prerequisites of L<Template::Magic::HTML|Template::Magic::HTML>.
-
-B<Note>: The installation of this module runs an automatic version check connection which will warn you in case a newer version is available: please don't use old versions, because I can give you full support only for current versions. Besides, since CPAN does not provide any download statistic to the authors, this check allows me also to keep my own installation counter. Version checking is transparent to regular users, while CPAN testers should skip it by running the Makefile.PL with NO_VERSION_CHECK=1.
 
 =item Distribution structure
 
@@ -1971,9 +1969,9 @@ Notice that C<$OK_block> and C<$NO_block> should not return a SCALAR value, that
 
 =head2 Use the NOT_* blocks
 
-This is a new feature implemented in Template::Magic 1.2, that allows to simplify the if-else handling.
+This is a new feature implemented in Template::Magic 1.2, that allows to simplify the if-else handling for any zone.
 
-For each zone you can use a NOT_* zone (where '*' stand for the zone id) which  will automatically be printed if the zone is not printed, or wiped out if the zone is printed.
+For any zone you can use a NOT_* zone (where '*' stands for the zone id) which  will automatically be printed if the zone is not printed, or wiped out if the zone is printed.
 
 The above example could be written also this way:
 
@@ -2516,6 +2514,8 @@ A I<zone object> is an internal object representing a zone.
 =item * L<Template::Magic::Zone|Template::Magic::Zone>
 
 =item * L<Template::Magic::HTML|Template::Magic::HTML>
+
+=item * L<Template::Magic::Pager|Template::Magic::Pager>
 
 =item * L<CGI::Builder::Magic|CGI::Builder::Magic>
 
