@@ -1,5 +1,9 @@
 Template-Magic Latest Versions Changes
 
+Version 1.38
+- "use strict" fix for CPANTS
+- Fixed Makeperl.PL (HTML::TableTiler not needed as a prerequisite)
+
 Version 1.37
 - Removed the eval block and local $SIG{__DIE__} from the TableTiler and
   the FillInForm value handlers. (now it croaks as it should on error)

@@ -1,7 +1,7 @@
 package Template::Magic ;
-$VERSION = 1.37 ;
-use 5.006_001 ;
+$VERSION = 1.38 ;
 use strict ;
+use 5.006_001 ;
 use AutoLoader 'AUTOLOAD' ;
 
 # This file uses the "Perlish" coding style
@@ -125,7 +125,7 @@ use AutoLoader 'AUTOLOAD' ;
    { my ($s) = @_
    ; unless ( $$s{_re} ) # execute it just the first time AND if it has to parse
       { unless ( @{$$s{markers}} == 3 )
-         { no strict 'refs'
+         { no strict 'refs' 
          ; my $m = $$s{markers}[0]
          ; my $M =  $s->can($m)
                  || $s->can($m.'_MARKERS')
@@ -145,6 +145,7 @@ use AutoLoader 'AUTOLOAD' ;
       ; $$s{_re}{end_label}      = qr/$S$I($ID)$E/s
       ; $$s{_re}{include_label}  = qr/$S\bINCLUDE_TEMPLATE\b($A)$E/s
       }
+
    ; wantarray
      ? @{$$s{markers}}
      : $$s{_re}
@@ -623,9 +624,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.37
+=head1 VERSION 1.38
 
-Included in Template-Magic 1.37 distribution.
+Included in Template-Magic 1.38 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

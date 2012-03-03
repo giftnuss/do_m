@@ -19,7 +19,6 @@
                        , 'Object::props'    => 2.1
                        , 'Class::Util'      => 2.1
                        , 'IO::Util'         => 1.46
-                       , 'HTML::TableTiler' => 1.2
                        , 'File::Spec'       => 0
                        }
    )
