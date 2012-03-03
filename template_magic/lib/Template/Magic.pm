@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.01 ;
+$VERSION = 1.02 ;
 use AutoLoader 'AUTOLOAD' ;
 
 ; use strict
@@ -634,11 +634,46 @@ sub FillInForm # value handler
 
 =head1 NAME
 
-Template::Magic - magic merger of runtime values with templates
+Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.01
+=head1 VERSION 1.02
 
-Included in Template-Magic 1.01 distribution.
+Included in Template-Magic 1.02 distribution.
+
+=head1 INSTALLATION
+
+=over
+
+=item Prerequisites
+
+    Perl version >= 5.6.1
+    OOTools  >= 1.52
+
+=item CPAN
+
+If you want to install Template::Magic plus all related extensions (the prerequisites to use also L<Template::Magic::HTML|Template::Magic::HTML>), all in one easy step:
+
+    perl -MCPAN -e 'install Bundle::Template::Magic'
+
+=item Standard installation
+
+From the directory where this file is located, type:
+
+    perl Makefile.PL
+    make
+    make test
+    make install
+
+B<Note>: this installs just the main distribution and does not install the prerequisites of L<Template::Magic::HTML|Template::Magic::HTML>.
+
+=item Distribution structure
+
+    Bundle::Template::Magic      a bundle to install everything in one step
+    Template::Magic              the main module
+    Template::Magic::Zone        defines the zone object
+    Template::Magic::HTML        handlers useful in HTML environment
+
+=back
 
 =head1 SYNOPSIS
 
@@ -693,7 +728,7 @@ When a match is found the object replaces the label or the block with the value 
 
 B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work. (see also L<"CONTRIBUTION">)
 
-B<Note>: If you are planning to use this module in CGI environment, take a look at L<CGI::Application::Magic|CGI::Application::Magic> that transparently integrates this module in a very handy and powerful framework.
+B<Note>: If you are planning to use this module in CGI environment, take a look at L<CGI::Application::Magic|CGI::Application::Magic> and L<Apache::Application::Magic|Apache::Application::Magic> that transparently integrates this module in a very handy and powerful framework.
 
 =head2 Simple example
 
@@ -864,41 +899,6 @@ Even if I don't encourage breaking the main principle (keep the designing separa
 
 Other important principles of Template::Magic are scalability and expandability. The whole extension system is built on these principles, giving you the possibility of control the behaviour of this module by omitting, changing the orders and/or adding your own handlers, without the need of subclassing the module. See L<"CUSTOMIZATION">.
 
-=head1 INSTALLATION
-
-=over
-
-=item Prerequisites
-
-    Perl version >= 5.6.1
-    OOTools  >= 1.52
-
-=item CPAN
-
-If you want to install Template::Magic plus all related extensions (the prerequisites to use also L<Template::Magic::HTML|Template::Magic::HTML>), all in one easy step:
-
-    perl -MCPAN -e 'install Bundle::Template::Magic'
-
-=item Standard installation
-
-From the directory where this file is located, type:
-
-    perl Makefile.PL
-    make
-    make test
-    make install
-
-B<Note>: this installs just the main distribution and does not install the prerequisites of L<Template::Magic::HTML|Template::Magic::HTML>.
-
-=item Distribution structure
-
-    Bundle::Template::Magic      a bundle to install everything in one step
-    Template::Magic              the main module
-    Template::Magic::Zone        defines the zone object
-    Template::Magic::HTML        handlers useful in HTML environment
-
-=back
-
 =head1 METHODS
 
 =head2 new ( [constructor_arrays] )
@@ -913,7 +913,7 @@ If you don't pass any parameter to the constructor method, the constructor defau
 
 B<WARNING>: this method is here for historical reasons, but it is not the maximum of efficiency. Please consider to use the L<print()|"print ( template [, temporary lookups ] )"> method when possible I<(see L<"EFFICIENCY">)>. You can also consider to write an I<output handler> that fits your needs but process the output content on the fly and without the need to collect the whole output as this method does.
 
-If you need to use Template::Magic with C<CGI::Application> (that requires the run modes method to collect the whole output) you may use L<CGI::Application::CodeRM|CGI::Application::CodeRM> that allows you to use C<print()> or C<nprint()> method instead of C<output()> method.
+B<Note:> If you need to use C<Template::Magic> with C<CGI::Application> (that requires the run modes method to collect the whole output) you may use L<CGI::Application::Magic|CGI::Application::Magic> or L<Apache::Application::Magic|Apache::Application::Magic> that transparently integrates the template system with the application and avoid this method.
 
 This method merges the runtime values with the template and returns a reference to the whole collected output. It accepts one I<template> parameter that can be a reference to a SCALAR content, a path to a template file or a filehandle.
 
@@ -1031,7 +1031,7 @@ The output generation can be completely customized during the creation of the ne
 
 =head2 Constructor Arrays
 
-The new() method accepts one optional reference to a hash that can contain the following optionals constructor arrays:
+The new() method accepts one optional hash that can contain the following optionals constructor arrays:
 
     markers
     lookups
@@ -1054,7 +1054,7 @@ All the constructor arrays should be array references, but if you have to pass j
               lookups => \%my_hash ,
               markers => 'HTML'    ;
 
-All the handlers in C<-*_handlers> I<(zone handlers, value handlers, output handlers, text handlers, post handlers)> receive the I<zone object> as $_[0] parameter. Besides, the I<value handlers> and the I<text handlers> receive also the processed text as $_[1] parameter.
+All the handlers in C<-*_handlers> I<(zone handlers, value handlers, output handlers, text handlers, post handlers)> receive the I<zone object> as $_[0] parameter. Besides, the I<test handlers> and the I<output handlers> receive also the processed text as $_[1] parameter.
 
 B<Note>: the old constructor arrays identifiers with the prepended '-' and/or the parameters passed as a reference to a hash are deprecated but still working:
 
@@ -1231,7 +1231,7 @@ If you use Template::Magic inside another module, you can pass the blessed objec
     
     sub method_triggered_by_lookup
     {
-        my $s = shift; # correct object passed
+        my ($s, $zone) = @_; # correct object passed + zone object
         ...
         $$s{data};
     }
@@ -2246,7 +2246,7 @@ You can save a lot of typing and a lot of memory if you do this instead:
 
     $tm->print('/path/to/big_template') ;
 
-If you need to use Template::Magic with C<CGI::Application> (that requires the run modes method to collect the whole output) you may use L<CGI::Application::CodeRM|CGI::Application::CodeRM> that allows you to use C<print()> or C<nprint()> method instead of C<output()> method.
+If you need to use C<Template::Magic> with C<CGI::Application> (that requires the run modes method to collect the whole output) you may use L<CGI::Application::Magic|CGI::Application::Magic> or L<Apache::Application::Magic|Apache::Application::Magic> that transparently integrates the template system with the application and avoid the C<output()> method.
 
 For memory optimization see also:
 
@@ -2451,6 +2451,8 @@ A I<zone object> is an internal object representing a zone.
 =item * L<Template::Magic::HTML|Template::Magic::HTML>
 
 =item * L<CGI::Application::Magic|CGI::Application::Magic>
+
+=item * L<Apache::Application::Magic|Apache::Application::Magic>
 
 =back
 

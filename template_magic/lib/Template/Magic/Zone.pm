@@ -1,5 +1,5 @@
 package Template::Magic::Zone ;
-$VERSION = 1.01 ;
+$VERSION = 1.02 ;
 
 ; use 5.006_001
 ; use strict
@@ -55,8 +55,7 @@ $VERSION = 1.01 ;
       }
    }
 
-; *merge   = \&content_process  # deprecated
-; *mt = \&tm  # backward compatibility
+; *mt = sub{shift()->tm(@_)}  # backward compatibility
 
 ; sub AUTOLOAD : lvalue
    { (my $n = $AUTOLOAD) =~ s/.*://
@@ -181,9 +180,9 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.01
+=head1 VERSION 1.02
 
-Included in Template-Magic 1.01 distribution.
+Included in Template-Magic 1.02 distribution.
 
 =head1 DESCRIPTION
 
@@ -195,7 +194,7 @@ Unless you plan to write an extension, you will find useful just the L<"attribut
 
 B<Note>: If you plan to write your own extension, please, feel free to ask for more support: the documentation in this distribution is not yet complete for that purpose.
 
-With Template::Magic the output generation is so flexible and customizable, because it can be changed DURING THE PROCESS by several factors coming both from the code I<(for example: the type of value found by the C<lookup()>)>, or from the template I<(for example: the literal id of a zone)>, or whatever combination of factors you prefer.
+With Template::Magic the output generation is so flexible and customizable, because it can be changed DURING THE PROCESS by several factors coming both from the code I<(for examplee.g. the type of value found by the C<lookup()>)>, or from the template I<(e.g. the literal id of a zone)>, or whatever combination of factors you prefer.
 
 It's important to understand that - for this reason - the output generation is done recursively by several processes (all customizable by the user) that are executed zone-by-zone, step-by-step, deciding the next step by evaluating the handlers conditions.
 
@@ -240,10 +239,6 @@ This method starts (and manage) the output generation for the zone: it process t
 
 B<Note>: You can change the way of parsing by customizing the I<markers> constructor array. You can change the resulting output by customizing the other constructor arrays.
 
-=head2 merge()
-
-Deprecated method. Use C<content_process()> instead.
-
 =head2 zone_process()
 
 The scope of this method is organizing the Zone object.
@@ -284,7 +279,7 @@ B<Note>: If the C<text_handlers> constructor array is undefined (as it is by def
 
 =head2 output_process()
 
-The scope of this method is processing the text that comes from the code. It is usually used to process the text coming from the template as well if the C<text_process()> method is not used (i.e. no defined c<text_handlers>).
+The scope of this method is processing the text that comes from the code. It is usually used to process the text coming from the template as well if the C<text_process()> method is not used (i.e. no defined C<text_handlers>).
 
 As other process methods, this process simply calls in turn all the handlers in the C<output_handlers> constructor array until some handler returns a true value: change the C<zone_handlers> to change this process (see L<Template::Magic/"output_handlers">).
 

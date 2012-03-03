@@ -15,13 +15,13 @@
                 lookups => \%hash1
                
 
-; my $out = ${$mt->output('t/25_tmpl')}
+; my $out = ${$mt->output('./t/25_tmpl')}
 
 ; $mt = new Template::Magic
             lookups => \%hash2
 
 
-; $out .= ${$mt->output('t/25_tmpl')}
+; $out .= ${$mt->output('./t/25_tmpl')}
 
 ; is( $out
     , 'text 1, text 2. text 3, text 4. '

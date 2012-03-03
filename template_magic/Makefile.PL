@@ -1,7 +1,7 @@
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'Template::Magic'
-; my $vers = '1.01'
+; my $vers = '1.02'
 
 ; WriteMakefile
    ( NAME           => $dist
@@ -11,10 +11,10 @@
        , ABSTRACT   => 'Magic merger of runtime values with templates'
        )
      : ()
-   , PREREQ_PM        => { 'Class::constr'     => '1.52'
-                         , 'Class::props'      => '1.52'
-                         , 'Object::props'     => '1.52'
-                         }
+   , PREREQ_PM      => { 'Class::constr'  => '1.52'
+                       , 'Class::props'   => '1.52'
+                       , 'Object::props'  => '1.52'
+                       }
    )
 
 ; eval
