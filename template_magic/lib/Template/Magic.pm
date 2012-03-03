@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.2 ;
+$VERSION = 1.21 ;
 use AutoLoader 'AUTOLOAD' ;
 
 ; use strict
@@ -15,7 +15,6 @@ use AutoLoader 'AUTOLOAD' ;
 ; BEGIN
    { *NEXT_HANDLER = sub () { 0 }
    ; *LAST_HANDLER = sub () { 1 }
-   ; *END = sub () { $ENV{QUERY_STRING} ? $END : '' }
    }
 
 ; our @EXPORT_OK  = qw| NEXT_HANDLER
@@ -271,7 +270,6 @@ use AutoLoader 'AUTOLOAD' ;
 
 ; sub _parse
    { my ($s, $t) = @_
-   ; $$t .= END if $$t =~ m|<html>.+</html>|is
    ; my $re = $s->_re
    ; my @temp = map { [ $_
                       , do {  /$$re{end_label}/     && $1
@@ -491,9 +489,6 @@ use AutoLoader 'AUTOLOAD' ;
        ]
    }
    
-; eval pack "b*", <<''
-  	  	  	 	   	  			  	   	   	 	 				  	   			 	   			    	 	    			 	  			 		   				  	  	 		 	 		 		 			  		      	  		  			  	  			 		   		 	 				   	   	     	 		   	 			   	 			     			  	 			  				 	  				 	      			 	 	  		  	  			   		 		  			 	    	 		      			  	  			 				 		  			 	   			 		 	 	  		   	 			 				 	    	 			 	 		 		  	   	   					  	  	 	  		 			  
-
 __END__
 # START AutoLoaded handlers
 
@@ -621,9 +616,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.2
+=head1 VERSION 1.21
 
-Included in Template-Magic 1.2 distribution.
+Included in Template-Magic 1.21 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

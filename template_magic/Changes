@@ -1,5 +1,8 @@
 Template-Magic Latest Versions Changes
+ 
 
+Verson 1.21
+- Changed Makefile.PL version check
 
 Version 1.2
 - Improved lookups for blessed objects (inheritance)
