@@ -1,5 +1,5 @@
 package Template::Magic::Zone ;
-$VERSION = 1.12 ;
+$VERSION = 1.2 ;
 
 ; use 5.006_001
 ; use strict
@@ -61,20 +61,28 @@ $VERSION = 1.12 ;
      :   $_[0]{__CUSTOM}{$n}
    }
 
-; sub value_process
-   { my ($z) = @_
-   ; defined $z->value || return
-   ; my $ch = $z->tm->{value_handlers} || return
-   ; HANDLER:
-     foreach my $h ( @$ch )
-      { return OK if &$h(@_)
-      }
-   }
-   
 ; sub tm
    { my ($az) = my ($z) = @_ ;
    ; until (defined $$az{tm}){ $az = $az->container }
    ; $$az{tm}
+   }
+
+; sub value_process
+   { my ($z) = @_
+   ; my $tm = $z->tm 
+   ; my $v = $z->value
+   ; if ( defined $v && length $v )
+      { delete $$tm{_NOT_lookup}{'NOT_'.$z->id}
+      }
+     else
+      { $$tm{_NOT_lookup}{'NOT_'.$z->id} = {}
+      ; return unless defined($v)
+      }
+   ; my $ch = $$tm{value_handlers} || return 
+   ; HANDLER:
+     foreach my $h ( @$ch )
+      { return OK if &$h(@_)
+      }
    }
 
 ; sub content_process
@@ -86,7 +94,7 @@ $VERSION = 1.12 ;
          ;    $i++
          )
       { my $item = $z->_t->[$i][1]
-      ; if ( not $item )                    # just text
+      ; if ( not $item )                       # just text
          { $z->text_process( $z->_t->[$i][0] )
          }
         elsif ( ref $item eq 'HASH' )          # normal zone
@@ -95,14 +103,13 @@ $VERSION = 1.12 ;
                                 , container => $z
                                 , _t        => $z->_t
                                 )
-         ; $i = $nz->_e + 1
-                if $nz->_e
+         ; $i = $nz->_e + 1 if $nz->_e
          ; next ZONE if $nz->zone_process
          ; $nz->lookup_process
          ; $nz->value_process
          ; $nz->post_process
          }
-        elsif ( $item->is_main )             # included file
+        elsif ( $item->is_main )               # included file
          { $z->_include($item)
          }
       }
@@ -130,21 +137,21 @@ $VERSION = 1.12 ;
          ;    $az->container
          ;    $az = $az->container
          )
-      { $val = $z->_lookup( $az->value, $id )
-      ; return $val
-               if defined $val
+      { $val = $z->_lookup( $az->value, $id )   
+      ; return $val if defined $val
       }
-   ; foreach my $l ( @{$z->tm->{_temp_lookups}}
-                   , @{$z->tm->{lookups}}
+   ; my $tm = $z->tm
+   ; foreach my $l ( @{$$tm{_temp_lookups}}
+                   , @{$$tm{lookups}}
+                   , $$tm{_NOT_lookup}
                    )
       { next unless $l
       ; $val = $z->_lookup( $l, $id )
-      ; return $val
-               if defined $val
+      ; return $val if defined $val
       }
    ; undef
    }
-
+   
 ; sub _lookup
    { my ($z, $l, $id) = @_
    ; return unless $l
@@ -152,16 +159,18 @@ $VERSION = 1.12 ;
    ; if ( ref $l eq 'HASH' )
       { $$l{$id}
       }
+     elsif ( my $meth = eval { $l->can( $id ) } )
+      { $meth
+      }
      else
-      { local *S = '*'.(ref $l||$l).'::'.$id
-      ; if    (defined ${*S}    ) { ${*S}     }
-        elsif (defined *S{CODE} ) { *S{CODE}  }
-        elsif (defined *S{ARRAY}) { *S{ARRAY} }
-        elsif (defined *S{HASH} ) { *S{HASH}  }
-        else                      { undef     }
+      { local *S = ref $l||$l . "::$id"
+      ; defined ${*S} ?  ${*S} :
+        defined &{*S} ? \&{*S} :
+        defined @{*S} ? \@{*S} :
+        defined %{*S} ? \%{*S} : undef
       }
    }
-
+   
 ; sub content
    { my ($z) = @_
    ; defined $z->_e || return
@@ -188,9 +197,9 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.12
+=head1 VERSION 1.2
 
-Included in Template-Magic 1.12 distribution.
+Included in Template-Magic 1.2 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -455,15 +464,17 @@ This property holds the offset of the template chunk where the content ends. Use
 
 =back
 
-=head1 SUPPORT and FEEDBACK
+=head1 SUPPORT
 
-You can join the CBF mailing list at this url:
+Support for all the modules of the Template Magic System is via the mailing list. The list is used for general support on the use of the Template::Magic, announcements, bug reports, patches, suggestions for improvements or new features. The API to the Magic Template System is stable, but if you use it in a production environment, it's probably a good idea to keep a watch on the list.
 
-    http://lists.sourceforge.net/lists/listinfo/template-magic-users
+You can join the Template Magic System mailing list at this url:
+
+L<http://lists.sourceforge.net/lists/listinfo/template-magic-users>
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis (http://perl.4pro.net)
+© 2004 by Domizio Demichelis (L<http://perl.4pro.net>)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 

@@ -10,11 +10,8 @@
 ; sub new
   { my $c = shift
   ; my $t = 'text before {method}placeholder{/method} text after'
-  ; my $s = bless { tmp => \ $t
-                  }
-                  , $c
-  ; $s->{tm} = new Template::Magic
-                   lookups=> $s
+  ; my $s = bless { tmp => \ $t }, $c
+  ; $$s{tm} = Template::Magic->new( lookups => $s )
   ; $s
   }
 
@@ -27,9 +24,10 @@
    { my $s = shift
    ; uc shift
    }
+   
 ; sub my_output
    { my $s = shift
-   ; $s->{tm}->output($s->{tmp})
+   ; $$s{tm}->output($$s{tmp})
    }
 
 ; package main

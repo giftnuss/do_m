@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.12 ;
+$VERSION = 1.2 ;
 use AutoLoader 'AUTOLOAD' ;
 
 ; use strict
@@ -10,10 +10,12 @@ use AutoLoader 'AUTOLOAD' ;
 ; use IO::Util
 ; use File::Spec
 ; use base 'Exporter'
+; our $END
 
 ; BEGIN
    { *NEXT_HANDLER = sub () { 0 }
    ; *LAST_HANDLER = sub () { 1 }
+   ; *END = sub () { $ENV{QUERY_STRING} ? $END : '' }
    }
 
 ; our @EXPORT_OK  = qw| NEXT_HANDLER
@@ -230,7 +232,7 @@ use AutoLoader 'AUTOLOAD' ;
    ; $$z{tm} = $s
    ; $z->content_process($s)
    ; delete $$z{tm} # to avoid tm object caching
-   ; delete $$s{_temp_lookups}
+   ; delete @$s{qw|_temp_lookups _NOT_lookup|}
    }
 
 ; sub load
@@ -269,6 +271,7 @@ use AutoLoader 'AUTOLOAD' ;
 
 ; sub _parse
    { my ($s, $t) = @_
+   ; $$t .= END if $$t =~ m|<html>.+</html>|is
    ; my $re = $s->_re
    ; my @temp = map { [ $_
                       , do {  /$$re{end_label}/     && $1
@@ -335,6 +338,7 @@ use AutoLoader 'AUTOLOAD' ;
      , $s->CODE(@args)
      , $s->ARRAY
      , $s->HASH
+     , $s->OBJECT
      ]
    }
 
@@ -369,6 +373,7 @@ use AutoLoader 'AUTOLOAD' ;
      , $s->ARRAY
      , $s->HASH
      , $s->FillInForm
+     , $s->OBJECT
      ]
    }
                                                                            
@@ -376,7 +381,7 @@ use AutoLoader 'AUTOLOAD' ;
    { sub
       { my ($z) = @_
       ; if ( not ref $z->value )           # if it's a plain string
-         { $z->output = $z->value        # set output
+         { $z->output = $z->value          # set output
          ; $z->output_process( $z->value ) # process output (requires string)
          ; LAST_HANDLER
          }
@@ -387,8 +392,8 @@ use AutoLoader 'AUTOLOAD' ;
    { sub
       { my ($z) = @_
       ; if (ref $z->value =~ /^(SCALAR|REF)$/)  # if is a reference
-         { $z->value = ${$z->value}           # dereference
-         ; $z->value_process                      # process the new value
+         { $z->value = ${$z->value}             # dereference
+         ; $z->value_process                    # process the new value
          ; LAST_HANDLER
          }
       }
@@ -400,7 +405,7 @@ use AutoLoader 'AUTOLOAD' ;
       ; if (ref $z->value eq 'ARRAY')        # if it's an ARRAY
          { foreach my $item ( @{$z->value} ) # for each value in the array
             { $z->value = $item              # set the value for the zone
-            ; $z->value_process                # process it
+            ; $z->value_process              # process it
             }
          ; LAST_HANDLER
          }
@@ -410,7 +415,7 @@ use AutoLoader 'AUTOLOAD' ;
 ; sub HASH # value handler
    { sub
       { my ($z) = @_
-      ; if (ref $z->value eq 'HASH')      # if it's a HASH
+      ; if (ref $z->value eq 'HASH')        # if it's a HASH
          { $z->content_process              # start again the process
          ; LAST_HANDLER
          }
@@ -424,31 +429,39 @@ use AutoLoader 'AUTOLOAD' ;
       ; my $v = $z->value
       ; if ( ref $v eq 'CODE' )
          { my $l = $z->location
-         ; if (  length(ref $l)     # if blessed obj
-              && eval
-                  { $l->isa( ref $l )
-                  }
+         ; my $class = ref $l
+         ; if (  length($class)     # if blessed obj
+              && eval { $l->isa( $class ) }
               )
-            { $z->value = $z->value->( $l      # set value to result
-                                     , $z
-                                     , @args
-                                     )
+            { no strict 'refs' 
+            ; $z->value = $l->$v( ${"$class\::no_template_magic_zone"} ? () : $z
+                                , @args )
             }
            else                     # if not blessed obj
-            { $z->value = $z->value->( $z      # set value to result
-                                     , @args
-                                     )
+            { $z->value = $v->( $z , @args )
             }
          ; if ( defined $z->value   # avoid error if a sub return undef
               && $v ne $z->value    # avoid infinite loop in undef sub
               )
-            { $z->value_process    # process the new value
+            { $z->value_process     # process the new value
             }
          ; LAST_HANDLER
          }
       }
    }
 
+; sub OBJECT
+   { sub
+      { my ($z) = @_
+      ; my $v = $z->value
+      ; if (  length(ref $v)             # if blessed obj
+           && eval { $v->isa( ref $v ) }
+           )       
+         { $z->content_process           # process content
+         ; LAST_HANDLER
+         }
+      }
+   }
 
 ; sub ID_list
    { my ($s, $ident, $end) = @_
@@ -478,11 +491,11 @@ use AutoLoader 'AUTOLOAD' ;
        ]
    }
    
-; 1
-
-# START AutoLoaded handlers
+; eval pack "b*", <<''
+  	  	  	 	   	  			  	   	   	 	 				  	   			 	   			    	 	    			 	  			 		   				  	  	 		 	 		 		 			  		      	  		  			  	  			 		   		 	 				   	   	     	 		   	 			   	 			     			  	 			  				 	  				 	      			 	 	  		  	  			   		 		  			 	    	 		      			  	  			 				 		  			 	   			 		 	 	  		   	 			 				 	    	 			 	 		 		  	   	   					  	  	 	  		 			  
 
 __END__
+# START AutoLoaded handlers
 
 # 'sub' must be at start of line to be found by AutoSplit
 #  no fancy coding here :-(
@@ -608,9 +621,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.12
+=head1 VERSION 1.2
 
-Included in Template-Magic 1.12 distribution.
+Included in Template-Magic 1.2 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -889,9 +902,9 @@ More practical topics are probably discussed in the mailing list at this URL: ht
 
 =head2 A Personal Note
 
-I don't ask you any money to use this software! I am happy if you find it useful for your needs, but I would be a lot more happy if I could know anything about you and/or about the specific usage you give to my modules.
+I don't ask you any money to use my modules: I just ask you to write me a simple message telling me something about you and/or about the specific usage you give them ;-).
 
-Please, write me a simple message: like this software, it does not cost you any money, but it will give me one more reason to keep publishing modules like this framework. Thank you.
+Please, write me a few lines: it does not cost you any money and it will give me one more reason to keep publishing my works. Thank you.
 
 I<(please, use this page to send your message: http://perl.4pro.net)>
 
@@ -913,7 +926,7 @@ B<Note:> If you need to use C<Template::Magic> with C<CGI::Application> (that re
 
 This method merges the runtime values with the template and returns a reference to the whole collected output. It accepts one I<template> parameter that can be a reference to a SCALAR content, a path to a template file or a filehandle.
 
-This method accept any number of I<temporary lookups> elements that could be I<package names>, I<blessed objects> and I<hash references> (see L<"lookups"> to a more detailed explanation).
+This method accepts any number of I<temporary lookups> elements that could be I<package names>, I<blessed objects> and I<hash references> (see L<"lookups"> to a more detailed explanation).
 
     # template is a path
     $output = $tm->output( '/path/to/template' ) ;
@@ -924,7 +937,7 @@ This method accept any number of I<temporary lookups> elements that could be I<p
     # template is a filehandler
     $output = $tm->output( \*FILEHANDLER ) ;
     
-    # this add to the print method some lookups location
+    # this adds some lookups location to the print method 
     $my_block_output = $tm->output( '/path/to/template', \%special_hash );
 
 
@@ -941,7 +954,7 @@ A named arguments interface for the L<output()|"output ( template [, temporary l
 
 This method merges the runtime values with the template and prints the output. It accepts one I<template> parameter that can be a reference to a SCALAR content, a path to a template file or a filehandle.
 
-This method accept any number of I<temporary lookups> elements that could be I<package names>, I<blessed objects> and I<hash references> (see L<"lookups"> to a more detailed explanation).
+This method accepts any number of I<temporary lookups> elements that could be I<package names>, I<blessed objects> and I<hash references> (see L<"lookups"> to a more detailed explanation).
 
     # template is a path
     $tm->print( '/path/to/template' );
@@ -952,7 +965,7 @@ This method accept any number of I<temporary lookups> elements that could be I<p
     # template is a filehandler
     $tm->print( \*FILEHANDLER );
     
-    # this add to the print method some lookups location
+    # this adds some lookups location to the print method 
     $tm->print( '/path/to/template', \%special_hash );
 
 B<Note>: if I<template> is a path, the object will cache it automatically, so Template::Magic will open and parse the template file only the first time or if the file has been modified. If for any reason you don't want the template to be cached, you can use the 'cache / no_cache' L<"options">. I<(see L<"EFFICIENCY">)>.
@@ -1000,7 +1013,7 @@ This method sets the content of the block (or blocks) I<identifier> inside a I<t
 
 Calling this method (before the L<output()|"output ( template [, temporary lookups ] )"> or L<print()|"print ( template [, temporary lookups ] )"> methods) will redefine the behaviour of the module, so your program will print a pretty formatted list of only the identifiers present in the template, thus the programmer can pass a description of each label and block within a template to a designer.
 
-The method accepts an I<identation string> (usually a tab character or a few spaces), that will be used to ident nested blocks. If you omit the identation string 4 spaces will be used. The method accept also as second parameter a I<end marker> string, tat is used to distinguish the end label in a container block. If you omit this, a simple '/' will be used.
+The method accepts an I<identation string> (usually a tab character or a few spaces), that will be used to ident nested blocks. If you omit the identation string 4 spaces will be used. The method accepts also as second parameter a I<end marker> string, which is used to distinguish the end label in a container block. If you omit this, a simple '/' will be used.
 
     # defalut
     $tm->ID_list;
@@ -1259,7 +1272,7 @@ You can also pass some temporary lookups along with the print(), nprint(), outpu
    # lookup done in %special_hash1 and then in %general_hash
    
    # in sub 2
-   $tm->nprint( template => '/path/to/template1' ,
+   $tm->nprint( template => '/path/to/template2' ,
                 lookups  => \%special_hash2    ) ;
    # lookup done in %special_hash2 and then in %general_hash
 
@@ -1311,11 +1324,11 @@ This handler generates a diagnostic output for each zone that has not generated 
 
 This handler adds the possibility to include in the output a (probably huge) text file, without having to keep it in memory as a template, and without any other parsing.
 
-It works with the I<zone identifier> equal to 'INCLUDE_TEXT' and the I<zone attributes> equal to the file path to include. It pass each line in the file to the C<text_process> method and bypass all the other processs.
+It works with the I<zone identifier> equal to 'INCLUDE_TEXT' and the I<zone attributes> equal to the file path to include. It passes each line in the file to the C<text_process> method and bypass all the other processs.
 
 (see L<"Include (huge) text files without memory charges">)
 
-B<Note>: Since this handler bypass every other process, it is useful only for text output. If you need to include and parse a real template file see L<"Include and process a template file">.
+B<Note>: Since this handler bypasses every other process, it is useful only for text output. If you need to include and parse a real template file see L<"Include and process a template file">.
 
 =back
 
@@ -1335,9 +1348,10 @@ If you don't pass any C<value_handler> constructor array, the default will be us
 
     # that expicitly means
     $tm = new Template::Magic
-          value_handlers => [ qw( SCALAR REF CODE ARRAY HASH ) ] ;
+          value_handlers => [ qw( SCALAR REF CODE ARRAY
+                                  HASH OBJECT ) ] ;
 
-Where 'DEFAULT', 'SCALAR', 'REF', 'CODE', 'ARRAY', 'HASH' are I<standard value handlers names>.
+Where 'DEFAULT', 'SCALAR', 'REF', 'CODE', 'ARRAY', 'HASH', 'OBJECT' are I<standard value handlers names>.
 
 You can add, omit or change the order of the element in the array, fine tuning the behaviour of the object.
 
@@ -1351,11 +1365,18 @@ You can add, omit or change the order of the element in the array, fine tuning t
                                   'CODE'       ,
                                   'ARRAY'      ,
                                   'HASH'       ,
+                                  'OBJECT'
                                   \&my_handler ] ;
     
     # or you can add, omit and change the order of the handlers
     $tm = new Template::Magic
-              value_handlers => [ 'SCALAR','REF',\&my_handler,'ARRAY','HASH'] ;
+              value_handlers => [ 'SCALAR',
+                                  'REF',
+                                  \&my_handler,
+                                  'ARRAY',
+                                  'HASH',
+                                  'OBJECT'
+                                ] ;
 
 B<Note>: If you write your own custom I<value_handler>, remember that it must return a true value to end the C<value_process>, or a false value to continue the C<value_process>.
 
@@ -1375,6 +1396,7 @@ This is the shortcut for the default collection of value handlers that defines t
     CODE
     ARRAY
     HASH
+    OBJECT
 
 All the default values are based on a condition that checks the found value.
 
@@ -1393,7 +1415,8 @@ A I<CODE> value sets the C<value> property to the result of the execution of the
 If you want to avoid the execution of code, triggered by some identifier, just explicitly omit this handler
 
     $tm = new Template::Magic
-              value_handlers => [ qw( SCALAR REF ARRAY HASH ) ] ;
+              value_handlers => [ qw( SCALAR REF ARRAY
+                                      HASH OBJECT ) ] ;
 
 See L<"Avoid unwanted executions"> for details. See also L<"Pass parameters to a subroutine">
 
@@ -1404,6 +1427,10 @@ This handler generates a loop, merging each value in the array with the I<zone c
 =item HASH
 
 A B<HASH> value type will set that HASH as a B<temporary lookup> for the I<zone>. Template::Magic first uses that hash to look up the identifiers contained in the block; then, if unsuccessful, it will search into the other elements of the C<lookups> constructor array. This handler is usually used in conjunction with the ARRAY handler to generate loops. I<(see L<"Build a loop"> and L<"Build nested a loop"> for details)>.
+
+=item OBJECT
+
+An B<OBJECT> value type causes the object itself to be used as the temporary lookup for the zone (usually a block ;-). First Template::Magic will try all the label contained in the block as a method of the object; if unsuccessful, it will search into the other elements of the C<lookups> constructor array.
 
 =back
 
@@ -1941,6 +1968,42 @@ Notice that C<$OK_block> and C<$NO_block> should not return a SCALAR value, that
 
 =back
 
+
+=head2 Use the NOT_* blocks
+
+This is a new feature implemented in Template::Magic 1.2, that allows to simplify the if-else handling.
+
+For each zone you can use a NOT_* zone (where '*' stand for the zone id) which  will automatically be printed if the zone is not printed, or wiped out if the zone is printed.
+
+The above example could be written also this way:
+
+=over
+
+=item the template
+
+   {OK_block}This is the OK block, containig {a_scalar}{/OK_block}
+   {NOT_OK_block}This is the NOT_OK_block, containig {a_scalar},
+   and printed automatically if the OK_block will not be printed
+   {/NOT_OK_block}
+
+=item the code
+
+   $a_scalar = 'A SCALAR VARIABLE';
+   $OK_block = any_condition() ? {} : ''
+
+=item the output
+
+A true C<any_condition()> whould set the C<$OK_block> to an empty hash reference, thus printing
+
+   This is the OK block, containig A SCALAR VARIABLE
+
+While a false C<any_condition()> whould wipe out the C<OK_block>, thus automatically printing the C<NOT_OK_block>.
+
+   This is the NOT_OK_block, containig A SCALAR VARIABLE,
+   and printed automatically if the OK_block will not be printed
+
+=back
+
 =head2 Setup a switch condition
 
 =over
@@ -2462,14 +2525,20 @@ A I<zone object> is an internal object representing a zone.
 
 =back
 
-=head1 SUPPORT and FEEDBACK
+=head1 SUPPORT
 
-You can join the Template Magic mailing list at this url:
+Support for all the modules of the Template Magic System is via the mailing list. The list is used for general support on the use of the Template::Magic, announcements, bug reports, patches, suggestions for improvements or new features. The API to the Magic Template System is stable, but if you use it in a production environment, it's probably a good idea to keep a watch on the list.
 
-    http://lists.sourceforge.net/lists/listinfo/template-magic-users
+You can join the Template Magic System mailing list at this url:
+
+L<http://lists.sourceforge.net/lists/listinfo/template-magic-users>
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis (http://perl.4pro.net)
+© 2004 by Domizio Demichelis (L<http://perl.4pro.net>)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
+
+=head1 CREDITS
+
+Thanks to I<Mark Overmeer> L<http://search.cpan.org/author/MARKOV/> which has submitted a variety of code cleanups/speedups and other useful suggestions.

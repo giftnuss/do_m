@@ -1,5 +1,5 @@
 package Template::Magic::HTML ;
-$VERSION = 1.12 ;
+$VERSION = 1.2 ;
 
 ; use 5.006_001
 ; use strict
@@ -21,9 +21,9 @@ __END__
 
 Template::Magic::HTML - HTML handlers for Template::Magic used in a HTML environment
 
-=head1 VERSION 1.12
+=head1 VERSION 1.2
 
-Included in Template-Magic 1.12 distribution.
+Included in Template-Magic 1.2 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -251,15 +251,17 @@ Note: if your template don't need this specific handler you can avoid its loadin
 
 =back
 
-=head1 SUPPORT and FEEDBACK
+=head1 SUPPORT
 
-You can join the CBF mailing list at this url:
+Support for all the modules of the Template Magic System is via the mailing list. The list is used for general support on the use of the Template::Magic, announcements, bug reports, patches, suggestions for improvements or new features. The API to the Magic Template System is stable, but if you use it in a production environment, it's probably a good idea to keep a watch on the list.
 
-    http://lists.sourceforge.net/lists/listinfo/template-magic-users
+You can join the Template Magic System mailing list at this url:
+
+L<http://lists.sourceforge.net/lists/listinfo/template-magic-users>
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis (http://perl.4pro.net)
+© 2004 by Domizio Demichelis (L<http://perl.4pro.net>)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 

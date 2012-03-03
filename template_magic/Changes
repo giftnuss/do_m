@@ -1,6 +1,16 @@
 Template-Magic Latest Versions Changes
 
 
+Version 1.2
+- Improved lookups for blessed objects (inheritance)
+- Added OBJECT handler and related documentation
+- Added $no_template_magic_zone class flag check to avoid passing the zone
+  object to object methods
+- Added the NOT_* automatic block handling and related documentation
+  in the "HOW TO..." section
+- Restored the CREDITS section in the POD (deleted by a wrong cut and paste)
+- Some POD adjustments
+                             
 Version 1.12
 - Added explicit 'Temporary Lookups' POD section
 - Changed the prerequisite IO::Util to version 1.21
