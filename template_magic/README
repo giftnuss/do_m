@@ -28,7 +28,7 @@ Installation
 0.  Prerequisites:
 - Perl version >= 5.6.1
 - OOTools      >= 1.62
-- IO::Util     >= 1.2
+- IO::Util     >= 1.21
 - File::Spec   >= 0
 
 
@@ -50,4 +50,4 @@ Installation
 
 --
 Domizio Demichelis - perl.4pro.net
-2004-03-27
+2004-03-31

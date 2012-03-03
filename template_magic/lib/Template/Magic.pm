@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.11 ;
+$VERSION = 1.12 ;
 use AutoLoader 'AUTOLOAD' ;
 
 ; use strict
@@ -589,11 +589,11 @@ sub FillInForm # value handler
          ; if (  ref $z->value
               && defined UNIVERSAL::can( $z->value , 'param' )
               )
-            { $z->value
+            { my $cont = IO::Util::capture { $z->content_process }
+            ; $z->value
               = eval { local $SIG{__DIE__}
-                     ; my $cont = $z->content
                      ; HTML::FillInForm->new
-                                       ->fill( scalarref => \$cont
+                                       ->fill( scalarref => $cont
                                              , fobject   => $z->value
                                              )
                      }
@@ -608,9 +608,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.11
+=head1 VERSION 1.12
 
-Included in Template-Magic 1.11 distribution.
+Included in Template-Magic 1.12 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -1244,7 +1244,11 @@ If you use Template::Magic inside another module, you can pass the blessed objec
 
 so that if some I<zone identifier> will trigger 'I<method_triggered_by_lookup>', it will receive the blessed object as the first parameter and it will work as expected.
 
-You can also pass some temporary lookups along with the print(), nprint(), output(), noutput() methods. This capability is useful if you want to have some sort of lookup inheritance as this:
+I<(see also L<Template::Magic::Zone/"lookup_process()">)>.
+
+=head4 Temporary Lookups
+
+You can also pass some temporary lookups along with the print(), nprint(), output(), noutput() methods (i.e. lookups that will be used only for one template processing). This capability is useful when you want to use the same object but you don't want to use the same lookups e.g. to have some sort of lookup inheritance as this:
 
    $tm = new Template::Magic
              lookups => \%general_hash ;
@@ -1258,8 +1262,6 @@ You can also pass some temporary lookups along with the print(), nprint(), outpu
    $tm->nprint( template => '/path/to/template1' ,
                 lookups  => \%special_hash2    ) ;
    # lookup done in %special_hash2 and then in %general_hash
-
-I<(see also L<Template::Magic::Zone/"lookup_process()">)>.
 
 =head3 zone_handlers
 

@@ -1,6 +1,12 @@
 Template-Magic Latest Versions Changes
 
 
+Version 1.12
+- Added explicit 'Temporary Lookups' POD section
+- Changed the prerequisite IO::Util to version 1.21
+- Fixed FillInForm value handler (now the labels inside the form block
+  work as expected)
+
 Version 1.11
 - Changed the prerequisite IO::Util to version 1.2
 - Internal changes to extend the use of IO::Util
