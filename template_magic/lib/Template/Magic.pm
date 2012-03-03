@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.22 ;
+$VERSION = 1.23 ;
 use AutoLoader 'AUTOLOAD' ;
 
 # This file uses the "Perlish" coding style
@@ -299,7 +299,7 @@ use AutoLoader 'AUTOLOAD' ;
               )
             )
          { my $the_start = $temp[$ii][1]
-         ; next unless ref $the_start             # next if not start
+         ; next unless ref($the_start) eq 'HASH'  # next if not start
          ; next unless $$the_start{id} eq $id     # next if not THE start
          ; $$the_start{_s} = $ii + 1
          ; $$the_start{_e} = $ii + $l
@@ -392,7 +392,7 @@ use AutoLoader 'AUTOLOAD' ;
 ; sub REF # value handler
    { sub
       { my ($z) = @_
-      ; if (ref $z->value =~ /^(SCALAR|REF)$/)  # if is a reference
+      ; if (ref($z->value) =~ /^(SCALAR|REF)$/)  # if is a reference
          { $z->value = ${$z->value}             # dereference
          ; $z->value_process                    # process the new value
          ; LAST_HANDLER
@@ -619,9 +619,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.22
+=head1 VERSION 1.23
 
-Included in Template-Magic 1.22 distribution.
+Included in Template-Magic 1.23 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

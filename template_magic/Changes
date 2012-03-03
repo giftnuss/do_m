@@ -1,6 +1,10 @@
 Template-Magic Latest Versions Changes
 
 
+Version 1.23
+- Fixed a REF handler bug
+- Fixed a INCLUDE_TEMPLATE warning bug
+
 Version 1.22
 - Minor POD changes
 

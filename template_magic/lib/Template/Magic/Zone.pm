@@ -1,5 +1,5 @@
 package Template::Magic::Zone ;
-$VERSION = 1.22 ;
+$VERSION = 1.23 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -166,11 +166,12 @@ $VERSION = 1.22 ;
       { $meth
       }
      else
-      { local *S = ref $l||$l . "::$id"
-      ; defined ${*S} ?  ${*S} :
-        defined &{*S} ? \&{*S} :
-        defined @{*S} ? \@{*S} :
-        defined %{*S} ? \%{*S} : undef
+      { no strict
+      ; local *S = ref $l||$l . "::$id"
+      ; defined $S ?  $S :
+        defined &S ? \&S :
+        defined @S ? \@S :
+        defined %S ? \%S : undef
       }
    }
    
@@ -200,9 +201,9 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.22
+=head1 VERSION 1.23
 
-Included in Template-Magic 1.22 distribution.
+Included in Template-Magic 1.23 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -480,4 +481,3 @@ L<http://lists.sourceforge.net/lists/listinfo/template-magic-users>
 © 2004 by Domizio Demichelis (L<http://perl.4pro.net>)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
-
