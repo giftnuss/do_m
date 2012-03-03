@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.31 ;
+$VERSION = 1.32 ;
 use AutoLoader 'AUTOLOAD' ;
 
 # This file uses the "Perlish" coding style
@@ -156,26 +156,26 @@ use AutoLoader 'AUTOLOAD' ;
    { my ($s, $t) = @_
    ; my $find = sub{(grep -s, @_)[0]}
    ; File::Spec->file_name_is_absolute($t)
-   ? $find->($t)
-   : (  $ENV{TEMPLATE_MAGIC_ROOT}
-     && $find->( File::Spec->catfile( $ENV{TEMPLATE_MAGIC_ROOT}
-                                    , $t
-                                    )
-               )
-     || $find->( map File::Spec->catfile( $_
-                                        , $t
-                                        )
-               , @{$$s{paths}}
-               )
-     || $ENV{TEMPLATE_MAGIC_ROOT}
-     && $find->( map File::Spec->catfile( $ENV{TEMPLATE_MAGIC_ROOT}
-                                        , $_
-                                        , $t
-                                        )
-               , @{$$s{paths}}
-               )
-     || $find->($t)
-     )
+     ? $find->($t)
+     : (  $ENV{TEMPLATE_MAGIC_ROOT}
+       && $find->( File::Spec->catfile( $ENV{TEMPLATE_MAGIC_ROOT}
+                                      , $t
+                                      )
+                 )
+       || $find->( map File::Spec->catfile( $_
+                                          , $t
+                                          )
+                 , @{$$s{paths}}
+                 )
+       || $ENV{TEMPLATE_MAGIC_ROOT}
+       && $find->( map File::Spec->catfile( $ENV{TEMPLATE_MAGIC_ROOT}
+                                          , $_
+                                          , $t
+                                          )
+                 , @{$$s{paths}}
+                 )
+       || $find->($t)
+       )
    }
       
 ; sub output
@@ -302,8 +302,8 @@ use AutoLoader 'AUTOLOAD' ;
                                )
    }
    
-   
-############################## STANDARD HANDLERS ##############################
+
+############################# STANDARD HANDLERS #############################
 
 # override these DEFAULT subs in subclasses to change defaults
 
@@ -390,13 +390,23 @@ use AutoLoader 'AUTOLOAD' ;
          }
       }
    }
-
+  
 ; sub ARRAY # value handler
    { sub
       { my ($z) = @_
       ; if (ref $z->value eq 'ARRAY')        # if it's an ARRAY
-         { foreach my $item ( @{$z->value} ) # for each value in the array
-            { $z->value = $item              # set the value for the zone
+         { my ($i, $attr, $val_key, $ix_key, $named) = 0
+         ; if ( $attr = $z->attributes )
+            { $attr =~ s/^\s*(OF\s)*\s*//i
+            ; ($val_key, $ix_key, $i) = split /\s+/, $attr
+            ; $named = 1
+            }
+         ; foreach my $item ( @{$z->value} ) # for each value in the array
+            { $z->value = $named             # set the value for the zone
+                          ? { $val_key => $item
+                            , $ix_key ? ($ix_key => $i ++) : ()
+                            }
+                          : $item
             ; $z->value_process              # process it
             }
          ; LAST_HANDLER
@@ -413,7 +423,7 @@ use AutoLoader 'AUTOLOAD' ;
          }
       }
    }
-
+   
 ; sub CODE # value handler
    { my ( undef, @args ) = @_
    ; sub
@@ -618,9 +628,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.31
+=head1 VERSION 1.32
 
-Included in Template-Magic 1.31 distribution.
+Included in Template-Magic 1.32 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -771,6 +781,8 @@ The template file F<'my_template_file'>... I<(this example uses plain text for c
 
 ... some variables and subroutines already defined somewhere in your code...
 
+B<Note>: This example uses globals just for simplicity. Please notice that Template::Magic can be used to write sloppy code or very strict code, exactly as perl itself can. Magic lookups is a very handly feature for simple scripts, while it is not recommended for complex script where you should explicitly limit the lookups to some specific package or hash (see L<"lookups">).
+
     $a_scalar           = 'THIS IS A SCALAR VALUE';
     $a_ref_to_scalar    = \$a_scalar;
     @an_array_of_hashes = ( { ID => 1, guy => 'JOHN SMITH',  job => 'PROGRAMMER' },
@@ -894,7 +906,7 @@ A simple and useful navigation system between my modules is available at this UR
 
 =item *
 
-More practical topics are probably discussed in the mailing list at this URL: http://lists.sourceforge.net/lists/listinfo/template-magic-users
+More practical topics are discussed in the mailing list at this URL: http://lists.sourceforge.net/lists/listinfo/template-magic-users
 
 =back
 
@@ -1410,7 +1422,7 @@ See L<"Avoid unwanted executions"> for details. See also L<"Pass parameters to a
 
 =item ARRAY
 
-This handler generates a loop, merging each value in the array with the I<zone content> and replacing the I<zone> with the sequence of the outputs. I<(see L<"Build a loop"> and L<"Build nested a loop"> for details)>.
+This handler generates a loop, merging each value in the array with the I<zone content> and replacing the I<zone> with the sequence of the outputs. I<(see L<"Build a loop">, L<"Build nested a loop"> and L<"Build a simple loop">, for details)>.
 
 =item HASH
 
@@ -1891,6 +1903,68 @@ Notice that the value of the keys I<'details'> are a reference to an array of ha
 
 =back
 
+=head2 Build a simple loop
+
+This is a new feature implemented in Template::Magic 1.32, that allows the direct handling of array items in loops (i.e. you can use an array of strings instead of an array of hashes containing a named string).
+
+When the loop contains just a label, you can also directly use the items of any array, eventually using also the relative index number:
+
+=over
+
+=item the code
+
+You should have some array defined somewhere:
+
+    $my_loop = [ qw( ball cube cone ) ] ;
+
+=item the template
+
+A loop is represented by a block, usually containing labels. This loop defines as 'product' the label representing each array item, the progressive count as 'line_number' and the starting count at 1:
+
+    A loop:
+    {my_loop OF product line_number 1}-------------------
+    {line_number} - Product: {product}
+    {/my_loop}-------------------
+
+=item the output
+
+    A loop:
+    -------------------
+    1 - Product: ball
+    -------------------
+    2 - Product: cube
+    -------------------
+    3 - Product: cone
+    -------------------
+
+=back
+
+B<Note>: any loop that directly uses the values of any array, can be written as:
+
+=over
+
+=item {my_array}
+
+this is used only when the array items are reference to hashes (see L<"Build a loop"> or L<"Build a nested loop">)
+
+=item {my_array OF anything index 1}
+
+this defines as 'anything' the label representing each array item, the progressive count as 'index' and the starting count will start at 1
+
+=item {my_array OF anything index}
+
+if you omit the starting count value, it will start at 0
+
+=item {my_array OF anything}
+
+if you don't use any progressive count inside the block you may omit it
+
+=item {my_array anything}
+
+you can also omit the 'OF' (case insensitive) keyword in all the above cases
+
+=back
+
 =head2 Process (huge) loops iteration by iteration
 
 Usually a loop is built just by an array of hashes value (see L<"Build a loop">). this means that you have to fill an array with all the hashes BEFORE the process starts. In normal situations (i.e. the array contains just a few hashes) this is not a problem, but if the array is supposed to contain a lot of hashes, it could be more efficient by creating each hash just DURING the process and not BEFORE it (i.e. without storing it in any array).
@@ -1959,7 +2033,7 @@ Notice that C<$OK_block> and C<$NO_block> should not return a SCALAR value, that
 
 =head2 Use the NOT_* blocks
 
-This is a new feature implemented in Template::Magic 1.2, that allows to simplify the if-else handling for any zone.
+This is a new feature implemented in Template::Magic 1.2, that allows to simplify the if-else handling for any zone. It is intended to be used only in such case (if-else), and in such order (first the * block and next the NOT_* block); for any other use, please refer to L<"Setup an if-else condition">.
 
 For any zone you can use a NOT_* zone (where '*' stands for the zone id) which  will automatically be printed if the zone is not printed, or wiped out if the zone is printed.
 

@@ -4,15 +4,12 @@
 ; use 5.006_001
 ; use ExtUtils::MakeMaker
 
-; my $dist = 'Template::Magic'
-; my $vers = '1.31'
-
 ; WriteMakefile
-   ( NAME           => $dist
-   , VERSION        => $vers
+   ( NAME           => 'Template::Magic'
+   , VERSION_FROM   => 'lib/Template/Magic.pm'
    , ( $] ge '5.005' )
      ? ( AUTHOR     => 'Domizio Demichelis - perl.4pro.net'
-       , ABSTRACT   => 'Magic merger of runtime values with templates'
+       , ABSTRACT_FROM   => 'lib/Template/Magic.pm'
        )
      : ()
    , PREREQ_PM      => { 'Class::constr'  => '1.52'
