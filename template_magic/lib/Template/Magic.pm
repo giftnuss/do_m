@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.36 ;
+$VERSION = 1.37 ;
 use 5.006_001 ;
 use strict ;
 use AutoLoader 'AUTOLOAD' ;
@@ -13,17 +13,10 @@ use AutoLoader 'AUTOLOAD' ;
 ; use IO::Util
 ; use Class::Util
 ; use File::Spec
-; use base 'Exporter'
-; our $END
 
-; BEGIN
-   { *NEXT_HANDLER = sub () { 0 }
-   ; *LAST_HANDLER = sub () { 1 }
-   }
+; sub NEXT_HANDLER () { 0 }
+; sub LAST_HANDLER () { 1 }
 
-; our @EXPORT_OK  = qw| NEXT_HANDLER
-                        LAST_HANDLER
-                      |
 ; our @autoloaded = qw| _EVAL_
                         _EVAL_ATTRIBUTES_
                         TRACE_DELETIONS
@@ -40,18 +33,23 @@ use AutoLoader 'AUTOLOAD' ;
    ; if (  $pragma
         && $pragma eq '-compile'
         )
-      { no strict 'refs'
-      ; @subs = @autoloaded unless @subs
+      { @subs = @autoloaded unless @subs
       ; my %auto
       ; @auto{@autoloaded} = ()
       ; foreach my $sub ( @subs )
-         { exists $auto{$sub}
-                  or croak qq("$sub" is not an autoloaded handler)
+         { no strict 'refs'
+         ; exists $auto{$sub}
+           or croak '"$sub" is not an autoloaded handler, died'
          ; &$sub()  # no argument for sure
          }
       }
      else
-      { $pkg->export_to_level(1, @_)
+      { require Exporter
+      ; our @ISA = 'Exporter'
+      ; our @EXPORT_OK  = qw| NEXT_HANDLER
+                              LAST_HANDLER
+                            |
+      ; $pkg->export_to_level(1, @_)
       }
    }
 
@@ -371,7 +369,7 @@ use AutoLoader 'AUTOLOAD' ;
       { my ($z) = @_
       ; my $v = $z->value
       ; if ( not ref $v )           # if it's a plain string
-         { $z->output = $v          # set output
+         { $z->output($v)          # set output
          ; $z->output_process( $v ) # process output (requires string)
          ; LAST_HANDLER
          }
@@ -383,7 +381,7 @@ use AutoLoader 'AUTOLOAD' ;
       { my ($z) = @_
       ; my $v = $z->value
       ; if (ref($v) =~ /^(SCALAR|REF)$/)  # if it's a reference
-         { $z->value = $$v                # dereference
+         { $z->value($$v)                # dereference
          ; $z->value_process              # process the new value
          ; LAST_HANDLER
          }
@@ -401,11 +399,12 @@ use AutoLoader 'AUTOLOAD' ;
             ; $named = 1
             }
          ; foreach my $item ( @{$z->value} ) # for each value in the array
-            { $z->value = $named             # set the value for the zone
+            { $z->value( $named             # set the value for the zone
                           ? { $val_key => $item
                             , $ix_key ? ($ix_key => $i ++) : ()
                             }
                           : $item
+                       )
             ; $z->value_process              # process it
             }
          ; LAST_HANDLER
@@ -440,7 +439,7 @@ use AutoLoader 'AUTOLOAD' ;
                          }
                     : $v->( $z , @args )
          ; if ( $v ne ($nv||'') ) # avoid infinite loop
-            { $z->value = $nv
+            { $z->value($nv)
             ; $z->value_process
             }
          ; LAST_HANDLER
@@ -472,8 +471,9 @@ use AutoLoader 'AUTOLOAD' ;
                               . ":\n"
                               )
           ; $z->content_process
+          ; my $cont = $z->content
           ; if (  $z->_e                               # if it is a block
-               && $z->content =~ /$$re{label}/         # and contains labels
+               && $cont =~ /$$re{label}/         # and contains labels
                )
              { $z->output_process( $ident x $z->level   # print the end
                                  . $end
@@ -496,7 +496,7 @@ sub _EVAL_ # zone handler
    { sub
       { my ($z) = @_;
       ; if ( $z->id eq '_EVAL_' )
-         { $z->value = eval $z->content
+         { $z->value( eval $z->content )
          }
       ; NEXT_HANDLER
       # lookup is skipped by the defined $z->value
@@ -508,7 +508,7 @@ sub _EVAL_ATTRIBUTES_ # zone handler
    { sub
       { my ($z) = @_
       ; if ( $z->attributes )
-         { $z->param = eval $z->attributes
+         { $z->param( eval $z->attributes )
          }
       ; NEXT_HANDLER
       # $z->attributes should be a ref to a structure
@@ -566,14 +566,14 @@ sub TableTiler # value handler
               && HTML::TableTiler::is_matrix($v)   # if matrix
               )
             { $z->value
-              = eval { local $SIG{__DIE__}
-                     ; my $cont = $z->content
-                     ; HTML::TableTiler::tile_table( $v
-                                                   , $cont && \$cont
-                                                   , $z->attributes
-                                                   , 1
-                                                   )
-                     }
+              ( do { my $cont = $z->content
+                   ; HTML::TableTiler::tile_table( $v
+                                                 , $cont && \$cont
+                                                 , $z->attributes
+                                                 , 1
+                                                 )
+                   }
+              )
             ; $z->value_process
             ; LAST_HANDLER
             }
@@ -603,14 +603,13 @@ sub FillInForm # value handler
             ; my @if = map /(?:'|")(.+)(?:'|")/  #'
                      , split /\s*,\s*/
                      , $list||''
-            ; $z->value
-              = eval { local $SIG{__DIE__}
-                     ; HTML::FillInForm->new
-                                       ->fill( scalarref     => $cont
-                                             , fobject       => $v
-                                             , ignore_fields => \@if
-                                             )
-                     }
+            ; $z->value( HTML::FillInForm
+                         ->new
+                         ->fill( scalarref     => $cont
+                               , fobject       => $v
+                               , ignore_fields => \@if
+                               )
+                       )
             ; $z->value_process
             ; LAST_HANDLER
             }
@@ -624,9 +623,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.36
+=head1 VERSION 1.37
 
-Included in Template-Magic 1.36 distribution.
+Included in Template-Magic 1.37 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

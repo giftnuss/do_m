@@ -1,5 +1,5 @@
 package Template::Magic::Zone ;
-$VERSION = 1.36 ;
+$VERSION = 1.37 ;
 use 5.006_001 ;
 use strict ;
 
@@ -134,7 +134,7 @@ use strict ;
 ; sub lookup_process
    { my ($z) = @_
    ; defined $z->value and return
-   ; $z->value = $z->lookup
+   ; $z->value($z->lookup)
    }
 
 ; sub lookup
@@ -208,9 +208,9 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.36
+=head1 VERSION 1.37
 
-Included in Template-Magic 1.36 distribution.
+Included in Template-Magic 1.37 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -365,7 +365,7 @@ From now on you can retrieve the attributes your way:
 
 =head1 PROPERTIES
 
-The following are the properties that Template::Magic uses to do its job: they all are left value properties.
+The following are the properties that Template::Magic uses to do its job: they all are left value properties (I<lvalue> means that you can create a reference to it, assign to it and apply a regex to it; see also L<KNOWN ISSUE>).
 
 =head2 tm
 
@@ -474,6 +474,30 @@ This property holds the offset of the template chunk where the content ends. Use
 =item * L<Template::Magic::HTML|Template::Magic::HTML>
 
 =back
+
+=head1 KNOWN ISSUE
+
+Due to the perl bug #17663 I<(Perl 5 Debugger doesn't handle properly lvalue sub assignment)>, you must know that under the B<-d> switch the lvalue sub assignment will not work, so your program will not run as you expect.
+
+In order to avoid the perl-bug you have 3 alternatives:
+
+=over
+
+=item 1
+
+patch perl itself as suggested in this post: http://www.talkaboutprogramming.com/group/comp.lang.perl.moderated/messages/13142.html (See also the cgi-builder-users mailinglist about that topic)
+
+=item 2
+
+use the lvalue sub assignment (e.g. C<< $s->any_property = 'something' >>) only if you will never need B<-d>
+
+=item 3
+
+if you plan to use B<-d>, use only standard assignments (e.g. C<< $s->any_property('something') >>)
+
+=back
+
+Maybe a next version of perl will fix the bug, or maybe lvalue subs will be banned forever, meanwhile be careful with lvalue sub assignment.
 
 =head1 SUPPORT
 

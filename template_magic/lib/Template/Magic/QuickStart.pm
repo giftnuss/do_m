@@ -1,5 +1,5 @@
 package Template::Magic::QuickStart;
-$VERSION = 1.36;
+$VERSION = 1.37;
 
 __END__
 
