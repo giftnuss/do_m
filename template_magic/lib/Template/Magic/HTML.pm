@@ -1,5 +1,5 @@
 package Template::Magic::HTML ;
-$VERSION = 1.02 ;
+$VERSION = 1.03 ;
 
 ; use 5.006_001
 ; use strict
@@ -21,9 +21,9 @@ __END__
 
 Template::Magic::HTML - HTML handlers for Template::Magic used in a HTML environment
 
-=head1 VERSION 1.02
+=head1 VERSION 1.03
 
-Included in Template-Magic 1.01 distribution.
+Included in Template-Magic 1.03 distribution.
 
 =head1 SYNOPSIS
 
@@ -251,12 +251,10 @@ Note: if your template don't need this specific handler you can avoid its loadin
 
 =head1 SUPPORT and FEEDBACK
 
-I would like to have just a line of feedback from everybody who tries or actually uses this module. PLEASE, write me any comment, suggestion or request. ;-)
-
-More information at http://perl.4pro.net/?Template::Magic::HTML.
+If you need support or if you want just to send me some feedback or request, please use this link: http://perl.4pro.net/?Template::Magic::HTML.
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis.
+© 2002-2004 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.

@@ -1,5 +1,5 @@
 package Template::Magic::Zone ;
-$VERSION = 1.02 ;
+$VERSION = 1.03 ;
 
 ; use 5.006_001
 ; use strict
@@ -78,6 +78,7 @@ $VERSION = 1.02 ;
 ; sub content_process
    { my ($z) = @_
    ; defined $z->_e || return
+
    ; ZONE:
      for ( my $i  = $z->_s
          ;    $i <= $z->_e
@@ -180,9 +181,9 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.02
+=head1 VERSION 1.03
 
-Included in Template-Magic 1.02 distribution.
+Included in Template-Magic 1.03 distribution.
 
 =head1 DESCRIPTION
 
@@ -447,16 +448,10 @@ This property holds the offset of the template chunk where the content ends. Use
 
 =head1 SUPPORT and FEEDBACK
 
-I would like to have just a line of feedback from everybody who tries or actually uses this module. PLEASE, write me any comment, suggestion or request. ;-)
-
-More information at http://perl.4pro.net/?Template::Magic::Zone.
+If you need support or if you want just to send me some feedback or request, please use this link: http://perl.4pro.net/?Template::Magic::Zone.
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis.
+© 2002-2004 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
-
-=head1 CONTRIBUTION
-
-I always answer to each and all the message i receive from users, but I have almost no time to find, install and organize a mailing list software that could improve a lot the support to people that use my modules. Besides I have too little time to write more detailed documentation, more examples and tests. Your contribution would be precious, so if you can and want to help, just contact me. Thank you in advance.

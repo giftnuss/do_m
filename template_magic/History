@@ -1,4 +1,19 @@
 Template-Magic Latest Versions Changes
 
+
+Version 1.03
+- Fixed bug that happened when you use the same
+  object to output() a template and then print() another template
+- Internal changes for output() method
+- Deprecated DEFAULT_OUTPUT_HANDLERS() sub
+- Fixed 'TableTiler' handler bug
+
+Version 1.02
+- Makefile changes
+- POD fixes and updates
+
+Version 1.01
+- Makefile changes
+
 Version 1.0
 - Transcription of old MagicTemplate namespace

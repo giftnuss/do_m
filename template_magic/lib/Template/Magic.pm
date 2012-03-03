@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.02 ;
+$VERSION = 1.03 ;
 use AutoLoader 'AUTOLOAD' ;
 
 ; use strict
@@ -60,18 +60,20 @@ use AutoLoader 'AUTOLOAD' ;
              unless ref eq 'ARRAY'
       }
    ; bless $s, $c
-   ; $$s{markers}       ||= $s->DEFAULT_MARKERS
-   ; $$s{text_handlers} ||= $s->DEFAULT_TEXT_HANDLERS
-   ; $$s{zone_handlers} ||= $s->DEFAULT_ZONE_HANDLERS
-   ; $$s{value_handlers}||= $s->DEFAULT_VALUE_HANDLERS
-   ; $$s{post_handlers} ||= $s->DEFAULT_POST_HANDLERS
-   ; $$s{lookups}       ||= [ (caller)[0] ]
-   ; $$s{options}       ||= $s->DEFAULT_OPTIONS
-   ; $$s{options}         = { map { /^(no_)*(.+)$/
-                                  ; $2 => $1 ? 0 : 1
-                                  }
-                                  @{$$s{options}}
-                            }
+   ; $$s{markers}         ||= $s->DEFAULT_MARKERS
+   ; $$s{output_handlers} ||= $s->DEFAULT_PRINT_HANDLERS
+   ; $$s{text_handlers}   ||= $s->DEFAULT_TEXT_HANDLERS
+                              || $$s{output_handlers}
+   ; $$s{zone_handlers}   ||= $s->DEFAULT_ZONE_HANDLERS
+   ; $$s{value_handlers}  ||= $s->DEFAULT_VALUE_HANDLERS
+   ; $$s{post_handlers}   ||= $s->DEFAULT_POST_HANDLERS
+   ; $$s{lookups}         ||= [ (caller)[0] ]
+   ; $$s{options}         ||= $s->DEFAULT_OPTIONS
+   ; $$s{options}           = { map { /^(no_)*(.+)$/
+                                    ; $2 => $1 ? 0 : 1
+                                    }
+                                    @{$$s{options}}
+                              }
    ; foreach my $n qw| zone
                        value
                        post
@@ -208,13 +210,13 @@ use AutoLoader 'AUTOLOAD' ;
              /$$new||$new/xgse
    ; $t
    }
-
+      
 ; sub output
    { my $s = shift
    ; my $args
    ; $$args{template} = shift
    ; $$args{lookups}  = [ @_ ] if @_
-   ; $s->_process( $args, $s->DEFAULT_OUTPUT_HANDLERS )
+   ; $s->_oprocess( $args )
    }
 
 ; sub print
@@ -222,28 +224,37 @@ use AutoLoader 'AUTOLOAD' ;
    ; my $args
    ; $$args{template} = shift
    ; $$args{lookups}  = [ @_ ] if @_
-   ; $s->_process( $args, $s->DEFAULT_PRINT_HANDLERS )
+   ; $s->_process( $args )
    }
 
 ; sub noutput
    { my ($s, %args) = @_
    ; $args{lookups} = [ $args{lookups} ]
                       unless ref $args{lookups} eq 'ARRAY'
-   ; $s->_process( \%args, $s->DEFAULT_OUTPUT_HANDLERS )
+   ; $s->_oprocess( \%args )
    }
 
 ; sub nprint
    { my ($s, %args) = @_
    ; $args{lookups} = [ $args{lookups} ]
                       unless ref $args{lookups} eq 'ARRAY'
-   ; $s->_process( \%args, $s->DEFAULT_PRINT_HANDLERS )
+   ; $s->_process( \%args )
+   }
+
+; sub _oprocess
+   { my ($s, $args) = @_
+   ; local *H
+   ; my $oldfh = select(H)
+   ; my $output = ''
+   ; tie *H , 'Template::Magic::Capt' , \ $output
+   ; $s->_process($args)
+   ; untie *H
+   ; select($oldfh)
+   ; \$output
    }
 
 ; sub _process
-   { my ($h) = pop
-   ; my ($s, $args) = @_
-   ; $$s{output_handlers} ||= $h
-   ; $$s{text_handlers}   ||= $$s{output_handlers}
+   { my ($s, $args) = @_
    ; $$s{_temp_lookups}     = $$args{lookups}           # init temp
                               if exists $$args{lookups}
    ; my $z  = $s->load( $$args{template} )
@@ -251,9 +262,7 @@ use AutoLoader 'AUTOLOAD' ;
         ; $z->tm = $s           # init top main zone tm is a class property
         }
    ; $z->content_process
-   ; delete $$s{_temp_lookups}                           # reset temp
-   ; return delete $$s{output}
-            if defined $$s{output}
+   ; delete $$s{_temp_lookups}
    }
 
 ; sub load
@@ -369,15 +378,9 @@ use AutoLoader 'AUTOLOAD' ;
         }
      ]
    }
-
-; sub DEFAULT_OUTPUT_HANDLERS
-   { [ sub
-        { ${$_[0]->tm->{output}} .= $_[1]
-        ; NEXT_HANDLER
-        }
-     ]
-   }
-  
+   
+; *DEFAULT_OUTPUT_HANDLERS = \&DEFAULT_PRINT_HANDLER  # deprecated
+ 
 ; sub DEFAULT_OPTIONS
    { [ qw| cache | ]
    }
@@ -507,6 +510,20 @@ use AutoLoader 'AUTOLOAD' ;
           }
        ]
    }
+   
+###############################
+; package Template::Magic::Capt
+
+; sub TIEHANDLE
+   { bless \@_, shift
+   }
+ 
+; sub PRINT
+   { my $s = shift
+   ; ${$$s[0]} .= join $,||'', map{defined $_ ? $_ : ''} @_
+   }
+
+package Template::Magic
 
 ; 1
 
@@ -577,7 +594,6 @@ sub INCLUDE_TEXT # zone handler
 sub TableTiler # value handler
    { eval
       { require HTML::TableTiler
-      ; import  HTML::TableTiler
       }
    ; if ( $@ )
       { carp qq("HTML::TableTiler" is not installed on this system\n)
@@ -586,13 +602,16 @@ sub TableTiler # value handler
      else
       { sub            # normal handler
          { my ($z) = @_
-         ; if (ref $z->value eq 'ARRAY')
+         ; if (  ref $z->value eq 'ARRAY'
+              && HTML::TableTiler::is_matrix($z->value)   # if matrix
+              )
             { $z->value
               = eval { local $SIG{__DIE__}
                      ; my $cont = $z->content
                      ; HTML::TableTiler::tile_table( $z->value
                                                    , $cont && \$cont
                                                    , $z->attributes
+                                                   , 1
                                                    )
                      }
             ; $z->value_process
@@ -605,7 +624,6 @@ sub TableTiler # value handler
 sub FillInForm # value handler
    { eval
       { require HTML::FillInForm
-      ; import  HTML::FillInForm
       }
    ; if ( $@ )
       { carp qq("HTML::FillInForm" is not installed on this system\n)
@@ -636,9 +654,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.02
+=head1 VERSION 1.03
 
-Included in Template-Magic 1.02 distribution.
+Included in Template-Magic 1.03 distribution.
 
 =head1 INSTALLATION
 
@@ -726,7 +744,7 @@ When a match is found the object replaces the label or the block with the value 
 
 =back
 
-B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work. (see also L<"CONTRIBUTION">)
+B<IMPORTANT NOTE>: If you write any script that rely on this module, you better send me an e-mail so I will inform you in advance about eventual planned changes, new releases, and other relevant issues that could speed-up your work.
 
 B<Note>: If you are planning to use this module in CGI environment, take a look at L<CGI::Application::Magic|CGI::Application::Magic> and L<Apache::Application::Magic|Apache::Application::Magic> that transparently integrates this module in a very handy and powerful framework.
 
@@ -1438,11 +1456,7 @@ This is the code of the print handler:
 
 =item DEFAULT_OUTPUT_HANDLER
 
-This handler is set by default by the C<output()> method. It receives and stores in $s->output each chunk of output that comes from the output generation.
-
-This is the code of the print handler:
-
-    sub{ $_[0]->tm->{output} .= $_[1] }
+Deprecated handler. Use the C<DEFAULT_PRINT_HANDLER> instead.
 
 =back
 
@@ -2458,20 +2472,10 @@ A I<zone object> is an internal object representing a zone.
 
 =head1 SUPPORT and FEEDBACK
 
-I would like to have just a line of feedback from everybody who tries or actually uses this module. PLEASE, write me any comment, suggestion or request. ;-)
-
-More information at http://perl.4pro.net/?Template::Magic.
+If you need support or if you want just to send me some feedback or request, please use this link: http://perl.4pro.net/?Template::Magic.
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis.
+© 2002-2004 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
-
-=head1 CREDITS
-
-Thanks to I<Mark Overmeer> http://search.cpan.org/author/MARKOV/ that has submitted a variety of code cleanups/speedups and other useful suggestions.
-
-=head1 CONTRIBUTION
-
-I always answer to each and all the message i receive from users, but I have almost no time to find, install and organize a mailing list software that could improve a lot the support to people that use my modules. Besides I have too little time to write more detailed documentation, more examples and tests. Your contribution would be precious, so if you can and want to help, just contact me. Thank you in advance.

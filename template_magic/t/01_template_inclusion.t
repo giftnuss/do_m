@@ -28,19 +28,19 @@
 ; $tmp3 = 'text from template {scalar_test}, {INCLUDE_TEXT t/text_file}'
 ; $content3 = $tm3->output(\$tmp3);
 ; is ( $$content3
-     , 'text from template SCALAR, text from file'
+     , 'text from template SCALAR, text from file {scalar_test}'
      )
-
-
 
 ; $tm4 = new Template::Magic
 ; $tmp4 = 'text from template {scalar_test}, {include_temp}'
 ; $content4 = $tm4->output(\$tmp4);
 ; is ( $$content4
-     , 'text from template SCALAR, text from file'
+     , 'text from template SCALAR, text from file SCALAR'
      )
 
 ; sub include_temp
    { my ($z) = @_
    ; return $z->include_template('t/text_file')
    }
+
+
