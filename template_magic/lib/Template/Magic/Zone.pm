@@ -1,5 +1,5 @@
 package Template::Magic::Zone ;
-$VERSION = 1.38 ;
+$VERSION = 1.39 ;
 use strict ;
 use 5.006_001 ;
 
@@ -208,9 +208,9 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.38
+=head1 VERSION 1.39
 
-Included in Template-Magic 1.38 distribution.
+Included in Template-Magic 1.39 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -253,7 +253,7 @@ These are the processes that are executed for any single zone:
       text & output processes
     post process
 
-As general rule, a C<*_process> is a method that executes in sequence the handlers contained in C<*_handlers> constructor array. In details, these process executes the handlers contained in these constructor arrays:
+As a general rule, a C<*_process> is a method that executes in sequence the handlers contained in C<*_handlers> constructor array. In details, these process executes the handlers contained in these constructor arrays:
 
     zone_process()    zone_handlers
     value_process()   value_handlers

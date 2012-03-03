@@ -10,7 +10,7 @@
    ( NAME           => 'Template::Magic'
    , VERSION_FROM   => $pm
    , ( $] ge '5.005' )
-     ? ( AUTHOR     => 'Domizio Demichelis - perl.4pro.net'
+     ? ( AUTHOR          => 'Domizio Demichelis - perl.4pro.net'
        , ABSTRACT_FROM   => $pm
        )
      : ()

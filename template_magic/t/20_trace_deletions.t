@@ -1,7 +1,7 @@
 #!perl -w
 
 ; use strict
-; use Test::More tests => 1
+; use Test::More tests => 2
 ; use Template::Magic
 
 ; our ( $tm
@@ -28,3 +28,17 @@ __EOS__
 ; is( $$content."\n"
     , $expected
     )
+
+#########
+
+
+; our %a_hash = ( key => 'value' )
+
+; $tmp = 'text {a_hash}the value is {key}placeholder{/key}{/a_hash} text'
+; $expected = 'text the value is value text'
+; $content = $tm->output(\$tmp)
+; is( $$content
+    , $expected
+    )
+
+

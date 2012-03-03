@@ -1,14 +1,14 @@
 package Template::Magic ;
-$VERSION = 1.38 ;
+$VERSION = 1.39 ;
 use strict ;
 use 5.006_001 ;
-use AutoLoader 'AUTOLOAD' ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
+; use warnings::register
 ; use Template::Magic::Zone
 ; use IO::Util
 ; use Class::Util
@@ -17,31 +17,13 @@ use AutoLoader 'AUTOLOAD' ;
 ; sub NEXT_HANDLER () { 0 }
 ; sub LAST_HANDLER () { 1 }
 
-; our @autoloaded = qw| _EVAL_
-                        _EVAL_ATTRIBUTES_
-                        TRACE_DELETIONS
-                        INCLUDE_TEXT
-                        TableTiler
-                        FillInForm
-                      |
-                       
-# predeclaration of autoloaded methods
-; use subs @autoloaded
-
 ; sub import
-   { my ($pkg, $pragma, @subs) = @_
+   { my ($pkg, $pragma) = @_
    ; if (  $pragma
         && $pragma eq '-compile'
         )
-      { @subs = @autoloaded unless @subs
-      ; my %auto
-      ; @auto{@autoloaded} = ()
-      ; foreach my $sub ( @subs )
-         { no strict 'refs'
-         ; exists $auto{$sub}
-           or croak '"$sub" is not an autoloaded handler, died'
-         ; &$sub()  # no argument for sure
-         }
+      { carp "The -compile pragma has no effect since version 1.39"
+        if warnings::enabled
       }
      else
       { require Exporter
@@ -83,6 +65,8 @@ use AutoLoader 'AUTOLOAD' ;
                               }
    ; foreach my $n qw| zone
                        value
+                       text
+                       output
                        post
                      |
       { $$s{$n.'_handlers'}
@@ -128,7 +112,7 @@ use AutoLoader 'AUTOLOAD' ;
          { no strict 'refs' 
          ; my $m = $$s{markers}[0]
          ; my $M =  $s->can($m)
-                 || $s->can($m.'_MARKERS')
+                 || $s->can($m.'_MARKERS') # backward compatibility
                  || croak qq(Unknown markers "$m")
          ; $$s{markers} = $s->$M
          }
@@ -334,8 +318,10 @@ use AutoLoader 'AUTOLOAD' ;
      ]
    }
    
-; *DEFAULT_OUTPUT_HANDLERS = \&DEFAULT_PRINT_HANDLER  # deprecated
- 
+; { no warnings 'once'
+  ; *DEFAULT_OUTPUT_HANDLERS = \&DEFAULT_PRINT_HANDLER  # deprecated
+  }
+  
 ; sub DEFAULT_OPTIONS
    { [ qw| cache | ]
    }
@@ -459,15 +445,15 @@ use AutoLoader 'AUTOLOAD' ;
    }
    
 ; sub ID_list
-   { my ($s, $ident, $end) = @_
-   ; $ident ||= ' ' x 4
+   { my ($s, $indent, $end) = @_
+   ; $indent ||= ' ' x 4
    ; $end   ||= '/'
    ; my $re   = $s->_re
    ; $$s{text_handlers} = [ sub{} ]  # does not print any text
    ; $$s{zone_handlers}
      = [ sub  # takes control of the whole process
           { my ($z) = @_
-          ; $z->output_process( $ident x $z->level
+          ; $z->output_process( $indent x $z->level
                               . $z->id
                               . ":\n"
                               )
@@ -476,7 +462,7 @@ use AutoLoader 'AUTOLOAD' ;
           ; if (  $z->_e                               # if it is a block
                && $cont =~ /$$re{label}/         # and contains labels
                )
-             { $z->output_process( $ident x $z->level   # print the end
+             { $z->output_process( $indent x $z->level   # print the end
                                  . $end
                                  . $z->id
                                  . ":\n"
@@ -487,7 +473,6 @@ use AutoLoader 'AUTOLOAD' ;
        ]
    }
    
-__END__
 # START AutoLoaded handlers
 
 # 'sub' must be at start of line to be found by AutoSplit
@@ -525,6 +510,7 @@ sub TRACE_DELETIONS # zone handler
       # if they fail to find a true output trace the deletion
       ; if    ( not defined $z->output )
          { $z->output_process ( '<<' . $z->id . ' not found>>' )
+           unless ref $z->value eq 'HASH'
          }
         elsif ( not $z->output )
          { $z->output_process ( '<<' . $z->id . ' found but empty>>' )
@@ -618,17 +604,19 @@ sub FillInForm # value handler
       }
    }
    
+__END__
+   
 =pod
 
 =head1 NAME
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.38
+=head1 VERSION 1.39
 
-Included in Template-Magic 1.38 distribution.
+Included in Template-Magic 1.39 distribution.
 
-The latest versions changes are reported in the F<Changes> file in this distribution.
+The latest version changes are reported in the F<Changes> file in this distribution.
 
 =head1 INSTALLATION
 
@@ -870,7 +858,7 @@ Placeholders and simulated areas can help in designing the template for a more c
 
 =item * Labels and block list
 
-When you have to deal with a webmaster, you can easily print a pretty formatted output of all the identifiers present in a template. Just add your description of each label and block and save hours of explanations ;-)  (see L<ID_list()|"ID_list ( [identation_string [, end_marker]] )"> static method)
+When you have to deal with a webmaster, you can easily print a pretty formatted output of all the identifiers present in a template. Just add your description of each label and block and save hours of explanations ;-)  (see L<ID_list()|"ID_list ( [indentation_string [, end_marker]] )"> static method)
 
 =item * Simple to maintain
 
@@ -977,16 +965,16 @@ A named arguments interface for the L<print()|"print ( template [, temporary loo
                  lookups  => [ \%special_hash, 'My::lookups'],
                  container_template => '/path/to/container_template') ;
 
-=head2 ID_list ( [identation_string [, end_marker]] )
+=head2 ID_list ( [indentation_string [, end_marker]] )
 
 Calling this method (before the L<output()|"output ( template [, temporary lookups ] )"> or L<print()|"print ( template [, temporary lookups ] )"> methods) will redefine the behaviour of the module, so your program will print a pretty formatted list of only the identifiers present in the template, thus the programmer can pass a description of each label and block within a template to a designer.
 
-The method accepts an I<identation string> (usually a tab character or a few spaces), that will be used to ident nested blocks. If you omit the identation string 4 spaces will be used. The method accepts also as second parameter a I<end marker> string, which is used to distinguish the end label in a container block. If you omit this, a simple '/' will be used.
+The method accepts an I<indentation string> (usually a tab character or a few spaces), that will be used to indent nested blocks. If you omit the indentation string 4 spaces will be used. The method accepts also as second parameter an I<end marker> string, which is used to distinguish the end label in a container block. If you omit this, a simple '/' will be used.
 
     # defalut
     $tm->ID_list;
     
-    # custom identation
+    # custom indentation
     $tm->ID_list("\t", 'END OF ');
 
 See also L<"Prepare the identifiers description list">.
@@ -1027,6 +1015,9 @@ The new() method accepts one optional hash that can contain the following option
     text_handlers
     output_handlers
     post_handlers
+    paths
+    options
+    container_template
 
 Constructor Arrays are array references containing elements that can completely change the behaviour of the object and even add code not directly related with the output generation but executed during the process.
 
@@ -1034,14 +1025,14 @@ All the constructor arrays should be array references, but if you have to pass j
 
     $tm = new Template::Magic
               lookups => [\%my_hash] ,
-              markers => ['HTML'   ] ;
+              markers => ['HTML_MARKERS'   ] ;
     
     # same thing less noisy
     $tm = new Template::Magic
               lookups => \%my_hash ,
               markers => 'HTML'    ;
 
-All the handlers in C<-*_handlers> I<(zone handlers, value handlers, output handlers, text handlers, post handlers)> receive the I<zone object> as $_[0] parameter. Besides, the I<test handlers> and the I<output handlers> receive also the processed text as $_[1] parameter.
+All the handlers in C<-*_handlers> I<(zone handlers, value handlers, output handlers, text handlers, post handlers)> receive the I<zone object> as $_[0] parameter. Besides, the I<text handlers> and the I<output handlers> receive also the processed text as $_[1] parameter.
 
 B<Note>: the old constructor arrays identifiers with the prepended '-' and/or the parameters passed as a reference to a hash are deprecated but still working:
 
@@ -1074,7 +1065,7 @@ If you want to use the default markers, just call the new() method without any C
     
     # same but explicit extension name
     $tm = new Template::Magic
-              markers => 'DEFAULT';
+              markers => 'DEFAULT_MARKERS';
     
     # same but 3 explicit default markers
     $tm = new Template::Magic
@@ -1082,11 +1073,11 @@ If you want to use the default markers, just call the new() method without any C
     
     # HTML markers extension name
     $tm = new Template::Magic
-              markers => 'HTML' };
+              markers => 'HTML_MARKERS' };
     
     # same but 3 explicit HTML markers
     $tm = new Template::Magic
-              markers => [ qw( <!-- / --> ) ] ;
+              markers => [ qw( <!--{ / }--> ) ] ;
     
     # custom explicit markers
     $tm = new Template::Magic
@@ -1124,11 +1115,11 @@ B<Note>: Remember that if the characters you chose as the markers have a special
 
 =head4 standard markers
 
-Template::Magic offers 2 standar markers: B<DEFAULT> and B<HTML>:
+Template::Magic offers 3 standard markers: B<DEFAULT_MARKERS>, B<CODE_MARKERS> and B<HTML_MARKERS>:
 
 =over
 
-=item DEFAULT
+=item DEFAULT_MARKERS
 
 The default markers:
 
@@ -1140,7 +1131,7 @@ Example of block:
 
     {identifier} content of the block {/identifier}
 
-=item CODE
+=item CODE_MARKERS
 
 This markers are useful when you deal with templates which contain code, because they reduces the possible conflict with the content:
 
@@ -1152,7 +1143,7 @@ Example of block:
 
     <-identifier-> content of the block <-/identifier->
 
-=item HTML
+=item HTML_MARKERS
 
 HTML-comment-like markers. If your output is a HTML text - or just because you prefer that particular look - you can use it instead of using the default markers.
 
@@ -1167,7 +1158,7 @@ Example of block:
 Usage:
 
     $tm = new Template::Magic
-              markers => 'HTML' ;
+              markers => 'HTML_MARKERS' ;
 
 The main advantages to use it are:
 
@@ -1283,7 +1274,7 @@ The default C<zone_handler> is undefined, so you must add explicitly any standar
     $tm = new Template::Magic
               zone_handlers => [ '_EVAL_'           ,
                                  '_EVAL_ATTRIBUTES' ,
-                                 'TEXT_INCLUDE'     ,
+                                 'INCLUDE_TEXT'     ,
                                   \&my_handler      ] ;
 
 B<Note>: If you write your own custom I<zone_handler>, remember that it must return a true value to end the C<zone_process>, or a false value to continue the C<zone_process>. In other words: if your I<zone_handler> has taken the control of the whole process it must return true, so the other processes (i.e. C<lookup_process> and C<value_process>) will be skipped, while if you want to continue the normal process your I<zone_handler> must return false.
@@ -1332,7 +1323,7 @@ B<Note>: Since this handler bypasses every other process, it is useful only for 
 
 Use this constructor array to explicitly define or modify the way the object finds the value in your code.
 
-This constructor array can contain B<code references> and/or B<standard value handlers names> (resulting in one or more code references: see L<standard value handlers> for details.
+This constructor array can contain B<code references> and/or B<standard value handlers names> (resulting in one or more code references: see L<standard value handlers> for details).
 
 If you don't pass any C<value_handler> constructor array, the default will be used:
 
@@ -1349,7 +1340,7 @@ If you don't pass any C<value_handler> constructor array, the default will be us
 
 Where 'DEFAULT', 'SCALAR', 'REF', 'CODE', 'ARRAY', 'HASH', 'OBJECT' are I<standard value handlers names>.
 
-You can add, omit or change the order of the element in the array, fine tuning the behaviour of the object.
+You can add, omit or change the order of the elements in the array, fine tuning the behaviour of the object.
 
     $tm = new Template::Magic
               value_handlers => [ 'DEFAULT', \&my_handler ] ;
@@ -1402,7 +1393,7 @@ A I<SCALAR> value sets the C<output> property to the value, and pass it to the C
 
 =item REF
 
-A I<REFERENCE> value (SCALAR or REF) sets the C<value> property to the dereferenced the value and start again the C<value_process()> method
+A I<REFERENCE> value (SCALAR or REF) sets the C<value> property to the dereferenced value and start again the C<value_process()> method
 
 =item CODE
 
@@ -1418,11 +1409,11 @@ See L<"Avoid unwanted executions"> for details. See also L<"Pass parameters to a
 
 =item ARRAY
 
-This handler generates a loop, merging each value in the array with the I<zone content> and replacing the I<zone> with the sequence of the outputs. I<(see L<"Build a loop">, L<"Build nested a loop"> and L<"Build a simple loop">, for details)>.
+This handler generates a loop, merging each value in the array with the I<zone content> and replacing the I<zone> with the sequence of the outputs. I<(see L<"Build a loop">, L<"Build a nested loop"> and L<"Build a simple loop"> for details)>.
 
 =item HASH
 
-A B<HASH> value type will set that HASH as a B<temporary lookup> for the I<zone>. Template::Magic first uses that hash to look up the identifiers contained in the block; then, if unsuccessful, it will search into the other elements of the C<lookups> constructor array. This handler is usually used in conjunction with the ARRAY handler to generate loops. I<(see L<"Build a loop"> and L<"Build nested a loop"> for details)>.
+A B<HASH> value type will set that HASH as a B<temporary lookup> for the I<zone>. Template::Magic first uses that hash to look up the identifiers contained in the block; then, if unsuccessful, it will search into the other elements of the C<lookups> constructor array. This handler is usually used in conjunction with the ARRAY handler to generate loops. I<(see L<"Build a loop"> and L<"Build a nested loop"> for details)>.
 
 =item OBJECT
 
@@ -1434,7 +1425,7 @@ An B<OBJECT> value type causes the object itself to be used as the temporary loo
 
 If you need to change the way the output is processed, you can add your own handler.
 
-This constructor array can contain B<code references> and/or B<standard value handlers names> (resulting in one or more code references: see L<standard output handlers> for details.
+This constructor array can contain B<code references> and/or B<standard output handlers names> (resulting in one or more code references: see L<standard output handlers> for details).
 
 If you want to use the default I<output handler>, just call the new() method without any C<output_handler> constructor array:
 
@@ -1465,7 +1456,7 @@ This handler is set by default by the C<print()> method. It receives and print e
 
 This is the code of the print handler:
 
-    sub{ print $_[1] }
+    sub{ print $_[1] if defined $_[1]; NEXT_HANDLER}
 
 =item DEFAULT_OUTPUT_HANDLER
 
@@ -1578,6 +1569,10 @@ A B<HASH> value type will set that HASH as a B<temporary lookup> for the I<zone>
 
 =item *
 
+An B<OBJECT> value type causes the object itself to be used as the temporary lookup for the zone (usually a block ;-). First Template::Magic will try all the label contained in the block as a method of the object; if unsuccessful, it will search into the other elements of the C<lookups> constructor array.
+
+= item *
+
 Finally, if no value are found in the code, the I<zone> will be B<deleted>.
 
 =back
@@ -1622,8 +1617,16 @@ The same template: '{block}|before-{label}-after|{/block}'
     $label = 'THE VALUE';            >  |BEFORE-{LABEL}-AFTER|
     sub block { uc shift }
     ------------------------------------------------------------------------
+    package Local::Foo
+    sub new {bless {}, shift}
+    sub label {my $s = shift; 'NEW VALUE from '.$s}
+    
+    package main
+    $block = Local::Foo->new         
+                 >  |before-NEW VALUE from Local::Foo=HASH(0x1957934)-after|
+    ------------------------------------------------------------------------
 
-Different combinations of I<values> and I<zones> can easily produce complex ouputs: see the other topics in this section.
+Different combinations of I<values> and I<zones> can easily produce complex outputs: see the other topics in this section.
 
 =head2 Use template directories
 
@@ -1717,16 +1720,16 @@ B<Note>: do not use quotes!
     $tm = new Template::Magic
               markers => [ qw( <- / -> ) ] ;
 
-=item by using a standard markers
+=item by using standard markers
 
 The standard installation comes with a HTML friendly L<"standard markers"> that implements a HTML-comment-like syntax. If your output is an HTML text - or just because you prefer that particular look - you can use it instead of using the default markers.
 
     $tm = new Template::Magic
-              markers => 'HTML' ;
+              markers => 'HTML_MARKERS' ;
     
     # that means
     $tm = new Template::Magic
-              markers => [ qw( <!-- / --> ) ] ;
+              markers => [ qw( <!--{ / }--> ) ] ;
 
 =back
 
@@ -1801,7 +1804,7 @@ If you want to include in your template some area only for design purpose I<(for
 
 =head2 Setup labeled areas
 
-If you want to label some area in your template I<(for example to extract the area to mix with another template)>, just transform it into a block and give it an identifier that will always be defined in your code. A convenient way to do so is to define a reference to an empty hash. This will generate the output of the block and (since the array does not contain any keys) the lookup will fallback to the I<containers> zones and the I<lookups> locations.
+If you want to label some area in your template I<(for example to extract the area to mix with another template)>, just transform it into a block and give it an identifier that will always be defined in your code. A convenient way to do so is to define a reference to an empty hash. This will generate the output of the block and (since the hash does not contain any keys) the lookup will fallback to the I<containers> zones and the I<lookups> locations.
 
 =over
 
@@ -2001,7 +2004,7 @@ you can also omit the 'OF' (case insensitive) keyword in all the above cases
 
 =head2 Process (huge) loops iteration by iteration
 
-Usually a loop is built just by an array of hashes value (see L<"Build a loop">). this means that you have to fill an array with all the hashes BEFORE the process starts. In normal situations (i.e. the array contains just a few hashes) this is not a problem, but if the array is supposed to contain a lot of hashes, it could be more efficient by creating each hash just DURING the process and not BEFORE it (i.e. without storing it in any array).
+Usually a loop is built just by an array of hashes value (see L<"Build a loop">). This means that you have to fill an array with all the hashes BEFORE the process starts. In normal situations (i.e. the array contains just a few hashes) this is not a problem, but if the array is supposed to contain a lot of hashes, it could be more efficient by creating each hash just DURING the process and not BEFORE it (i.e. without storing it in any array).
 
 For example imagine that in the L<"Build a loop"> example, the array comes from a huge file like this:
 
@@ -2218,7 +2221,7 @@ The sub 'matrix' receive the reference to the I<zone object>, and return the out
 
 =head2 Pass a structure to a subroutine
 
-You can use the '_EVAL_ATTRIBUTES_' zone handler to pass compless named structures to a subroutine.
+You can use the '_EVAL_ATTRIBUTES_' zone handler to pass complex named structures to a subroutine.
 
 A simple example that use the '_EVAL_ATTRIBUTES_' zone handler could be:
 
@@ -2230,7 +2233,7 @@ This is a possible example of template:
 
     text <<my_sub {color => 'red', quantity => 2}>> text
 
-The '_EVAL_ATTRIBUTES_' zone handler set the C<param> property to the evalued I<attributes string> C<{color => 'red', quantity => 2}> in the template, so you can use it directly in your sub:
+The '_EVAL_ATTRIBUTES_' zone handler set the C<param> property to the evalued I<attributes string> C<< {color => 'red', quantity => 2} >> in the template, so you can use it directly in your sub:
     
     sub my_sub
     {
@@ -2450,28 +2453,7 @@ See also:
 
 =head2 The -compile pragma
 
-There are some handlers that are AUTOLOADed (i.e. compiled just at run time). This is the list of AUTOLOADed handlers:
-
-    _EVAL_
-    _EVAL_ATTRIBUTES_
-    TRACE_DELETIONS
-    INCLUDE_TEXT
-    TableTiler
-    FillInForm
-
-If you want to compile some or all the AUTOLOADed handlers at import time you can use this pragma:
-
-    # compiles all the AUTOLOADed handlers, without importing
-    use Template::Magic qw( -compile ) ;
-   
-    # or compiles just '_EVAL_' AUTOLOADed handlers at import, without importing
-    use Template::Magic qw( -compile _EVAL_ ) ;
-    
-e.g. this could be useful if you plan to load the module in F<startup.pl> when using C<mod_perl>.
-    
-    # normal import can follow the -compile
-    use Template::Magic qw( -compile ) ;
-    use Template::Magic qw( LAST_HANDLER ) ;
+It has no effect since version 1.39.
 
 =head1 SYNTAX GLOSSARY
 
@@ -2507,7 +2489,7 @@ where C<'{'> is the START_MARKER, C<'/'> is the END_MARKER_ID, C<'my_identifier'
 
 =item identifier
 
-A I<label identifier> is a alphanumeric name C<(\w+)> that represents (and usually matches) a variable or a subroutine identifier of your code.
+A I<label identifier> is an alphanumeric name C<(\w+)> that represents (and usually matches) a variable or a subroutine identifier of your code.
 
 =item illegal blocks
 
@@ -2549,7 +2531,7 @@ The 'root' zone representing the whole template content
 
 =item markers
 
-The markers that defines a labels and blocks. These are the default values of the markers that define the label:
+The markers that defines labels and blocks. These are the default values of the markers that define the label:
 
     START_MARKER:   {
     END_MARKER_ID:  /
@@ -2640,5 +2622,7 @@ All Rights Reserved. This module is free software. It may be used, redistributed
 =head1 CREDITS
 
 Thanks to I<Mark Overmeer> L<http://search.cpan.org/author/MARKOV/> which has submitted a variety of code cleanups/speedups and other useful suggestions.
+
+A special thanks to Megyaszai Sandor for his very detailed revision of the POD.
 
 =cut

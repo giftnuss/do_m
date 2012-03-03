@@ -1,5 +1,15 @@
 Template-Magic Latest Versions Changes
 
+Version 1.39
+- A lot of minor fixes in the POD
+- Removed the use of AUTOLOADER. Now all handlers are loaded at compile-time
+- Added the warning when old -compile pragma is used
+- Fixed TRACE_DELETION hash bug; added a test
+- Fixed text_handlers and output_handlers bug: now they accept standard handler 
+  names
+- Changed the name of the standard markers keeping backward compatibility
+  Now all markers are explicitly named '*_MARKERS'
+
 Version 1.38
 - "use strict" fix for CPANTS
 - Fixed Makeperl.PL (HTML::TableTiler not needed as a prerequisite)
