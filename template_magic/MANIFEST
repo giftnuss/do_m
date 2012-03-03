@@ -36,8 +36,10 @@ t/27_FillInForm.t
 t/28_memory_leaking.t
 t/29_direct_array.t
 t/30_container.t
+t/31_include_nested_lookup.t
 t/included_test_01
 t/included_test_02
+t/included_test_03
 t/template_test_02
 t/text_file
 META.yml                                 Module meta-data (added by MakeMaker)

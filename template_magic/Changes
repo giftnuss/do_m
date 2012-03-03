@@ -1,6 +1,10 @@
 Template-Magic Latest Versions Changes
 
 
+Version 1.35
+- Fixed "nested lookups in INCLUDE_TEMPLATE" bug introduced in version 1.3
+- Added 'include_nested_lookup.t' test
+
 Version 1.34
 - Rewritten 'load' method
 - Caching now uses IO::Util 1.43 internal functions
@@ -32,9 +36,7 @@ Version 1.3
 - Added 'find_file' method
 - Changed 'load' method
 - Rewritten a couple of internal methods and eliminated a few eval{}
-- Added 'CODE' standar markers
-
-Version 1.26
+- Added 'CODE' standard markers
 - Fixed inconsistency of the container property of an included templates
 - Changed the prerequisite IO::Util to version 1.26 (fixes the -T bug)
 

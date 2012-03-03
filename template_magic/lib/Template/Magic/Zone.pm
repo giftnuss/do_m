@@ -1,5 +1,5 @@
 package Template::Magic::Zone ;
-$VERSION = 1.34 ;
+$VERSION = 1.35 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -123,7 +123,7 @@ $VERSION = 1.34 ;
    
 ; sub _include
    { my ($z, $iz) = @_
-   ; @$iz{qw|container level tm|} = ( $z->container
+   ; @$iz{qw|container level tm|} = ( $z
                                     , $z->level
                                     , $z->tm
                                     )
@@ -167,14 +167,13 @@ $VERSION = 1.34 ;
    ; if ( ref $l eq 'HASH' )
       { $$l{$id}
       }
-     elsif ( my $meth = $l->can( $id ) )
-      { $meth
+     elsif ( my $code = UNIVERSAL::can( $l, $id ) )
+      { $code
       }
      else
       { no strict
-      ; local *S = ref $l||$l . "::$id"
+      ; local *S = "$l\::$id"
       ; defined $S ?  $S
-      : defined &S ? \&S
       : defined @S ? \@S
       : defined %S ? \%S
       : undef
@@ -207,9 +206,9 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.34
+=head1 VERSION 1.35
 
-Included in Template-Magic 1.34 distribution.
+Included in Template-Magic 1.35 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

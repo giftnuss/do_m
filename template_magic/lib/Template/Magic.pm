@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.34 ;
+$VERSION = 1.35 ;
 use AutoLoader 'AUTOLOAD' ;
 
 # This file uses the "Perlish" coding style
@@ -624,9 +624,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.34
+=head1 VERSION 1.35
 
-Included in Template-Magic 1.34 distribution.
+Included in Template-Magic 1.35 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
