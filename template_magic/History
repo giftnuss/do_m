@@ -1,5 +1,7 @@
 Template-Magic Latest Versions Changes
 
+Version 1.04
+- Fixed typo in TableTiler handler
 
 Version 1.03
 - Fixed bug that happened when you use the same

@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.03 ;
+$VERSION = 1.04 ;
 use AutoLoader 'AUTOLOAD' ;
 
 ; use strict
@@ -593,7 +593,7 @@ sub INCLUDE_TEXT # zone handler
 
 sub TableTiler # value handler
    { eval
-      { require HTML::TableTiler
+      { require HTML::TableTiler 1.14
       }
    ; if ( $@ )
       { carp qq("HTML::TableTiler" is not installed on this system\n)
@@ -654,9 +654,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.03
+=head1 VERSION 1.04
 
-Included in Template-Magic 1.03 distribution.
+Included in Template-Magic 1.04 distribution.
 
 =head1 INSTALLATION
 

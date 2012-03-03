@@ -1,5 +1,5 @@
 package Bundle::Template::Magic;
-$VERSION = 1.03;
+$VERSION = 1.04;
 __END__
 
 =head1 NAME

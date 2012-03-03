@@ -1,5 +1,5 @@
 package Template::Magic::Zone ;
-$VERSION = 1.03 ;
+$VERSION = 1.04 ;
 
 ; use 5.006_001
 ; use strict
@@ -181,9 +181,9 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.03
+=head1 VERSION 1.04
 
-Included in Template-Magic 1.03 distribution.
+Included in Template-Magic 1.04 distribution.
 
 =head1 DESCRIPTION
 
