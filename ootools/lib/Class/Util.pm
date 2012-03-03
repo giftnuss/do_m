@@ -26,8 +26,9 @@ use strict ;
    ; my $r = eval "require $_;"
    ; if ($@)
       { (my $c = $_.'.pm') =~ s|\b::\b|/|g
+      ; no strict 'refs'
       ; croak $@ if $@ !~ /^Can't locate $c in \@INC/
-                    || not defined %{$_.'::'}
+                    || not grep { /[^:][^:]\z/ } keys %{$_.'::'}
       }
    ; $r
    }
