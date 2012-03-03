@@ -1,5 +1,14 @@
 Template-Magic Latest Versions Changes
 
+
+Version 1.1
+- Substancial changes in the internal structure to allow more efficient
+  object caching and destroying.
+- The chache does not contain any object self reference anymore and the object
+  get destroyed always when it goes out of scope, instead in global
+  destruction phase (i.e. when the script exits)
+- Added the perl version check to the Makefile.PL
+
 Version 1.06
 - New mailing list available at this url:
   http://lists.sourceforge.net/lists/listinfo/template-magic-users

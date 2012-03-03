@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.06 ;
+$VERSION = 1.1 ;
 use AutoLoader 'AUTOLOAD' ;
 
 ; use strict
@@ -10,8 +10,11 @@ use AutoLoader 'AUTOLOAD' ;
 ; use IO::Util
 ; use File::Spec
 ; use base 'Exporter'
-; use constant NEXT_HANDLER => 0
-; use constant LAST_HANDLER => 1
+
+; BEGIN
+   { *NEXT_HANDLER = sub () { 0 }
+   ; *LAST_HANDLER = sub () { 1 }
+   }
 
 ; our @EXPORT_OK  = qw| NEXT_HANDLER
                         LAST_HANDLER
@@ -202,7 +205,7 @@ use AutoLoader 'AUTOLOAD' ;
    ; \$_
    }
 
-; sub set_block
+; sub set_block # deprecated method
    { my ($s, $t, $id, $new) = @_
    ; my ($S, $I, $E, $A) = $s->_re
    ; $t = $s->get_block($t)
@@ -245,13 +248,11 @@ use AutoLoader 'AUTOLOAD' ;
 
 ; sub _process
    { my ($s, $args) = @_
-   ; $$s{_temp_lookups} = $$args{lookups}           # init temp
-                              if exists $$args{lookups}
+   ; $$s{_temp_lookups} = $$args{lookups} if exists $$args{lookups}
    ; my $z = $s->load( $$args{template} )
-   ; do { local $Class::props::force = 1
-        ; $z->tm = $s           # init top main zone tm is a class property
-        }
-   ; $z->content_process
+   ; $$z{tm} = $s
+   ; $z->content_process($s)
+   ; delete $$z{tm} # to avoid tm object caching
    ; delete $$s{_temp_lookups}
    }
 
@@ -271,7 +272,6 @@ use AutoLoader 'AUTOLOAD' ;
          { $CACHE{$path}{main_zone} = $s->_parse($s->get_block($path))
          ; $CACHE{$path}{mtime}     = $mtime
          }
-      ; $CACHE{$path}{main_zone}{tm} = $s
       ; return $CACHE{$path}{main_zone}
       }
      else                         # if it is not a path or no_cache
@@ -309,7 +309,7 @@ use AutoLoader 'AUTOLOAD' ;
          )
       { my $id = $temp[$i][1]
       ; next if ( ref $id or not $id )
-      ; for ( ( my $ii = $i-1                       # find THE start
+      ; for ( ( my $ii = $i-1                     # find THE start
               , my $l  = 0
               )
             ; $ii >= 0     # condition
@@ -319,7 +319,7 @@ use AutoLoader 'AUTOLOAD' ;
             )
          { my $the_start = $temp[$ii][1]
          ; next unless ref $the_start             # next if not start
-         ; next unless $$the_start{id} eq $id    # next if not THE start
+         ; next unless $$the_start{id} eq $id     # next if not THE start
          ; $$the_start{_s} = $ii + 1
          ; $$the_start{_e} = $ii + $l
          ; last
@@ -500,7 +500,7 @@ use AutoLoader 'AUTOLOAD' ;
           }
        ]
    }
-
+   
 ; 1
 
 # START AutoLoaded handlers
@@ -631,9 +631,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.06
+=head1 VERSION 1.1
 
-Included in Template-Magic 1.06 distribution.
+Included in Template-Magic 1.1 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

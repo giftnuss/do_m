@@ -1,1 +1,1 @@
-text from template {scalar_test}, {'t/included_test_01'}.
+text from template {scalar_test}, {'included_test_01'}.

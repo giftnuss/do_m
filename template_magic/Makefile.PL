@@ -1,7 +1,8 @@
+; use 5.006_001
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'Template::Magic'
-; my $vers = '1.06'
+; my $vers = '1.1'
 
 ; WriteMakefile
    ( NAME           => $dist

@@ -1,19 +1,35 @@
 package Template::Magic::Zone ;
-$VERSION = 1.06 ;
+$VERSION = 1.1 ;
 
 ; use 5.006_001
 ; use strict
-; our ( $AUTOLOAD, $tm )
-; use constant OK => 1
-; my @temp_properties = qw | container
-                             level
-                           |
+; our $AUTOLOAD
+
+; BEGIN
+   { *OK = sub () { 1 }
+   }
+
+; BEGIN
+   { foreach my $n qw| zone
+                       text
+                       output
+                       post
+                     |
+      { no strict 'refs'
+      ; *{"$n\_process"}
+        = sub
+           { my ($z) = @_
+           ; my $ch = $z->tm->{"$n\_handlers"} || return
+           ; HANDLER:
+             foreach my $h ( @$ch )
+              { return OK if &$h(@_)
+              }
+           }
+      }
+   ; *mt = sub{shift()->tm(@_)}  # backward compatibility
+   }
+   
 ; use Class::constr
-
-; use Class::props    { name      => 'tm'
-                      , protected => 1
-                      }
-
 ; use Object::props qw| param
                         location
                         value
@@ -36,26 +52,6 @@ $VERSION = 1.06 ;
                       , protected => 1
                       , default   => -1
                       }
-                                
-; BEGIN
-   { foreach my $n qw| zone
-                       text
-                       output
-                       post
-                     |
-      { no strict 'refs'
-      ; *{"$n\_process"}
-        = sub
-           { my $ch = $tm->{"$n\_handlers"} || return
-           ; HANDLER:
-             foreach my $h ( @$ch )
-              { return OK if &$h(@_)
-              }
-           }
-      }
-   }
-
-; *mt = sub{shift()->tm(@_)}  # backward compatibility
 
 ; sub AUTOLOAD : lvalue
    { (my $n = $AUTOLOAD) =~ s/.*://
@@ -68,17 +64,22 @@ $VERSION = 1.06 ;
 ; sub value_process
    { my ($z) = @_
    ; defined $z->value || return
-   ; my $ch = $tm->{value_handlers} || return
+   ; my $ch = $z->tm->{value_handlers} || return
    ; HANDLER:
      foreach my $h ( @$ch )
       { return OK if &$h(@_)
       }
    }
- 
+   
+; sub tm
+   { my ($az) = my ($z) = @_ ;
+   ; until (defined $$az{tm}){ $az = $az->container }
+   ; $$az{tm}
+   }
+
 ; sub content_process
    { my ($z) = @_
-   ; defined $z->_e || return
-
+   ; defined $z->_e || return  # content or return
    ; ZONE:
      for ( my $i  = $z->_s
          ;    $i <= $z->_e
@@ -102,13 +103,19 @@ $VERSION = 1.06 ;
          ; $nz->post_process
          }
         elsif ( $item->is_main )             # included file
-         { @$item{@temp_properties} = @$z{@temp_properties}   # init main zone
-         ; $item->content_process
-         ; delete @$item{@temp_properties}                    # reset main zone
+         { $z->_include($item)
          }
       }
    }
 
+; sub _include
+   { my ($z, $iz) = @_
+   ; $iz->level = $z->level
+   ; $iz->container = $z
+   ; $iz->content_process
+   ; delete @$iz{qw|container level|}   # reset
+   }
+   
 ; sub lookup_process
    { my ($z) = @_
    ; defined $z->value && return
@@ -127,8 +134,8 @@ $VERSION = 1.06 ;
       ; return $val
                if defined $val
       }
-   ; foreach my $l ( @{$tm->{_temp_lookups}}
-                   , @{$tm->{lookups}}
+   ; foreach my $l ( @{$z->tm->{_temp_lookups}}
+                   , @{$z->tm->{lookups}}
                    )
       { next unless $l
       ; $val = $z->_lookup( $l, $id )
@@ -168,8 +175,8 @@ $VERSION = 1.06 ;
 
 ; sub include_template
    { my ($z, $t) = @_
-   ; my $nz = $tm->load($t)
-   ; $nz->content_process
+   ; my $nz = $z->tm->load($t)
+   ; $z->_include($nz)
    ; return undef
    }
 
@@ -181,9 +188,9 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.06
+=head1 VERSION 1.1
 
-Included in Template-Magic 1.06 distribution.
+Included in Template-Magic 1.1 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
