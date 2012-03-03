@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.33 ;
+$VERSION = 1.34 ;
 use AutoLoader 'AUTOLOAD' ;
 
 # This file uses the "Perlish" coding style
@@ -33,7 +33,6 @@ use AutoLoader 'AUTOLOAD' ;
                        
 # predeclaration of autoloaded methods
 ; use subs @autoloaded
-; our %CACHE
 
 ; sub import
    { my ($pkg, $pragma, @subs) = @_
@@ -145,8 +144,7 @@ use AutoLoader 'AUTOLOAD' ;
       ; $$s{_re}{label}          = qr/$S$I*$ID$A$E/s
       ; $$s{_re}{start_label}    = qr/$S($ID)($A)$E/s
       ; $$s{_re}{end_label}      = qr/$S$I($ID)$E/s
-      ; $$s{_re}{include_label}  = qr/$S\bINCLUDE_TEMPLATE\s+($A)$E/s
-      ; $$s{_re}{container_include_label}  = qr/$S\bINCLUDE_TEMPLATE$E/s
+      ; $$s{_re}{include_label}  = qr/$S\bINCLUDE_TEMPLATE\b($A)$E/s
       }
    ; wantarray
      ? @{$$s{markers}}
@@ -228,61 +226,47 @@ use AutoLoader 'AUTOLOAD' ;
    ; delete @$s{qw|_included_template _temp_lookups _NOT_lookup|}
    }
 
-
 ; sub load
    { my ($s, $t) = @_
+   ; my $main_zone
    ; if ( not ref $t )
-      { $t = $s->find_file($t) or croak qq(Template file "$t" empty or not found)
-      ; if ( $$s{options}{cache})
-         { my $path = File::Spec->rel2abs($t)
-         ; my $mtime = ( stat($path) )[9]
-         ;  exists $CACHE{$path}             # if it is cached
-         && $mtime > $CACHE{$path}{mtime}    # and old
-         && $s->purge_cache($path)           # purge $path from cache
-         ; unless ( exists $CACHE{$path} )   # if it is not cached
-            { $CACHE{$path}{main_zone} = $s->_parse(IO::Util::slurp $t)
-            ; $CACHE{$path}{mtime}     = $mtime
-            }
-         ; $CACHE{$path}{main_zone}
-         }
-        else
-         { $s->_parse( IO::Util::slurp $t )
+      { $t = $s->find_file($t)
+             or croak qq(Template file "$t" empty or not found)
+      ; if ( $$s{options}{cache} )
+         { $main_zone = IO::Util::_get_parsing_cache('magic_zone', $t)
+         ; return $main_zone if $main_zone
          }
       }
-     elsif ( ref $t eq 'GLOB' )
-      { $s->_parse( IO::Util::slurp $t ) ;
-      }
-     elsif ( ref $t eq 'SCALAR' )
-      { $s->_parse( $t )
-      }
+   ; my $content = ref $t eq 'SCALAR' ? $t : IO::Util::slurp $t
+   ; $main_zone  =  $s->_parse( $content )
+   ; $$s{options}{cache}  &&! ref($t)    # set cache
+     && IO::Util::_set_parsing_cache 'magic_zone', $t, $main_zone
+   ; $main_zone
    }
 
 ; sub purge_cache
-   { my ($s, @paths) = @_
-   ; @paths || return undef %CACHE
-   ; @paths = map { File::Spec->rel2abs($_)
-                  }
-                  @paths
-   ; foreach my $path ( @paths )
-      { delete $CACHE{$path}
-      }
+   { $_[0] = 'magic_zone'
+   ; goto &IO::Util::_purge_parsing_cache
    }
 
 ; sub _parse
    { my ($s, $content_ref) = @_
    ; my $re = $s->_re
-   ; my @temp = map { [ $_
-                      , do {  /$$re{end_label}/     && $1
-                           || /$$re{include_label}/ && $s->load($1)
-                           || /$$re{container_include_label}/
-                              && 'CONTAINER_INCLUDE'
-                           || /$$re{start_label}/   && { id         => $1
-                                                       , attributes => $2
-                                                       }
-                           }
-                      ]
-                    }
-                    split /($$re{label})/ , $$content_ref
+   ; my @temp
+     = map { [ $_
+             , do {  /$$re{end_label}/     && $1
+                  || /$$re{include_label}/ && do{ (my $t = $1) =~ s/^\s+//
+                                                ; $t
+                                                  ? $s->load($t)
+                                                  : 'CONTAINER_INCLUDE'
+                                                }
+                  || /$$re{start_label}/   && { id         => $1
+                                              , attributes => $2
+                                              }
+                  }
+             ]
+           }
+           split /($$re{label})/ , $$content_ref
    ; for ( my $i  = $#temp                        # find end
          ;    $i >= 0
          ;    $i --
@@ -640,9 +624,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.33
+=head1 VERSION 1.34
 
-Included in Template-Magic 1.33 distribution.
+Included in Template-Magic 1.34 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -654,7 +638,7 @@ The latest versions changes are reported in the F<Changes> file in this distribu
 
     Perl version >= 5.6.1
     OOTools      >= 1.52
-    IO::Util     >= 1.26
+    IO::Util     >= 1.42
     File::Spec   >= 0
 
 =item CPAN
@@ -955,7 +939,7 @@ This method accepts any number of I<temporary lookups> elements that could be I<
     $my_block_output = $tm->output( '/path/to/template', \%special_hash );
 
 
-B<Note>: if I<template> is a path, the object will cache it automatically, so Template::Magic will open and parse the template file only the first time or if the file has been modified. If for any reason you don't want the template to be cached, you can use the 'cache / no_cache' L<"options">.
+B<Note>: if I<template> is a path, the object will cache it automatically, so Template::Magic will open and parse the template file only the first time or if the file has been modified. If for any reason you don't want to cache the template structure, you can use the 'cache / no_cache' L<"options">.
 
 =head2 noutput ( arguments )
 
@@ -983,7 +967,7 @@ This method accepts any number of I<temporary lookups> elements that could be I<
     # this adds some lookups location to the print method 
     $tm->print( '/path/to/template', \%special_hash );
 
-B<Note>: if I<template> is a path, the object will cache it automatically, so Template::Magic will open and parse the template file only the first time or if the file has been modified. If for any reason you don't want the template to be cached, you can use the 'cache / no_cache' L<"options">. I<(see L<"EFFICIENCY">)>.
+B<Note>: if I<template> is a path, the object will cache it automatically, so Template::Magic will open and parse the template file only the first time or if the file has been modified. If for any reason you don't want to cache the template structure, you can use the 'cache / no_cache' L<"options">. I<(see L<"EFFICIENCY">)>.
 
 =head2 nprint ( arguments )
 
@@ -1015,8 +999,6 @@ You shouldn't need to use this method unless you want to build the cache in adva
 =head2 purge_cache ( [template_path] )
 
 Template::Magic opens and parses a template file only the first time or if the file has been modified. Since the template caching is automatic you shouldn't need to use this method under normal situations, anyway with this method you can purge the I<template_path> from the cache. Without any I<template_path> parameter the method purges all the stored templates.
-
-B<Note>: I<template_path> must be an absolute path.
 
 =head2 find_file ( template )
 
@@ -1657,7 +1639,7 @@ To include a file in a template use the I<INCLUDE_TEMPLATE> label passing the fi
 
 The  F<'/temp/footer.html'> file will be included in place of the label and it will be processed (and automatically cached) as usual.
 
-B<WARNING>: An icluded template is processed as it was a complete template, this means that a I<block> should be always ended with an I<end label> in the same template. In other words I<blocks> cannot cross the phisical boundary of the file they belong to, or unpredictable behaviours could occur.
+B<WARNING>: An icluded template is processed as it was a complete template, this means that a I<block> should be always ended with an I<end label> in the same template. In other words I<blocks> cannot cross the boundary of the file they belong to, or unpredictable behaviours could occur.
 
 =head2 Conditionally include and process a template file
 
@@ -2651,7 +2633,7 @@ L<http://lists.sourceforge.net/lists/listinfo/template-magic-users>
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis (L<http://perl.4pro.net>)
+© 2004-2005 by Domizio Demichelis (L<http://perl.4pro.net>)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 

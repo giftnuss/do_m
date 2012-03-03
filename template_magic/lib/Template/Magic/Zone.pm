@@ -1,5 +1,5 @@
 package Template::Magic::Zone ;
-$VERSION = 1.33 ;
+$VERSION = 1.34 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -72,7 +72,7 @@ $VERSION = 1.33 ;
    
 ; sub value_process
    { my ($z) = @_
-   ; my $tm = $z->tm 
+   ; my $tm = $z->tm
    ; my $v = $z->value
    ; if ( defined $v && length $v )
       { delete $$tm{_NOT_lookup}{'NOT_'.$z->id}
@@ -120,7 +120,7 @@ $VERSION = 1.33 ;
          }
       }
    }
-
+   
 ; sub _include
    { my ($z, $iz) = @_
    ; @$iz{qw|container level tm|} = ( $z->container
@@ -207,9 +207,9 @@ __END__
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.33
+=head1 VERSION 1.34
 
-Included in Template-Magic 1.33 distribution.
+Included in Template-Magic 1.34 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -484,6 +484,6 @@ L<http://lists.sourceforge.net/lists/listinfo/template-magic-users>
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis (L<http://perl.4pro.net>)
+© 2004-2005 by Domizio Demichelis (L<http://perl.4pro.net>)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.

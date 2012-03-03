@@ -1,5 +1,5 @@
 package Template::Magic::HTML ;
-$VERSION = 1.33 ;
+$VERSION = 1.34 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -24,9 +24,9 @@ __END__
 
 Template::Magic::HTML - HTML handlers for Template::Magic used in a HTML environment
 
-=head1 VERSION 1.33
+=head1 VERSION 1.34
 
-Included in Template-Magic 1.33 distribution.
+Included in Template-Magic 1.34 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -272,7 +272,7 @@ L<http://lists.sourceforge.net/lists/listinfo/template-magic-users>
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004 by Domizio Demichelis (L<http://perl.4pro.net>)
+© 2004-2005 by Domizio Demichelis (L<http://perl.4pro.net>)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 

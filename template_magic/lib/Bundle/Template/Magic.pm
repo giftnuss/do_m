@@ -1,5 +1,5 @@
 package Bundle::Template::Magic;
-$VERSION = 1.33;
+$VERSION = 1.34;
 __END__
 
 =head1 NAME
@@ -40,7 +40,7 @@ Note: A Bundle is a module that simply defines a collection of other modules. It
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2002-2004 by Domizio Demichelis.
+© 2004-2005 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 
