@@ -14,11 +14,13 @@
        , ABSTRACT_FROM   => $pm
        )
      : ()
-   , PREREQ_PM      => { 'Class::constr'  => 1.52
-                       , 'Class::props'   => 1.52
-                       , 'Object::props'  => 1.52
-                       , 'IO::Util'       => 1.43
-                       , 'File::Spec'     => 0
+   , PREREQ_PM      => { 'Class::constr'    => 2.1
+                       , 'Class::props'     => 2.1
+                       , 'Object::props'    => 2.1
+                       , 'Class::Util'      => 2.1
+                       , 'IO::Util'         => 1.46
+                       , 'HTML::TableTiler' => 1.2
+                       , 'File::Spec'       => 0
                        }
    )
 

@@ -1,15 +1,17 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         Template-Magic
-version:      1.35
+version:      1.36
 version_from: lib/Template/Magic.pm
 installdirs:  site
 requires:
-    Class::constr:                 1.52
-    Class::props:                  1.52
+    Class::constr:                 2.1
+    Class::props:                  2.1
+    Class::Util:                   2.1
     File::Spec:                    0
-    IO::Util:                      1.43
-    Object::props:                 1.52
+    HTML::TableTiler:              1.2
+    IO::Util:                      1.46
+    Object::props:                 2.1
 
 distribution_type: module
 generated_by: ExtUtils::MakeMaker version 6.17

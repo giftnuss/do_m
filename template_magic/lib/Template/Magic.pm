@@ -1,16 +1,17 @@
 package Template::Magic ;
-$VERSION = 1.35 ;
+$VERSION = 1.36 ;
+use 5.006_001 ;
+use strict ;
 use AutoLoader 'AUTOLOAD' ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
-; use strict
-; use 5.006_001
 ; use Carp
 ; $Carp::Internal{+__PACKAGE__}++
 ; use Template::Magic::Zone
 ; use IO::Util
+; use Class::Util
 ; use File::Spec
 ; use base 'Exporter'
 ; our $END
@@ -86,8 +87,8 @@ use AutoLoader 'AUTOLOAD' ;
                        value
                        post
                      |
-      { $$s{"$n\_handlers"}
-        &&= [ $s->_Hload( $$s{"$n\_handlers"}
+      { $$s{$n.'_handlers'}
+        &&= [ $s->_Hload( $$s{$n.'_handlers'}
                         , $n
                         )
             ]
@@ -221,7 +222,7 @@ use AutoLoader 'AUTOLOAD' ;
       }
    ; my $z = $s->load( $t )
    ; $$z{tm} = $s
-   ; $z->content_process($s)
+   ; $z->content_process
    ; delete $$z{tm} # to avoid tm object caching
    ; delete @$s{qw|_included_template _temp_lookups _NOT_lookup|}
    }
@@ -328,7 +329,7 @@ use AutoLoader 'AUTOLOAD' ;
 
 ; sub DEFAULT_PRINT_HANDLERS
    { [ sub
-        { print $_[1]
+        { print $_[1] if defined $_[1]
         ; NEXT_HANDLER
         }
      ]
@@ -368,9 +369,10 @@ use AutoLoader 'AUTOLOAD' ;
 ; sub SCALAR # value handler
    { sub
       { my ($z) = @_
-      ; if ( not ref $z->value )           # if it's a plain string
-         { $z->output = $z->value          # set output
-         ; $z->output_process( $z->value ) # process output (requires string)
+      ; my $v = $z->value
+      ; if ( not ref $v )           # if it's a plain string
+         { $z->output = $v          # set output
+         ; $z->output_process( $v ) # process output (requires string)
          ; LAST_HANDLER
          }
       }
@@ -379,9 +381,10 @@ use AutoLoader 'AUTOLOAD' ;
 ; sub REF # value handler
    { sub
       { my ($z) = @_
-      ; if (ref($z->value) =~ /^(SCALAR|REF)$/)  # if it's a reference
-         { $z->value = ${$z->value}              # dereference
-         ; $z->value_process                     # process the new value
+      ; my $v = $z->value
+      ; if (ref($v) =~ /^(SCALAR|REF)$/)  # if it's a reference
+         { $z->value = $$v                # dereference
+         ; $z->value_process              # process the new value
          ; LAST_HANDLER
          }
       }
@@ -427,21 +430,18 @@ use AutoLoader 'AUTOLOAD' ;
       ; my $v = $z->value
       ; if ( ref $v eq 'CODE' )
          { my $l = $z->location
-         ; my $class = ref $l
-         ; if (  length($class)     # if blessed obj
-              && eval { $l->isa( $class ) }
-              )
-            { no strict 'refs' 
-            ; $z->value = $l->$v( ${"$class\::no_template_magic_zone"} ? () : $z
-                                , @args )
-            }
-           else                     # if not blessed obj
-            { $z->value = $v->( $z , @args )
-            }
-         ; if ( defined $z->value   # avoid error if a sub return undef
-              && $v ne $z->value    # avoid infinite loop in undef sub
-              )
-            { $z->value_process     # process the new value
+         ; my $nv = Class::Util::blessed($l)
+                    ? do { no strict 'refs'
+                         ; $l->$v( ${ref($l).'::no_template_magic_zone'}
+                                   ? ()
+                                   : $z
+                                 , @args
+                                 )
+                         }
+                    : $v->( $z , @args )
+         ; if ( $v ne ($nv||'') ) # avoid infinite loop
+            { $z->value = $nv
+            ; $z->value_process
             }
          ; LAST_HANDLER
          }
@@ -451,16 +451,13 @@ use AutoLoader 'AUTOLOAD' ;
 ; sub OBJECT
    { sub
       { my ($z) = @_
-      ; my $v = $z->value
-      ; if (  length(ref $v)             # if blessed obj
-           && eval { $v->isa( ref $v ) }
-           )       
+      ; if ( Class::Util::blessed($z->value) )
          { $z->content_process           # process content
          ; LAST_HANDLER
          }
       }
    }
-
+   
 ; sub ID_list
    { my ($s, $ident, $end) = @_
    ; $ident ||= ' ' x 4
@@ -540,11 +537,10 @@ sub INCLUDE_TEXT # zone handler
       { my ($z) = @_
       ; if ( $z->id eq 'INCLUDE_TEXT' )
          { my $file = $z->attributes
-         ; local *I_TEXT
-         ; open I_TEXT, $file
+         ; open my $itxt, $file
            or croak qq(Error opening text file "$file": $^E)
-         ; $z->text_process($_) while <I_TEXT>
-         ; close I_TEXT
+         ; $z->text_process($_) while <$itxt>
+         ; close $itxt
          ; LAST_HANDLER
          }
       }
@@ -565,13 +561,14 @@ sub TableTiler # value handler
      else
       { sub            # normal handler
          { my ($z) = @_
-         ; if (  ref $z->value eq 'ARRAY'
-              && HTML::TableTiler::is_matrix($z->value)   # if matrix
+         ; my $v = $z->value
+         ; if (  ref($v) eq 'ARRAY'
+              && HTML::TableTiler::is_matrix($v)   # if matrix
               )
             { $z->value
               = eval { local $SIG{__DIE__}
                      ; my $cont = $z->content
-                     ; HTML::TableTiler::tile_table( $z->value
+                     ; HTML::TableTiler::tile_table( $v
                                                    , $cont && \$cont
                                                    , $z->attributes
                                                    , 1
@@ -596,8 +593,9 @@ sub FillInForm # value handler
      else
       { sub
          { my ($z) = @_
-         ; if (  ref $z->value
-              && defined UNIVERSAL::can( $z->value , 'param' )
+         ; my $v = $z->value
+         ; if (  ref($v)
+              && defined UNIVERSAL::can( $v , 'param' )
               )
             { my $cont = IO::Util::capture { $z->content_process }
             ; my $attr = $z->attributes
@@ -609,7 +607,7 @@ sub FillInForm # value handler
               = eval { local $SIG{__DIE__}
                      ; HTML::FillInForm->new
                                        ->fill( scalarref     => $cont
-                                             , fobject       => $z->value
+                                             , fobject       => $v
                                              , ignore_fields => \@if
                                              )
                      }
@@ -619,14 +617,16 @@ sub FillInForm # value handler
          }
       }
    }
+   
+=pod
 
 =head1 NAME
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.35
+=head1 VERSION 1.36
 
-Included in Template-Magic 1.35 distribution.
+Included in Template-Magic 1.36 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -637,8 +637,8 @@ The latest versions changes are reported in the F<Changes> file in this distribu
 =item Prerequisites
 
     Perl version >= 5.6.1
-    OOTools      >= 1.52
-    IO::Util     >= 1.42
+    OOTools      >= 2
+    IO::Util     >= 1.46
     File::Spec   >= 0
 
 =item CPAN
@@ -1652,7 +1652,7 @@ Sometimes it may be useful to include a template only if a condition is true. To
       {
         return $zone->include_template('/path/to/template')
       }
-      else # may be you don't need an else block
+      else # may be you want just return ''
       {
          return 'template not included'
       }
@@ -2640,3 +2640,5 @@ All Rights Reserved. This module is free software. It may be used, redistributed
 =head1 CREDITS
 
 Thanks to I<Mark Overmeer> L<http://search.cpan.org/author/MARKOV/> which has submitted a variety of code cleanups/speedups and other useful suggestions.
+
+=cut

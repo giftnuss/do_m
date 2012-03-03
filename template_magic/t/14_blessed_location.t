@@ -3,6 +3,7 @@
 ; use strict
 ; use Test::More tests => 1
 ; use Template::Magic
+; use Data::Dumper
 
 
 ; package Local::foo

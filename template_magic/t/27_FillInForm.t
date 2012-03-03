@@ -54,13 +54,14 @@ EOE2
 
 ; my $tm = Template::Magic::HTML->new()
 
-                                       
+; use IO::Util
 ; SKIP: { skip("HTML::FillInForm is not installed on this system", 2 )
           unless eval
                   { require HTML::FillInForm
                   }
 
       ; my $filled1 = $tm->output(\$temp1)
+
       ; is( $$filled1
           , $expected1
           )
@@ -70,3 +71,4 @@ EOE2
           )
 
       }
+

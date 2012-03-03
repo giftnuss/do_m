@@ -1,6 +1,9 @@
-package Bundle::Template::Magic;
-$VERSION = 1.34;
+; package Bundle::Template::Magic
+
+
 __END__
+
+=pod
 
 =head1 NAME
 
@@ -44,4 +47,4 @@ Note: A Bundle is a module that simply defines a collection of other modules. It
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 
-
+=cut

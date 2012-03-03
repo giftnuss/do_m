@@ -1,12 +1,13 @@
 package Template::Magic::Zone ;
-$VERSION = 1.35 ;
+$VERSION = 1.36 ;
+use 5.006_001 ;
+use strict ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
-; use 5.006_001
-; use strict
 ; our $AUTOLOAD
+; $Carp::Internal{+__PACKAGE__}++
 
 ; BEGIN
    { *OK = sub () { 1 }
@@ -14,48 +15,65 @@ $VERSION = 1.35 ;
 
 ; BEGIN
    { foreach my $n qw| zone
-                       text
                        output
+                       text
                        post
                      |
       { no strict 'refs'
-      ; *{"$n\_process"}
-        = sub
-           { my ($z) = @_
-           ; my $ch = $z->tm->{"$n\_handlers"} || return
-           ; HANDLER:
-             foreach my $h ( @$ch )
-              { return OK if &$h(@_)
-              }
-           }
+      ; *{$n.'_process'} = sub
+                            { my ($z) = @_
+                            ; my $ch = $z->tm->{$n.'_handlers'} || return
+                            ; HANDLER:
+                              foreach my $h ( @$ch )
+                               { return OK if $h->(@_)
+                               }
+                            }
       }
    ; *mt = sub{shift()->tm(@_)}  # backward compatibility
    }
    
 ; use Class::constr
-; use Object::props qw| param
-                        location
-                        value
-                        output
-                        _s
-                        _e
-                      |
-                      ,
-                      { name      => [ qw| id
-                                           attributes
-                                           is_main
-                                           _t
-                                           container
-                                         |
-                                     ]
-                      , protected => 1
-                      }
-                      ,
-                      { name      => 'level'
-                      , protected => 1
-                      , default   => -1
-                      }
+; use Object::props
+  ( { name       => [ qw| id
+                          attributes
+                          is_main
+                          _t
+                          container
+                          output
+                        |
+                    ]
+    , protected  => 1
+    }
+  , { name       => 'level'
+    , protected  => 1
+    , default    => -1
+    }
+  , qw| param
+        location
+        value
+        _s
+        _e
+      |
+  )
 
+; sub value_process
+   { my ($z) = @_
+   ; my $tm = $z->tm
+   ; my $v = $z->value
+   ; if ( defined $v && length $v )
+      { delete $$tm{_NOT_lookup}{'NOT_'.$z->id}
+      }
+     else
+      { $$tm{_NOT_lookup}{'NOT_'.$z->id} = {}
+      ; return unless defined($v)
+      }
+   ; my $ch = $$tm{value_handlers} || return
+   ; HANDLER:
+     foreach my $h ( @$ch )
+      { return OK if &$h(@_)
+      }
+   }
+     
 ; sub AUTOLOAD : lvalue
    { (my $n = $AUTOLOAD) =~ s/.*://
    ; return if $n eq 'DESTROY'
@@ -70,24 +88,6 @@ $VERSION = 1.35 ;
    ; $$az{tm}
    }
    
-; sub value_process
-   { my ($z) = @_
-   ; my $tm = $z->tm
-   ; my $v = $z->value
-   ; if ( defined $v && length $v )
-      { delete $$tm{_NOT_lookup}{'NOT_'.$z->id}
-      }
-     else
-      { $$tm{_NOT_lookup}{'NOT_'.$z->id} = {}
-      ; return unless defined($v)
-      }
-   ; my $ch = $$tm{value_handlers} || return 
-   ; HANDLER:
-     foreach my $h ( @$ch )
-      { return OK if &$h(@_)
-      }
-   }
-
 ; sub content_process
    { my ($z) = @_
    ; defined $z->_e || return  # content or return
@@ -133,7 +133,7 @@ $VERSION = 1.35 ;
    
 ; sub lookup_process
    { my ($z) = @_
-   ; defined $z->value && return
+   ; defined $z->value and return
    ; $z->value = $z->lookup
    }
 
@@ -172,7 +172,7 @@ $VERSION = 1.35 ;
       }
      else
       { no strict
-      ; local *S = "$l\::$id"
+      ; local *S = $l.'::'.$id
       ; defined $S ?  $S
       : defined @S ? \@S
       : defined %S ? \%S
@@ -202,13 +202,15 @@ $VERSION = 1.35 ;
 
 __END__
 
+=pod
+
 =head1 NAME
 
 Template::Magic::Zone - The Zone object
 
-=head1 VERSION 1.35
+=head1 VERSION 1.36
 
-Included in Template-Magic 1.35 distribution.
+Included in Template-Magic 1.36 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -486,3 +488,5 @@ L<http://lists.sourceforge.net/lists/listinfo/template-magic-users>
 © 2004-2005 by Domizio Demichelis (L<http://perl.4pro.net>)
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
+
+=cut

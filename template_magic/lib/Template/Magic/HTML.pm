@@ -1,12 +1,13 @@
 package Template::Magic::HTML ;
-$VERSION = 1.35 ;
+$VERSION = 1.36 ;
+use 5.006_001 ;
+use strict ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
 
-; use 5.006_001
-; use strict
 ; use base 'Template::Magic'
+; $Carp::Internal{+__PACKAGE__}++
 
 ; BEGIN
    { *NEXT_HANDLER           = *Template::Magic::NEXT_HANDLER
@@ -19,14 +20,16 @@ $VERSION = 1.35 ;
 ; 1
 
 __END__
+
+=pod
       
 =head1 NAME
 
 Template::Magic::HTML - HTML handlers for Template::Magic used in a HTML environment
 
-=head1 VERSION 1.35
+=head1 VERSION 1.36
 
-Included in Template-Magic 1.35 distribution.
+Included in Template-Magic 1.36 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -276,3 +279,4 @@ L<http://lists.sourceforge.net/lists/listinfo/template-magic-users>
 
 All Rights Reserved. This module is free software. It may be used, redistributed and/or modified under the same terms as perl itself.
 
+=cut
