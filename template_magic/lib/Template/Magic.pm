@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.0 ;
+$VERSION = 1.01 ;
 use AutoLoader 'AUTOLOAD' ;
 
 ; use strict
@@ -636,9 +636,9 @@ sub FillInForm # value handler
 
 Template::Magic - magic merger of runtime values with templates
 
-=head1 VERSION 1.0
+=head1 VERSION 1.01
 
-Included in Template-Magic 1.0 distribution.
+Included in Template-Magic 1.01 distribution.
 
 =head1 SYNOPSIS
 

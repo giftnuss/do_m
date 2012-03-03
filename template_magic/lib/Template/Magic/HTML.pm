@@ -1,5 +1,5 @@
 package Template::Magic::HTML ;
-$VERSION = 1.0 ;
+$VERSION = 1.01 ;
 
 ; use 5.006_001
 ; use strict
@@ -21,9 +21,9 @@ __END__
 
 Template::Magic::HTML - HTML handlers for Template::Magic used in a HTML environment
 
-=head1 VERSION 1.0
+=head1 VERSION 1.01
 
-Included in Template-Magic 1.0 distribution.
+Included in Template-Magic 1.01 distribution.
 
 =head1 SYNOPSIS
 
