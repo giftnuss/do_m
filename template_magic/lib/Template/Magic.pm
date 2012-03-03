@@ -103,24 +103,15 @@ use AutoLoader 'AUTOLOAD' ;
          { $_
          }
         elsif ( not ref )
-         { no strict 'refs'
-         ; my $ref
-         ; eval
-            { $ref = $s->$_
-            }
-         ; if ( $@ )
-            { my $h = join ( '_'
-                           , $_
-                           , uc $n
-                           ,'HANDLERS'
-                           )
-            ; eval
-               { $ref = $s->$h
-               }
-            }
-         ; if ( $@ )
-            { croak qq(Unknown handler "$_")
-            }
+         { my $C =  $s->can($_)
+                || $s->can( join ( '_'
+                                 , $_
+                                 , uc $n
+                                 ,'HANDLERS'
+                                 )
+                          )
+                || croak qq(Unknown handler "$_")
+         ; my $ref = $s->$C
          ; if ( ref $ref eq 'ARRAY' )
             { $s->_Hload( $ref, $n )
             }
@@ -138,18 +129,10 @@ use AutoLoader 'AUTOLOAD' ;
       { unless ( @{$$s{markers}} == 3 )
          { no strict 'refs'
          ; my $m = $$s{markers}[0]
-         ; eval
-            { $$s{markers} = $s->$m
-            }
-         ; if ( $@ )
-            { $m .= '_MARKERS'
-            ; eval
-               { $$s{markers} = $s->$m
-               }
-            }
-           if ( $@ )
-            { croak qq(Unknown markers "$m")
-            }
+         ; my $M =  $s->can($m)
+                 || $s->can($m.'_MARKERS')
+                 || croak qq(Unknown markers "$m")
+         ; $$s{markers} = $s->$M
          }
       ; $$s{markers} = [ map { qr/$_/s
                              }
@@ -168,33 +151,31 @@ use AutoLoader 'AUTOLOAD' ;
      ? @{$$s{markers}}
      : $$s{_re}
    }
-
-; sub get_block  # deprecated method
-   { my ($s, $t, $id) = @_
-   ; $t = IO::Util::slurp $t
-          unless ref $t eq 'SCALAR'
-   ; $$t or croak 'The template content is empty'
-   ; my ($S, $I, $E, $A) = $s->_re
-   ; $$t =~ s/ $S ('|") (.*?) \1 $E
-             /${$s->get_block($2)}/xgse # deprecated include
-   ; if ( $id )
-      { ( $$t ) = $$t =~ / ( $S$id$A$E
-                           (?: (?! $S$id$A$E) (?! $S$I$id$E) . )*
-                           $S$I$id$E )
-                         /xs
-      }
-   ; $t
-   }
-
-; sub set_block # deprecated method
-   { my ($s, $t, $id, $new) = @_
-   ; my ($S, $I, $E, $A) = $s->_re
-   ; $t = $s->get_block($t)
-   ; $$t =~ s/ $S$id$A$E
-               (?: (?! $S$id$A$E) (?! $S$I$id$E) . )*
-               $S$I$id$E
-             /$$new||$new/xgse
-   ; $t
+   
+; sub find_file
+   { my ($s, $t) = @_
+   ; my $find = sub{(grep -s, @_)[0]}
+   ; File::Spec->file_name_is_absolute($t)
+   ? $find->($t)
+   : (  $ENV{TEMPLATE_MAGIC_ROOT}
+     && $find->( File::Spec->catfile( $ENV{TEMPLATE_MAGIC_ROOT}
+                                    , $t
+                                    )
+               )
+     || $find->( map File::Spec->catfile( $_
+                                        , $t
+                                        )
+               , @{$$s{paths}}
+               )
+     || $ENV{TEMPLATE_MAGIC_ROOT}
+     && $find->( map File::Spec->catfile( $ENV{TEMPLATE_MAGIC_ROOT}
+                                        , $_
+                                        , $t
+                                        )
+               , @{$$s{paths}}
+               )
+     || $find->($t)
+     )
    }
       
 ; sub output
@@ -237,26 +218,32 @@ use AutoLoader 'AUTOLOAD' ;
    ; delete @$s{qw|_temp_lookups _NOT_lookup|}
    }
 
+
 ; sub load
    { my ($s, $t) = @_
-   ; if (  $$s{options}{cache}          # if it is a path and cache
-        && not ref $t
-        )
-      { my $path = File::Spec->rel2abs($t)
-      ; -e $path
-           or croak qq(Template file "$path" not found)
-      ; my $mtime = ( stat($path) )[9]
-      ;  exists $CACHE{$path}             # if it is cached
-      && $mtime > $CACHE{$path}{mtime}    # and old
-      && $s->purge_cache($path)           # purge $path from cache
-      ; unless ( exists $CACHE{$path} )   # if it is not cached
-         { $CACHE{$path}{main_zone} = $s->_parse($s->get_block($path))
-         ; $CACHE{$path}{mtime}     = $mtime
+   ; if ( not ref $t )
+      { $t = $s->find_file($t) or croak qq(Template file "$t" empty or not found)
+      ; if ( $$s{options}{cache})
+         { my $path = File::Spec->rel2abs($t)
+         ; my $mtime = ( stat($path) )[9]
+         ;  exists $CACHE{$path}             # if it is cached
+         && $mtime > $CACHE{$path}{mtime}    # and old
+         && $s->purge_cache($path)           # purge $path from cache
+         ; unless ( exists $CACHE{$path} )   # if it is not cached
+            { $CACHE{$path}{main_zone} = $s->_parse(IO::Util::slurp $t)
+            ; $CACHE{$path}{mtime}     = $mtime
+            }
+         ; $CACHE{$path}{main_zone}
          }
-      ; return $CACHE{$path}{main_zone}
+        else
+         { $s->_parse( IO::Util::slurp $t )
+         }
       }
-     else                         # if it is not a path or no_cache
-      { $s->_parse( $s->get_block($t) ) ;
+     elsif ( ref $t eq 'GLOB' )
+      { $s->_parse( IO::Util::slurp $t ) ;
+      }
+     elsif ( ref $t eq 'SCALAR' )
+      { $s->_parse( $t )
       }
    }
 
@@ -272,7 +259,7 @@ use AutoLoader 'AUTOLOAD' ;
    }
 
 ; sub _parse
-   { my ($s, $t) = @_
+   { my ($s, $content_ref) = @_
    ; my $re = $s->_re
    ; my @temp = map { [ $_
                       , do {  /$$re{end_label}/     && $1
@@ -283,7 +270,7 @@ use AutoLoader 'AUTOLOAD' ;
                            }
                       ]
                     }
-                    split /($$re{label})/ , $$t
+                    split /($$re{label})/ , $$content_ref
    ; for ( my $i  = $#temp                        # find end
          ;    $i >= 0
          ;    $i --
@@ -363,6 +350,10 @@ use AutoLoader 'AUTOLOAD' ;
    
 ; sub HTML_MARKERS
    { [ qw| <!--{ / }--> | ]
+   }
+
+; sub CODE_MARKERS
+   { [ qw| <- / -> | ]
    }
 
 ; sub HTML_VALUE_HANDLERS # value handler
@@ -557,7 +548,8 @@ sub INCLUDE_TEXT # zone handler
 
 sub TableTiler # value handler
    { eval
-      { require HTML::TableTiler
+      { local $SIG{__DIE__}
+      ; require HTML::TableTiler
       ; return $HTML::TableTiler::VERSION >= 1.14
       }
    ; if ( $@ )
@@ -588,7 +580,8 @@ sub TableTiler # value handler
 
 sub FillInForm # value handler
    { eval
-      { require HTML::FillInForm
+      { local $SIG{__DIE__}
+      ; require HTML::FillInForm
       }
    ; if ( $@ )
       { carp qq("HTML::FillInForm" is not installed on this system\n)
@@ -625,9 +618,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.25
+=head1 VERSION 1.3
 
-Included in Template-Magic 1.25 distribution.
+Included in Template-Magic 1.3 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -639,7 +632,7 @@ The latest versions changes are reported in the F<Changes> file in this distribu
 
     Perl version >= 5.6.1
     OOTools      >= 1.52
-    IO::Util     >= 1.25
+    IO::Util     >= 1.26
     File::Spec   >= 0
 
 =item CPAN
@@ -680,7 +673,8 @@ to have all your variable and subroutines merged with the F<template> file, or s
     use Template::Magic qw( -compile );
     
     $tm = new Template::Magic
-              markers         =>   qw( < / > )                     ,
+              paths           => [ qw(/any/path /any/other/path) ] ,
+              markers         => [ qw( < / > ) ]                   ,
               lookups         => [ \%my_hash, $my_obj, 'main'    ] ,
               zone_handlers   => [ \&my_zone_handler, '_EVAL_'   ] ,
               value_handlers  => [ 'DEFAULT', \&my_value_handler ] ,
@@ -904,14 +898,6 @@ More practical topics are probably discussed in the mailing list at this URL: ht
 
 =back
 
-=head2 A Personal Note
-
-I don't ask you any money to use my modules: I just ask you to write me a simple message telling me something about you and/or about the specific usage you give them ;-).
-
-Please, write me a few lines: it does not cost you any money and it will give me one more reason to keep publishing my works. Thank you.
-
-I<(please, use this page to send your message: http://perl.4pro.net)>
-
 =head1 METHODS
 
 =head2 new ( [constructor_arrays] )
@@ -981,38 +967,6 @@ A named arguments interface for the L<print()|"print ( template [, temporary loo
     $tm->nprint( template => '/path/to/template',
                  lookups  => [ \%special_hash, 'My::lookups'] ) ;
 
-=head2 get_block ( template [, identifier] )
-
-B<WARNING>: deprecated method. It may be removed in a future version, so don't rely on it.
-
-This method returns a reference to the template content or to a block inside the template, without merging values. It accepts one I<template> parameter that can be a reference to a SCALAR content, a path to a template file or a filehandle. If any I<identifier> is passed, it returns just that block.
-
-    # this returns a ref to the whole template content
-    $tpl_content = $tm->get_block ( '/temp/template_file.html' );
-    
-    # this return a ref to the 'my_block_identifier' block
-    $tpl_block = $tm->get_block ( '/temp/template_file.html',
-                                  'my_block_identifier'     );
-    
-    # same thing passing a reference
-    $tpl_block = $tm->get_block ( $tpl_content          ,
-                                  'my_block_identifier' );
-
-=head2 set_block ( template, identifier, new_content )
-
-B<WARNING>: deprecated method. It may be removed in a future version, so don't rely on it.
-
-This method sets the content of the block (or blocks) I<identifier> inside a I<template> - without merging values - and returns a reference to the changed template. It accepts one I<template> parameter that can be a reference to a SCALAR content, a path to a template file or a filehandle. I<New_content> can be a reference to the content or the content itself.
-
-    # this return a ref to the 'my_block' block
-    $new_content = $tm->get_block ( '/temp/template_file_2.html',
-                                    'my_block'                  );
-    
-    # this returns a ref to the changed template content,
-    $changed_content = $tm->set_block ( '/temp/template_file.html',
-                                        'my_old_block'            ,
-                                         $new_content             );
-
 =head2 ID_list ( [identation_string [, end_marker]] )
 
 Calling this method (before the L<output()|"output ( template [, temporary lookups ] )"> or L<print()|"print ( template [, temporary lookups ] )"> methods) will redefine the behaviour of the module, so your program will print a pretty formatted list of only the identifiers present in the template, thus the programmer can pass a description of each label and block within a template to a designer.
@@ -1035,6 +989,18 @@ You shouldn't need to use this method unless you want to build the cache in adva
 =head2 purge_cache ( [template_path] )
 
 Template::Magic opens and parses a template file only the first time or if the file has been modified. Since the template caching is automatic you shouldn't need to use this method under normal situations, anyway with this method you can purge the I<template_path> from the cache. Without any I<template_path> parameter the method purges all the stored templates.
+
+B<Note>: I<template_path> must be an absolute path.
+
+=head2 find_file ( template )
+
+This method is internally used to find the templates you pass with C<print(), nprint(), output(), noutput()> methods or an 'INCLUDE_TEMPLATE' label (and its relative Zone method C<include_template>).
+
+You usually don't need to use this method explicitly, unless you want to check if a template exists on your own. If a non-zero size file exists it returns the path of the found template, or undef if it doesn't.
+
+The I<template> specified can be an absolute path (beginning with a '/' under
+Unix, for example). If it isn't absolute, the path in the environment variable
+TEMPLATE_MAGIC_ROOT is tried, if it exists. Next the paths in the B<paths> constructor array are tried, first as they are, and then with TEMPLATE_MAGIC_ROOT prepended if available. As a final attempt, the I<template> is checked directly.
 
 =head1 CUSTOMIZATION
 
@@ -1082,6 +1048,12 @@ B<Note>: the old constructor arrays identifiers with the prepended '-' and/or th
                 -output_handlers =>   sub {print uc $_[1]}            ,
                 -post_handlers   =>   \&my_post_handler               ,
               } ;
+
+=head3 paths
+
+Use this constructor array to supply a list of paths to search for templates. This list will be used when you pass a relative path as the template name.
+
+See L<find_file()|find_file ( template )> method for details about how the paths are searched.
 
 =head3 markers
 
@@ -1159,6 +1131,18 @@ The default markers:
 Example of block:
 
     {identifier} content of the block {/identifier}
+
+=item CODE
+
+This markers are useful when you deal with templates which contain code, because they reduces the possible conflict with the content:
+
+    START MARKER:  <-
+    END_MARKER_ID: /
+    END_MARKER:    ->
+
+Example of block:
+
+    <-identifier-> content of the block <-/identifier->
 
 =item HTML
 
@@ -1627,6 +1611,12 @@ The same template: '{block}|before-{label}-after|{/block}'
 
 Different combinations of I<values> and I<zones> can easily produce complex ouputs: see the other topics in this section.
 
+=head2 Use template directories
+
+You can set the $ENV{TEMPLATE_MAGIC_ROOT} or use the paths constructor array to pass a list of directories to use when searching the template.
+
+See L<find_file()|find_file ( template )> method for details about how the paths are searched.
+
 =head2 Include and process a template file
 
 To include a file in a template use the I<INCLUDE_TEMPLATE> label passing the file path as the label attribute:
@@ -1635,13 +1625,7 @@ To include a file in a template use the I<INCLUDE_TEMPLATE> label passing the fi
 
 The  F<'/temp/footer.html'> file will be included in place of the label and it will be processed (and automatically cached) as usual.
 
-B<WARNING>: An icluded template is processed as it were a complete template, this means that a I<block> should be always ended with an I<end label> in the same template. In other words I<blocks> cannot cross the phisical boundary of the file they belong to, or unpredictable behaviours could occur.
-
-A deprecated (but still supported) way to include a template file is using a label with the pathname of the file as identifier, surrounded by single or double quotes:
-
-    {'/temp/footer.html'}
-
-Even if this way does not present the above cross boundary problem, it is far less memory efficient, so please use the 'INCLUDE_TEMPLATE' label instead.
+B<WARNING>: An icluded template is processed as it was a complete template, this means that a I<block> should be always ended with an I<end label> in the same template. In other words I<blocks> cannot cross the phisical boundary of the file they belong to, or unpredictable behaviours could occur.
 
 =head2 Conditionally include and process a template file
 

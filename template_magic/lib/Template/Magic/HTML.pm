@@ -1,5 +1,5 @@
 package Template::Magic::HTML ;
-$VERSION = 1.25 ;
+$VERSION = 1.3 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -24,9 +24,9 @@ __END__
 
 Template::Magic::HTML - HTML handlers for Template::Magic used in a HTML environment
 
-=head1 VERSION 1.25
+=head1 VERSION 1.3
 
-Included in Template-Magic 1.25 distribution.
+Included in Template-Magic 1.3 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 

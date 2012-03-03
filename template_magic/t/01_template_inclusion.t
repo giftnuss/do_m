@@ -1,6 +1,6 @@
 #!perl -w
 ; use strict
-; use Test::More tests => 3
+; use Test::More tests => 2
 ; use Template::Magic
 
 ; use Carp
@@ -21,11 +21,6 @@
 ; $tm = new Template::Magic
 
 ; $scalar_test = 'SCALAR'
-
-; $content = $tm->output('template_test_01')
-; is ( $$content
-     , "text from template SCALAR, text from included_test_01 with SCALAR, text from included_test_02 with SCALAR."
-    )
 
 ; $tm3 = new Template::Magic
              zone_handlers=>'INCLUDE_TEXT'
