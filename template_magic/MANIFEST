@@ -34,6 +34,7 @@ t/24_TableTiler.t
 t/25_double_init.t
 t/25_tmpl
 t/26_export.t
+t/27_FillInForm.t
 t/included_test_01
 t/included_test_02
 t/template_test_01

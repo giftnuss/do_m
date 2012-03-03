@@ -1,5 +1,5 @@
 package Template::Magic::HTML ;
-$VERSION = 1.24 ;
+$VERSION = 1.25 ;
 
 # This file uses the "Perlish" coding style
 # please read http://perl.4pro.net/perlish_coding_style.html
@@ -24,9 +24,9 @@ __END__
 
 Template::Magic::HTML - HTML handlers for Template::Magic used in a HTML environment
 
-=head1 VERSION 1.24
+=head1 VERSION 1.25
 
-Included in Template-Magic 1.24 distribution.
+Included in Template-Magic 1.25 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -223,6 +223,14 @@ You can use this handler to fill the form with default values too, To do this, j
     $query = new CGI;
     $query->param( name    => 'John', 
                    surname => 'Smith', ...);
+
+You can pass an array of ignore_fields (see L<HTML::FillInForm> for details) by using the attributes like this:
+
+    <!--{my_query ignore_fields => [ 'prev', 'next'] }-->
+    <form action="my.cgi">
+    ...
+    </form>
+    <!--{/my_query}-->
 
 See L<HTML::FillInForm> for details about this module.
 

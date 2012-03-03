@@ -1,5 +1,5 @@
 package Template::Magic ;
-$VERSION = 1.24 ;
+$VERSION = 1.25 ;
 use AutoLoader 'AUTOLOAD' ;
 
 # This file uses the "Perlish" coding style
@@ -601,11 +601,17 @@ sub FillInForm # value handler
               && defined UNIVERSAL::can( $z->value , 'param' )
               )
             { my $cont = IO::Util::capture { $z->content_process }
+            ; my $attr = $z->attributes
+            ; my ($list) = $attr =~ /ignore_fields\s*=>\s*\[(.*)\]/
+            ; my @if = map /(?:'|")(.+)(?:'|")/  #'
+                     , split /\s*,\s*/
+                     , $list||''
             ; $z->value
               = eval { local $SIG{__DIE__}
                      ; HTML::FillInForm->new
-                                       ->fill( scalarref => $cont
-                                             , fobject   => $z->value
+                                       ->fill( scalarref     => $cont
+                                             , fobject       => $z->value
+                                             , ignore_fields => \@if
                                              )
                      }
             ; $z->value_process
@@ -619,9 +625,9 @@ sub FillInForm # value handler
 
 Template::Magic - Magic merger of runtime values with templates
 
-=head1 VERSION 1.24
+=head1 VERSION 1.25
 
-Included in Template-Magic 1.24 distribution.
+Included in Template-Magic 1.25 distribution.
 
 The latest versions changes are reported in the F<Changes> file in this distribution.
 
@@ -633,7 +639,7 @@ The latest versions changes are reported in the F<Changes> file in this distribu
 
     Perl version >= 5.6.1
     OOTools      >= 1.52
-    IO::Util     >= 1.2
+    IO::Util     >= 1.25
     File::Spec   >= 0
 
 =item CPAN

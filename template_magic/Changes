@@ -1,6 +1,10 @@
 Template-Magic Latest Versions Changes
 
 
+Version 1.25
+- Added ignore_fields option for FillInForm handler plus relative test
+- Changed the prerequisite IO::Util to version 1.25 (fixes the -T bug)
+
 Version 1.24
 - Eliminated version check and installation feedback system
   ("phone home" opt-out) from Makefile.PL to make Randal L Schwartz happy :-)

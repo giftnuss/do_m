@@ -5,7 +5,7 @@
 ; use ExtUtils::MakeMaker
 
 ; my $dist = 'Template::Magic'
-; my $vers = '1.24'
+; my $vers = '1.25'
 
 ; WriteMakefile
    ( NAME           => $dist
@@ -18,10 +18,17 @@
    , PREREQ_PM      => { 'Class::constr'  => '1.52'
                        , 'Class::props'   => '1.52'
                        , 'Object::props'  => '1.52'
-                       , 'IO::Util'       => '1.21'
+                       , 'IO::Util'       => '1.25'
                        , 'File::Spec'     => '0'
                        }
    )
 
 
 ; 1
+
+
+__END__
+
+Note: While I did removed the "phone home opt-out only logic" from all my distributions since 2004-24-06, the related ratings have not been removed so far. Sorry for the inconvenience.
+
+Domizio Demichelis
