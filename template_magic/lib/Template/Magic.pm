@@ -63,12 +63,7 @@ use 5.006_001 ;
                                     }
                                     @{$$s{options}}
                               }
-   ; foreach my $n qw| zone
-                       value
-                       text
-                       output
-                       post
-                     |
+   ; foreach my $n (qw| zone value text output post |)
       { $$s{$n.'_handlers'}
         &&= [ $s->_Hload( $$s{$n.'_handlers'}
                         , $n
@@ -251,6 +246,7 @@ use 5.006_001 ;
              ]
            }
            split /($$re{label})/ , $$content_ref
+  
    ; for ( my $i  = $#temp                        # find end
          ;    $i >= 0
          ;    $i --
@@ -312,7 +308,7 @@ use 5.006_001 ;
 
 ; sub DEFAULT_PRINT_HANDLERS
    { [ sub
-        { print $_[1] if defined $_[1]
+        { print "$_[1]" if defined $_[1]
         ; NEXT_HANDLER
         }
      ]
