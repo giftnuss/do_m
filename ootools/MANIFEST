@@ -31,3 +31,4 @@ t/15_P_props.t
 t/16_P_groups.t
 t/test_pod.t
 t/test_pod_coverage.t
+META.json

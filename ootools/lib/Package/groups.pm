@@ -1,11 +1,11 @@
 package Package::groups ;
-$VERSION = 2.21 ;
+$VERSION = 2.30 ;
 use 5.006_001 ;
 use strict ;
 
 ; use Class::groups
 ; our @ISA = qw| Class::groups |
-   
+
 ; 1
 
 __END__

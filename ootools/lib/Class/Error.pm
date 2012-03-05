@@ -1,5 +1,5 @@
 package Class::Error ;
-$VERSION = 2.21 ;
+$VERSION = 2.30 ;
 use strict ;
 
 # This file uses the "Perlish" coding style
