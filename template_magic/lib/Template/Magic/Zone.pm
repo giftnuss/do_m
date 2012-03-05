@@ -1,5 +1,5 @@
 package Template::Magic::Zone ;
-$VERSION = 1.39 ;
+$VERSION = 1.40 ;
 use strict ;
 use 5.006_001 ;
 

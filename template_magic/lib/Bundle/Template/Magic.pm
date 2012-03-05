@@ -1,6 +1,7 @@
 use strict ;
-; package Bundle::Template::Magic
+package Bundle::Template::Magic ;
 
+1;
 
 __END__
 
