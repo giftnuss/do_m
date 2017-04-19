@@ -1,5 +1,5 @@
 package Class::Error ;
-$VERSION = 2.30 ;
+$VERSION = 2.40 ;
 use strict ;
 
 # This file uses the "Perlish" coding style
@@ -33,7 +33,7 @@ __END__
 
 Class::Error - Delayed checking of object failure
 
-=head1 VERSION 2.21
+=head1 VERSION 2.40
 
 Included in OOTools 2.21 distribution.
 

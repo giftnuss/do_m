@@ -1,5 +1,5 @@
 package Class::Util ;
-$VERSION = 2.30 ;
+$VERSION = 2.40 ;
 use 5.006_001 ;
 use strict ;
   
@@ -93,7 +93,7 @@ __END__
 
 Class::Util - Class utility functions
 
-=head1 VERSION 2.21
+=head1 VERSION 2.40
 
 Included in OOTools 2.21 distribution.
 
