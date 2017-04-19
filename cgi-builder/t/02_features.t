@@ -1,6 +1,8 @@
 #!perl -w
 ; use strict
-; use Test::More tests => 17
+; use Test::More tests => 18
+
+; BEGIN { use_ok('CGI::Builder'); }
 
 ; BEGIN
   { chdir './t'
