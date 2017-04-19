@@ -18,31 +18,31 @@ name: OOTools
 provides:
   Class::Error:
     file: lib/Class/Error.pm
-    version: '2.3'
+    version: '2.4'
   Class::Util:
     file: lib/Class/Util.pm
-    version: '2.3'
+    version: '2.4'
   Class::constr:
     file: lib/Class/constr.pm
-    version: '2.3'
+    version: '2.4'
   Class::groups:
     file: lib/Class/groups.pm
-    version: '2.3'
+    version: '2.4'
   Class::props:
     file: lib/Class/props.pm
-    version: '2.3'
+    version: '2.4'
   Object::groups:
     file: lib/Object/groups.pm
-    version: '2.3'
+    version: '2.4'
   Object::props:
     file: lib/Object/props.pm
-    version: '2.3'
+    version: '2.4'
   Package::groups:
     file: lib/Package/groups.pm
-    version: '2.3'
+    version: '2.4'
   Package::props:
     file: lib/Package/props.pm
-    version: '2.3'
+    version: '2.4'
 requires:
   perl: 5.006_001
 resources:
