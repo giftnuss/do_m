@@ -1,7 +1,8 @@
 {
    "abstract" : "Pragmas to implement constructors and accessors",
    "author" : [
-      "Domizio Demichelis - perl.4pro.net"
+      "Domizio Demichelis - perl.4pro.net {Original Author}",
+      "Sebastian Knapp <sknpp@cpan.org> {Maintainer}"
    ],
    "dynamic_config" : 1,
    "generated_by" : "Module::Build version 0.422",
@@ -16,6 +17,7 @@
    "prereqs" : {
       "build" : {
          "requires" : {
+            "CGI" : "0",
             "Test::More" : "0"
          }
       },

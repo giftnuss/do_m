@@ -3,13 +3,14 @@ require 5.006001;
 use ExtUtils::MakeMaker;
 WriteMakefile
 (
-  'VERSION_FROM' => './lib/Class/props.pm',
-  'PL_FILES' => {},
-  'INSTALLDIRS' => 'site',
-  'EXE_FILES' => [],
   'PREREQ_PM' => {
+                   'CGI' => 0,
                    'Test::More' => 0
                  },
-  'NAME' => 'Class::props'
+  'EXE_FILES' => [],
+  'VERSION_FROM' => './lib/Class/props.pm',
+  'INSTALLDIRS' => 'site',
+  'NAME' => 'Class::props',
+  'PL_FILES' => {}
 )
 ;
