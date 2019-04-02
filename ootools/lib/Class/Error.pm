@@ -1,5 +1,5 @@
 package Class::Error ;
-$VERSION = 2.40 ;
+$VERSION = 2.41 ;
 use strict ;
 
 # This file uses the "Perlish" coding style
@@ -33,9 +33,9 @@ __END__
 
 Class::Error - Delayed checking of object failure
 
-=head1 VERSION 2.40
+=head1 VERSION 2.41
 
-Included in OOTools 2.21 distribution.
+Included in OOTools 2.41 distribution.
 
 The latest versions changes are reported in the F<Changes> file in
 this distribution.
@@ -218,7 +218,7 @@ request, please use this link: http://perl.4pro.net/?Class::Error.
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004-2005 by Domizio Demichelis.
+Copyright 2004-2005 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used,
 redistributed and/or modified under the same terms as perl itself.

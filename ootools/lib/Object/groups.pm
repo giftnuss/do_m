@@ -30,35 +30,35 @@ The distribution includes:
 
 Pragma to implement lvalue accessors with options
 
-=item * Package::groups
+=item Package::groups
 
 Pragma to implement groups of properties accessors with options
 
-=item * Class::constr
+=item Class::constr
 
 Pragma to implement constructor methods
 
-=item * Class::props
+=item Class::props
 
 Pragma to implement lvalue accessors with options
 
-=item * Class::groups
+=item Class::groups
 
 Pragma to implement groups of properties accessors with options
 
-=item * Class::Error
+=item Class::Error
 
 Delayed checking of object failure
 
-=item * Class::Util
+=item Class::Util
 
 Class utility functions
 
-=item * Object::props
+=item Object::props
 
 Pragma to implement lvalue accessors with options
 
-=item * Object::groups
+=item Object::groups
 
 Pragma to implement groups of properties accessors with options
 
@@ -183,21 +183,15 @@ B<Note>: The grouped properties will be stored in
 e.g. C<< $Object->{any_group}{any_property} >> instead of the usual
 C<< $Object->{any_property} >>
 
-Whit the accessor method for the group you can:
+With the accessor method for the group you can:
 
 =over
 
-=item *
+=item set a group of properties by passing an hash of values to the accessor
 
-set a group of properties by passing an hash of values to the accessor
+=item retrieve (in list context) the list of the names of the (already defined) properties of the group
 
-=item *
-
-retrieve (in list context) the list of the names of the (already defined) properties of the group
-
-=item *
-
-retrieve (in scalar context) the reference to the underlying hash containing the grouped properties.
+=item retrieve (in scalar context) the reference to the underlying hash containing the grouped properties.
 
 =back
 
@@ -205,14 +199,9 @@ B<Note>: The underlaying hash contains:
 
 =over
 
-=item *
+=item all the already set properties of the class and base classes
 
-all the already set properties of the class and base classes
-
-=item *
-
-all the properties with a C<default> or C<rt_default> option
-(of the class and base classes, even if they have not been set yet)
+=item all the properties with a C<default> or C<rt_default> option (of the class and base classes, even if they have not been set yet)
 
 =back
 
@@ -298,7 +287,7 @@ please use this link: http://perl.4pro.net/?Object::groups.
 
 =head1 AUTHOR and COPYRIGHT
 
-© 2004-2005 by Domizio Demichelis.
+Copyright 2004-2005 by Domizio Demichelis.
 
 All Rights Reserved. This module is free software. It may be used,
 redistributed and/or modified under the same terms as perl itself.
