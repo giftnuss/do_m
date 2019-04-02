@@ -1,5 +1,5 @@
 package Class::props ;
-$VERSION = 2.40 ;
+$VERSION = 2.41 ;
 use 5.006_001 ;
 use strict ;
   

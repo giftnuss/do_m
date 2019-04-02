@@ -1,5 +1,8 @@
 OOTools Latest Versions Changes
 
+Version 2.41 - 2019-04-02
+- add Test::Pod to build requirements
+
 Version 2.30 - 2012-03-05
 - maintainance release fixing deprecated warnings and 
   test case that was broken beause the used syntax for
